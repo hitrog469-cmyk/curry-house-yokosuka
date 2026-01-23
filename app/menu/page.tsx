@@ -1,0 +1,729 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { formatPrice } from '@/lib/utils'
+import { menuItems, menuCategories, sortOptions, type MenuItem, type AddOn } from '@/lib/menu-data'
+import { getMenuItemImage } from '@/lib/image-mapping'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import Image from 'next/image'
+import Navbar from '@/components/Navbar'
+import Footer from '@/components/footer'
+
+export default function MenuPage() {
+  const searchParams = useSearchParams()
+  const searchQuery = searchParams.get('search') || ''
+
+  const [filteredItems, setFilteredItems] = useState<MenuItem[]>(menuItems)
+  const [selectedCategory, setSelectedCategory] = useState('all')
+  const [selectedSort, setSelectedSort] = useState('default')
+  const [cart, setCart] = useState<{[key: string]: number}>({})
+  const [searchTerm, setSearchTerm] = useState(searchQuery)
+  const [selectedAddOns, setSelectedAddOns] = useState<{[itemId: string]: string[]}>({})
+  const [selectedVariations, setSelectedVariations] = useState<{[itemId: string]: number}>({})
+  const [showAddOnModal, setShowAddOnModal] = useState<string | null>(null)
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null)
+  const [showSuggestedModal, setShowSuggestedModal] = useState<string | null>(null)
+  const [suggestedQuantities, setSuggestedQuantities] = useState<{[itemId: string]: number}>({})
+
+  useEffect(() => {
+    // Load cart from localStorage
+    const savedCart = localStorage.getItem('cart')
+
+    if (savedCart) {
+      setCart(JSON.parse(savedCart))
+    }
+
+    // Load add-ons and variations from localStorage
+    // But validate they match current cart items
+    const savedAddOns = localStorage.getItem('selectedAddOns')
+    const savedVariations = localStorage.getItem('selectedVariations')
+
+    if (savedAddOns) {
+      try {
+        const addOns = JSON.parse(savedAddOns)
+        // Only keep add-ons for items currently in cart
+        const validAddOns: {[key: string]: string[]} = {}
+        Object.keys(addOns).forEach(itemId => {
+          const cartItem = JSON.parse(savedCart || '{}')
+          if (cartItem[itemId]) {
+            validAddOns[itemId] = addOns[itemId]
+          }
+        })
+        setSelectedAddOns(validAddOns)
+        localStorage.setItem('selectedAddOns', JSON.stringify(validAddOns))
+      } catch (e) {
+        localStorage.removeItem('selectedAddOns')
+      }
+    }
+
+    if (savedVariations) {
+      try {
+        const variations = JSON.parse(savedVariations)
+        // Only keep variations for items currently in cart
+        const validVariations: {[key: string]: number} = {}
+        Object.keys(variations).forEach(itemId => {
+          const cartItem = JSON.parse(savedCart || '{}')
+          if (cartItem[itemId]) {
+            validVariations[itemId] = variations[itemId]
+          }
+        })
+        setSelectedVariations(validVariations)
+        localStorage.setItem('selectedVariations', JSON.stringify(validVariations))
+      } catch (e) {
+        localStorage.removeItem('selectedVariations')
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    filterAndSortItems()
+  }, [selectedCategory, searchTerm, selectedSort])
+
+  function filterAndSortItems() {
+    let filtered = menuItems
+
+    // Filter by category
+    if (selectedCategory === 'recommended') {
+      filtered = filtered.filter(item => item.isRecommended)
+    } else if (selectedCategory !== 'all') {
+      filtered = filtered.filter(item => item.category === selectedCategory)
+    }
+
+    // Filter by search term
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(item => {
+        const nameMatch = item.name.toLowerCase().includes(searchLower);
+        const nameJpMatch = item.nameJp.toLowerCase().includes(searchLower);
+        const descMatch = item.description?.toLowerCase().includes(searchLower);
+        const subcategoryMatch = item.subcategory?.toLowerCase().includes(searchLower);
+        const categoryName = menuCategories.find(c => c.id === item.category)?.name.toLowerCase() || '';
+        const categoryMatch = categoryName.includes(searchLower);
+
+        // Spice level search
+        const spiceMatch = item.spiceLevel?.toLowerCase().includes(searchLower);
+
+        return nameMatch || nameJpMatch || descMatch || subcategoryMatch || categoryMatch || spiceMatch;
+      });
+    }
+
+    // Sort items
+    let sorted = [...filtered]
+    switch (selectedSort) {
+      case 'name_asc':
+        sorted.sort((a, b) => a.name.localeCompare(b.name))
+        break
+      case 'name_desc':
+        sorted.sort((a, b) => b.name.localeCompare(a.name))
+        break
+      case 'price_asc':
+        sorted.sort((a, b) => a.price - b.price)
+        break
+      case 'price_desc':
+        sorted.sort((a, b) => b.price - a.price)
+        break
+      case 'popular':
+        sorted.sort((a, b) => (b.isRecommended ? 1 : 0) - (a.isRecommended ? 1 : 0))
+        break
+    }
+
+    setFilteredItems(sorted)
+  }
+
+  const updateCart = (itemId: string, change: number) => {
+    setCart(prev => {
+      const newCart = { ...prev }
+      const currentQty = newCart[itemId] || 0
+      const newQty = currentQty + change
+
+      if (newQty <= 0) {
+        delete newCart[itemId]
+        // Clear selections when item removed from cart
+        setSelectedAddOns(prevAddOns => {
+          const newAddOns = { ...prevAddOns }
+          delete newAddOns[itemId]
+          localStorage.setItem('selectedAddOns', JSON.stringify(newAddOns))
+          return newAddOns
+        })
+        setSelectedVariations(prevVars => {
+          const newVars = { ...prevVars }
+          delete newVars[itemId]
+          localStorage.setItem('selectedVariations', JSON.stringify(newVars))
+          return newVars
+        })
+      } else {
+        newCart[itemId] = newQty
+      }
+
+      localStorage.setItem('cart', JSON.stringify(newCart))
+      return newCart
+    })
+  }
+
+  const handleAddToCart = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId)
+
+    // If item has add-ons, show modal first
+    if (item?.addOns && item.addOns.length > 0) {
+      setPendingItemId(itemId)
+      setShowAddOnModal(itemId)
+    } else {
+      // Add to cart first
+      updateCart(itemId, 1)
+
+      // Then check if item has suggested items (like Queso Dip for Chips)
+      if (item?.suggestedItems && item.suggestedItems.length > 0) {
+        setPendingItemId(itemId)
+        setShowSuggestedModal(itemId)
+      }
+    }
+  }
+
+  const confirmAddToCart = () => {
+    if (pendingItemId) {
+      updateCart(pendingItemId, 1)
+      setPendingItemId(null)
+      setShowAddOnModal(null)
+
+      // Check for suggested items after adding
+      const item = menuItems.find(i => i.id === pendingItemId)
+      if (item?.suggestedItems && item.suggestedItems.length > 0) {
+        setShowSuggestedModal(pendingItemId)
+      }
+    }
+  }
+
+  const skipAddOns = () => {
+    if (pendingItemId) {
+      // Clear any selected add-ons for this item
+      setSelectedAddOns(prev => {
+        const updated = { ...prev }
+        delete updated[pendingItemId]
+        localStorage.setItem('selectedAddOns', JSON.stringify(updated))
+        return updated
+      })
+      updateCart(pendingItemId, 1)
+      setPendingItemId(null)
+      setShowAddOnModal(null)
+
+      // Check for suggested items after adding
+      const item = menuItems.find(i => i.id === pendingItemId)
+      if (item?.suggestedItems && item.suggestedItems.length > 0) {
+        setShowSuggestedModal(pendingItemId)
+      }
+    }
+  }
+
+  const addSuggestedItems = () => {
+    if (!pendingItemId) return
+
+    const item = menuItems.find(i => i.id === pendingItemId)
+    if (item?.suggestedItems) {
+      item.suggestedItems.forEach(suggested => {
+        const qty = suggestedQuantities[suggested.id] || 1
+        updateCart(suggested.id, qty)
+      })
+    }
+
+    setSuggestedQuantities({})
+    setShowSuggestedModal(null)
+    setPendingItemId(null)
+  }
+
+  const skipSuggested = () => {
+    setSuggestedQuantities({})
+    setShowSuggestedModal(null)
+    setPendingItemId(null)
+  }
+
+  const updateSuggestedQty = (itemId: string, change: number) => {
+    setSuggestedQuantities(prev => {
+      const current = prev[itemId] || 1
+      const newQty = Math.max(1, current + change)
+      return { ...prev, [itemId]: newQty }
+    })
+  }
+
+  const getItemPrice = (item: MenuItem) => {
+    let basePrice = item.price
+
+    // If variation is selected
+    if (item.variations && selectedVariations[item.id] !== undefined) {
+      basePrice = item.variations[selectedVariations[item.id]].price
+    }
+
+    // Add selected add-ons
+    if (selectedAddOns[item.id]) {
+      item.addOns?.forEach(addOn => {
+        if (selectedAddOns[item.id]?.includes(addOn.name)) {
+          basePrice += addOn.price
+        }
+      })
+    }
+
+    return basePrice
+  }
+
+  const getCartTotal = () => {
+    return Object.entries(cart).reduce((total, [itemId, qty]) => {
+      const item = menuItems.find(i => i.id === itemId)
+      if (!item) return total
+      return total + (getItemPrice(item) * qty)
+    }, 0)
+  }
+
+  const getCartCount = () => {
+    return Object.values(cart).reduce((sum, qty) => sum + qty, 0)
+  }
+
+  const getSpiceColor = (level?: string) => {
+    if (!level) return ''
+    const colors: any = {
+      'MILD': 'bg-green-100 text-green-800 border-green-300',
+      'NORMAL': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'MEDIUM': 'bg-orange-100 text-orange-800 border-orange-300',
+      'HOT': 'bg-red-100 text-red-800 border-red-300',
+      'VERY HOT': 'bg-red-200 text-red-900 border-red-400'
+    }
+    return colors[level] || ''
+  }
+
+  const toggleAddOn = (itemId: string, addOnName: string) => {
+    setSelectedAddOns(prev => {
+      const current = prev[itemId] || []
+      const updated = current.includes(addOnName)
+        ? current.filter(name => name !== addOnName)
+        : [...current, addOnName]
+      const newAddOns = { ...prev, [itemId]: updated }
+      localStorage.setItem('selectedAddOns', JSON.stringify(newAddOns))
+      return newAddOns
+    })
+  }
+
+  const selectVariation = (itemId: string, variationIndex: number) => {
+    setSelectedVariations(prev => {
+      const newVars = { ...prev, [itemId]: variationIndex }
+      localStorage.setItem('selectedVariations', JSON.stringify(newVars))
+      return newVars
+    })
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+
+      {/* Header */}
+      <div className="bg-linear-to-r from-green-600 to-green-700 text-white py-16">
+        <div className="container-custom">
+          <h1 className="heading-1 mb-4">Our Complete Menu</h1>
+          <p className="text-xl text-green-50 mb-2">
+            Authentic Indian, Nepalese, Mexican & Japanese-Fusion Cuisine
+          </p>
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <span className="bg-white/20 px-4 py-2 rounded-full font-semibold">
+              {menuItems.length} Items Available
+            </span>
+            <span className="bg-white/20 px-4 py-2 rounded-full font-semibold">
+              All Prices Include Tax
+            </span>
+            <span className="bg-white/20 px-4 py-2 rounded-full font-semibold">
+              Delivery Fee Calculated at Checkout
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Cart */}
+      {getCartCount() > 0 && (
+        <Link href="/order">
+          <div className="fixed bottom-6 right-6 z-40 bg-linear-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-2xl px-6 py-4 flex items-center gap-3 hover:scale-105 transition-transform cursor-pointer">
+            <div className="relative">
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span className="absolute -top-2 -right-2 bg-white text-orange-600 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                {getCartCount()}
+              </span>
+            </div>
+            <div>
+              <div className="font-bold text-sm">View Cart</div>
+              <div className="text-xs">{formatPrice(getCartTotal())}</div>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      <div className="container-custom py-8">
+        {/* Search & Sort Bar */}
+        <div className="mb-8 space-y-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Search */}
+            <div className="md:col-span-2">
+              <div className="relative">
+                <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search menu items... (English or Japanese)"
+                  className="w-full pl-12 pr-4 py-4 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:border-green-500 outline-none transition-colors"
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Sort */}
+            <div>
+              <select
+                value={selectedSort}
+                onChange={(e) => setSelectedSort(e.target.value)}
+                className="w-full px-4 py-4 bg-white border-2 border-gray-200 rounded-xl text-gray-900 focus:border-green-500 outline-none transition-colors font-semibold"
+              >
+                {sortOptions.map(option => (
+                  <option key={option.id} value={option.id}>{option.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Category Filter */}
+        <div className="mb-8 -mx-4 px-4 relative">
+          {/* Right fade gradient with arrow */}
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-linear-to-l from-gray-50 to-transparent pointer-events-none z-10 flex items-center justify-end pr-4">
+            <div className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg animate-pulse">
+              Scroll →
+            </div>
+          </div>
+
+          <div className="overflow-x-auto pb-3" style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#16a34a #e5e7eb'
+          }}>
+            <div className="flex gap-3 min-w-max">
+              {menuCategories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-6 py-3 rounded-xl font-semibold whitespace-nowrap transition-all shadow-md ${
+                    selectedCategory === cat.id
+                      ? 'bg-linear-to-r from-green-600 to-green-700 text-white scale-105'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {cat.name}
+                  <span className="block text-xs mt-1 opacity-80">{cat.nameJp}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Results Count */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {searchTerm && `Search results for "${searchTerm}"`}
+            {!searchTerm && selectedCategory === 'all' && 'All Menu Items'}
+            {!searchTerm && selectedCategory === 'recommended' && 'Chef\'s Recommendations'}
+            {!searchTerm && selectedCategory !== 'all' && selectedCategory !== 'recommended' &&
+              menuCategories.find(c => c.id === selectedCategory)?.name}
+            <span className="text-lg text-gray-600 ml-3">
+              ({filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'})
+            </span>
+          </h2>
+        </div>
+
+        {/* Menu Items Grid */}
+        {filteredItems.length === 0 ? (
+          <div className="card text-center py-12 max-w-md mx-auto">
+            <p className="text-gray-600 text-xl mb-2">No items found</p>
+            <p className="text-gray-500 mb-4">Try a different search or category</p>
+            <button onClick={() => { setSearchTerm(''); setSelectedCategory('all') }} className="btn-primary">
+              View All Items
+            </button>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredItems.map((item) => (
+              <div key={item.id} id={`item-${item.id}`} className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col relative">
+                {/* Recommended Badge */}
+                {item.isRecommended && (
+                  <div className="absolute top-3 right-3 z-10">
+                    <span className="bg-orange-500 text-white shadow-lg text-xs px-3 py-1 rounded-full font-bold">
+                      CHEF'S PICK
+                    </span>
+                  </div>
+                )}
+
+                {/* Image - DISH FILLS ENTIRE FRAME */}
+                <div className="relative w-full h-72 bg-white overflow-hidden">
+                  {getMenuItemImage(item.id) ? (
+                    <img
+                      src={getMenuItemImage(item.id)!}
+                      alt={item.name}
+                      className="w-full h-full object-cover hover:scale-120 transition-transform duration-700"
+                      style={{ objectPosition: 'center' }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
+                      <span className="text-gray-500 text-sm font-medium bg-white/80 px-4 py-2 rounded-full">
+                        Photo Coming Soon
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content Section - HAS PADDING */}
+                <div className="p-2 flex flex-col flex-1">
+                  {/* Spice Level */}
+                  {item.spiceLevel && (
+                    <div className="mb-3">
+                      <span className={`text-xs px-3 py-1 rounded-full font-bold border ${getSpiceColor(item.spiceLevel)}`}>
+                        {item.spiceLevel}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Item Details */}
+                  <h3 className="font-bold text-xl mb-1 text-gray-900">{item.name}</h3>
+                  <p className="text-gray-600 text-sm mb-2">{item.nameJp}</p>
+
+                  {/* Description */}
+                  {item.description && (
+                    <p className="text-gray-500 text-sm mb-3 line-clamp-2">
+                      {item.description}
+                    </p>
+                  )}
+
+                  {/* Variations */}
+                  {item.variations && item.variations.length > 0 && (
+                    <div className="mb-3">
+                      <p className="text-xs font-bold text-gray-700 mb-2">Choose Option:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {item.variations.map((variation, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => selectVariation(item.id, idx)}
+                            className={`px-3 py-1 rounded-lg text-sm font-semibold transition-all ${
+                              (selectedVariations[item.id] ?? 0) === idx
+                                ? 'bg-green-600 text-white'
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {variation.name} {formatPrice(variation.price)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add-ons available indicator */}
+                  {item.addOns && item.addOns.length > 0 && (
+                    <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-xs font-semibold text-blue-900 text-center">
+                        ✨ {item.addOns.length} Add-On{item.addOns.length > 1 ? 's' : ''} Available
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Spacer to push buttons to bottom */}
+                  <div className="flex-1"></div>
+
+                  {/* Price */}
+                  <div className="flex items-center justify-between mb-4 mt-auto">
+                    <p className="text-orange-600 font-bold text-3xl">
+                      {formatPrice(getItemPrice(item))}
+                    </p>
+                  </div>
+
+                  {/* Cart Buttons */}
+                  {cart[item.id] ? (
+                    <div className="flex items-center gap-3 bg-linear-to-r from-gray-100 to-gray-200 rounded-xl p-3 shadow-md">
+                      <button
+                        onClick={() => updateCart(item.id, -1)}
+                        className="w-12 h-12 bg-white hover:bg-gray-50 text-gray-800 font-black text-2xl rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
+                      >
+                        −
+                      </button>
+                      <div className="flex-1 text-center">
+                        <span className="block font-black text-3xl text-gray-900">{cart[item.id]}</span>
+                        <span className="block text-xs text-gray-600 font-semibold">in cart</span>
+                      </div>
+                      <button
+                        onClick={() => handleAddToCart(item.id)}
+                        className="w-12 h-12 bg-linear-to-br from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-black text-2xl rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center"
+                      >
+                        +
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleAddToCart(item.id)}
+                      className="w-full btn-primary"
+                    >
+                      Add to Cart
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Add-On Modal */}
+      {showAddOnModal && pendingItemId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            {(() => {
+              const item = menuItems.find(i => i.id === pendingItemId)
+              if (!item) return null
+
+              return (
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="mb-4">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">{item.name}</h3>
+                    <p className="text-gray-600 text-sm">{item.nameJp}</p>
+                  </div>
+
+                  {/* Add-Ons Selection */}
+                  <div className="mb-6">
+                    <h4 className="text-lg font-bold text-gray-800 mb-3">Would you like to add extras?</h4>
+                    <div className="space-y-3">
+                      {item.addOns?.map((addOn, idx) => (
+                        <label key={idx} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border-2 border-blue-200 hover:border-blue-400 cursor-pointer transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={selectedAddOns[item.id]?.includes(addOn.name) || false}
+                            onChange={() => toggleAddOn(item.id, addOn.name)}
+                            className="w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+                          />
+                          <div className="flex-1">
+                            <span className="block font-semibold text-gray-900">{addOn.name}</span>
+                            {addOn.note && <span className="text-xs text-gray-500">{addOn.note}</span>}
+                          </div>
+                          <span className="font-bold text-green-600">+{formatPrice(addOn.price)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Total Price Display */}
+                  <div className="mb-6 p-4 bg-linear-to-r from-green-50 to-blue-50 rounded-xl border-2 border-green-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700 font-semibold">Total Price:</span>
+                      <span className="text-3xl font-black text-green-600">{formatPrice(getItemPrice(item))}</span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={skipAddOns}
+                      className="flex-1 px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+                    >
+                      Skip Add-Ons
+                    </button>
+                    <button
+                      onClick={confirmAddToCart}
+                      className="flex-1 px-6 py-4 bg-linear-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Suggested Items Modal (like Queso Dip) */}
+      {showSuggestedModal && pendingItemId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            {(() => {
+              const item = menuItems.find(i => i.id === pendingItemId)
+              if (!item || !item.suggestedItems) return null
+
+              return (
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="mb-4 text-center">
+                    <div className="text-4xl mb-2">🎉</div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">Also Want to Add?</h3>
+                    <p className="text-gray-600 text-sm">Complete your order with these items</p>
+                  </div>
+
+                  {/* Suggested Items */}
+                  <div className="space-y-4 mb-6">
+                    {item.suggestedItems.map((suggested) => (
+                      <div key={suggested.id} className="p-4 bg-linear-to-r from-orange-50 to-yellow-50 rounded-xl border-2 border-orange-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-lg text-gray-900">{suggested.name}</h4>
+                            <p className="text-orange-600 font-bold text-xl">+{formatPrice(suggested.price)}</p>
+                          </div>
+                        </div>
+
+                        {/* Quantity Selector */}
+                        <div className="flex items-center gap-3 bg-white rounded-lg p-2">
+                          <button
+                            onClick={() => updateSuggestedQty(suggested.id, -1)}
+                            className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center transition-colors"
+                          >
+                            −
+                          </button>
+                          <span className="flex-1 text-center font-black text-2xl text-gray-900">
+                            {suggestedQuantities[suggested.id] || 1}
+                          </span>
+                          <button
+                            onClick={() => updateSuggestedQty(suggested.id, 1)}
+                            className="w-10 h-10 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold text-xl flex items-center justify-center transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={skipSuggested}
+                      className="flex-1 px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+                    >
+                      No Thanks
+                    </button>
+                    <button
+                      onClick={addSuggestedItems}
+                      className="flex-1 px-6 py-4 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      <Footer />
+    </div>
+  )
+}
