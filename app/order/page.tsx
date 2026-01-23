@@ -10,7 +10,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import RestaurantStatus from '@/components/RestaurantStatus'
-import AddressInput from '@/components/AddressInput'
 
 export default function OrderPage() {
   const router = useRouter()
@@ -456,10 +455,13 @@ export default function OrderPage() {
 
                   <div>
                     <label className="block text-sm font-bold mb-2">Delivery Address *</label>
-                    <AddressInput
+                    <textarea
                       value={formData.address}
-                      onChange={(address) => setFormData({...formData, address})}
-                      onDeliveryFeeCalculated={(fee) => setDeliveryFee(fee)}
+                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      rows={3}
+                      placeholder="Enter your full delivery address"
+                      required
                     />
                   </div>
 

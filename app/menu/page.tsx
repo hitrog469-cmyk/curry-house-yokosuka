@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { formatPrice } from '@/lib/utils'
 import { menuItems, menuCategories, sortOptions, type MenuItem, type AddOn } from '@/lib/menu-data'
 import { getMenuItemImage } from '@/lib/image-mapping'
@@ -10,7 +10,7 @@ import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 
-export default function MenuPage() {
+function MenuContent() {
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get('search') || ''
 
@@ -725,5 +725,13 @@ export default function MenuPage() {
 
       <Footer />
     </div>
+  )
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <MenuContent />
+    </Suspense>
   )
 }
