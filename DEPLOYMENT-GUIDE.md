@@ -17,7 +17,7 @@ git commit -m "Initial commit: Complete restaurant website with all features"
 # Create GitHub repository (do this on github.com first)
 # Then connect and push:
 git branch -M main
-git remote add origin https://github.com/rohitofficialce-sketch/curry-house-yokosuka.git
+git remote add origin https://github.com/hitrog469-cmyk/curry-house-yokosuka.git
 git push -u origin main
 ```
 
