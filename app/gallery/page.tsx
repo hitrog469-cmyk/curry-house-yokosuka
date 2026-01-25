@@ -8,6 +8,7 @@ import Link from 'next/link'
 export default function GalleryPage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
+  const [photoConsent, setPhotoConsent] = useState(false)
 
   // Placeholder photos until real guest photos are uploaded
   const placeholderPhotos = [
@@ -24,6 +25,13 @@ export default function GalleryPage() {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
+
+    // Check if user has given consent
+    if (!photoConsent) {
+      alert('Please confirm that you give us permission to display your photos on our website.')
+      e.target.value = '' // Reset file input
+      return
+    }
 
     setUploading(true)
 
@@ -93,6 +101,26 @@ export default function GalleryPage() {
                 </label>
               </div>
             </label>
+
+            {/* Consent Checkbox */}
+            <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={photoConsent}
+                  onChange={(e) => setPhotoConsent(e.target.checked)}
+                  className="mt-1 w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-blue-900 mb-1">
+                    📝 Photo Display Consent
+                  </p>
+                  <p className="text-xs text-blue-800">
+                    I give The Curry House Yokosuka permission to display my uploaded photos on their website and social media for promotional purposes.
+                  </p>
+                </div>
+              </label>
+            </div>
 
             {uploading && (
               <div className="mt-4 text-center">

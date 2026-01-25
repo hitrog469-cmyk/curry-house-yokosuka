@@ -76,17 +76,33 @@ function TableOrderContent() {
         }
       })
 
-      const { data, error } = await supabase
+      const { data: tableOrderData, error: tableError } = await supabase
         .from('table_orders')
         .insert({
           table_number: parseInt(tableNumber),
           items: orderItems,
           total_amount: getCartTotal(),
-          status: 'pending'
+          status: 'pending',
+          order_type: 'in-house'
         })
         .select()
 
-      if (error) throw error
+      if (tableError) throw tableError
+
+      // Also create in main orders table for admin revenue tracking
+      const { error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          total_amount: getCartTotal(),
+          status: 'pending',
+          order_type: 'in-house',
+          table_number: parseInt(tableNumber),
+          items: orderItems,
+          payment_status: 'pending',
+          delivery_address: `Table ${tableNumber} - In-House Dining`
+        })
+
+      if (orderError) console.error('Failed to sync to orders table:', orderError)
 
       setOrderSubmitted(true)
       setCart({})

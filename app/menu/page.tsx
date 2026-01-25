@@ -5,14 +5,17 @@ import { formatPrice } from '@/lib/utils'
 import { menuItems, menuCategories, sortOptions, type MenuItem, type AddOn } from '@/lib/menu-data'
 import { getMenuItemImage } from '@/lib/image-mapping'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
+import { useAuth } from '@/contexts/auth-context'
 
 function MenuContent() {
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get('search') || ''
+  const router = useRouter()
+  const { user } = useAuth()
 
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>(menuItems)
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -162,6 +165,13 @@ function MenuContent() {
   }
 
   const handleAddToCart = (itemId: string) => {
+    // Check if user is logged in
+    if (!user) {
+      // Redirect to login page
+      router.push('/auth/login?redirectTo=/menu')
+      return
+    }
+
     const item = menuItems.find(i => i.id === itemId)
 
     // If item has add-ons, show modal first

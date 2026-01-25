@@ -220,6 +220,7 @@ export default function OrderPage() {
       payment_method: 'cod',
       payment_status: 'pending',
       notes: formData.notes,
+      order_type: 'delivery'
     }
 
     // Add user_id if user is logged in
@@ -402,7 +403,7 @@ export default function OrderPage() {
                         </div>
                       )}
                       <div className="flex justify-between text-green-600">
-                        <span className="font-semibold">Delivery Fee (within 3km):</span>
+                        <span className="font-semibold">Delivery Fee:</span>
                         <span className="font-bold">FREE ✓</span>
                       </div>
                       <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t-2">

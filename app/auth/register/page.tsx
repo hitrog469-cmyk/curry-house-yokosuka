@@ -18,6 +18,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(false);
   
   const { signUp, signInWithGoogle, signInWithFacebook } = useAuth();
   const router = useRouter();
@@ -350,6 +351,26 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Newsletter Opt-in */}
+            <div className="mt-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={newsletterOptIn}
+                  onChange={(e) => setNewsletterOptIn(e.target.checked)}
+                  className="mt-1 w-5 h-5 text-green-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-green-900 dark:text-green-300 mb-1">
+                    📧 Stay Updated!
+                  </p>
+                  <p className="text-xs text-green-800 dark:text-green-400">
+                    Yes, I want to receive special offers, promotions, and newsletter updates from The Curry House Yokosuka via email.
+                  </p>
+                </div>
+              </label>
             </div>
 
             {/* Submit Button */}
