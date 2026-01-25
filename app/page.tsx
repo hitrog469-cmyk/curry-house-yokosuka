@@ -72,27 +72,47 @@ export default function HomePage() {
     <div className="min-h-screen">
       <Navbar />
 
-      {/* Rotating Announcements Banner */}
-      <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white py-3 overflow-hidden relative">
-        <div className="animate-scroll-slow whitespace-nowrap">
-          <span className="inline-block px-4">
-            🎉 Grand Opening Special - Visit us today!
-          </span>
-          <span className="inline-block px-4 mx-8">
-            ⭐ FREE DELIVERY on all orders!
-          </span>
-          <span className="inline-block px-4 mx-8">
-            🍛 Try our Authentic Indian & Mexican Cuisine!
-          </span>
-          <span className="inline-block px-4 mx-8">
-            📱 Order now via QR code at your table!
-          </span>
-          <span className="inline-block px-4 mx-8">
-            🎉 Grand Opening Special - Visit us today!
-          </span>
-          <span className="inline-block px-4 mx-8">
-            ⭐ FREE DELIVERY on all orders!
-          </span>
+      {/* Rotating Announcements Banner - Clickable to Menu */}
+      <Link href="/menu" className="block">
+        <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white py-3 overflow-hidden relative cursor-pointer hover:from-orange-700 hover:via-red-700 hover:to-orange-700 transition-all">
+          <div className="animate-scroll-slow whitespace-nowrap">
+            <span className="inline-block px-4">
+              🎉 2026 Special - Order Now!
+            </span>
+            <span className="inline-block px-4 mx-8">
+              ⭐ FREE DELIVERY on all orders!
+            </span>
+            <span className="inline-block px-4 mx-8">
+              🍛 Authentic Indian, Mexican, Japanese & Nepalese Cuisine!
+            </span>
+            <span className="inline-block px-4 mx-8">
+              🎉 2026 Special - Order Now!
+            </span>
+            <span className="inline-block px-4 mx-8">
+              ⭐ FREE DELIVERY on all orders!
+            </span>
+          </div>
+        </div>
+      </Link>
+
+      {/* QR Code Table Ordering Banner */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-6 shadow-lg">
+        <div className="container-custom">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="text-5xl">📱</div>
+              <div>
+                <h3 className="text-xl font-bold mb-1">Dining In? Scan QR Code at Your Table!</h3>
+                <p className="text-indigo-100 text-sm">Order directly from your table - No waiting, instant to kitchen</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="bg-white/20 backdrop-blur-sm px-6 py-3 rounded-lg">
+                <div className="text-2xl font-bold">15 Tables</div>
+                <div className="text-xs text-indigo-100">Quick Service</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

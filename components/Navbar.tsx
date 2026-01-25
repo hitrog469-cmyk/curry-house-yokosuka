@@ -9,6 +9,7 @@ import NotificationBell from './NotificationBell';
 export default function Navbar() {
   const { user, signOut, loading, refreshUser } = useAuth();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,11 +35,14 @@ export default function Navbar() {
           <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <img
               src="/images/Logo.png"
-              alt="The Curry House"
+              alt="The Curry House Yokosuka"
               className="w-12 h-12 object-contain"
             />
-            <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
-              The Curry House
+            <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent hidden sm:block">
+              The Curry House Yokosuka
+            </span>
+            <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent sm:hidden">
+              TCH Yokosuka
             </span>
           </Link>
 
@@ -169,8 +173,81 @@ export default function Navbar() {
                 </Link>
               </>
             )}
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="md:hidden p-2 text-gray-700 dark:text-gray-300 hover:text-orange-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {showMobileMenu ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {showMobileMenu && (
+          <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4 px-4 space-y-3 bg-white dark:bg-gray-800">
+            <Link
+              href="/menu"
+              onClick={() => setShowMobileMenu(false)}
+              className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
+            >
+              Menu
+            </Link>
+            <Link
+              href="/gallery"
+              onClick={() => setShowMobileMenu(false)}
+              className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
+            >
+              Gallery
+            </Link>
+            <Link
+              href="/about"
+              onClick={() => setShowMobileMenu(false)}
+              className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
+            >
+              About
+            </Link>
+            <Link
+              href="/contact"
+              onClick={() => setShowMobileMenu(false)}
+              className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
+            >
+              Contact
+            </Link>
+            <Link
+              href="/catering"
+              onClick={() => setShowMobileMenu(false)}
+              className="block px-4 py-3 text-purple-600 dark:text-purple-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-bold"
+            >
+              🎉 Party & Catering
+            </Link>
+            {!user && (
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                <Link
+                  href="/auth/login"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="block px-4 py-3 text-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-semibold"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/auth/register"
+                  onClick={() => setShowMobileMenu(false)}
+                  className="block px-4 py-3 text-center bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg hover:from-orange-700 hover:to-red-700 transition-all font-semibold"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </nav>
   );
