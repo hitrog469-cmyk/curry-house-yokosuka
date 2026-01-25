@@ -72,6 +72,30 @@ export default function HomePage() {
     <div className="min-h-screen">
       <Navbar />
 
+      {/* Rotating Announcements Banner */}
+      <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white py-3 overflow-hidden relative">
+        <div className="animate-scroll whitespace-nowrap">
+          <span className="inline-block px-4">
+            🎉 SPECIAL OFFER: 20% OFF on all orders above ¥3000!
+          </span>
+          <span className="inline-block px-4 mx-8">
+            ⭐ FREE DELIVERY within 3km radius!
+          </span>
+          <span className="inline-block px-4 mx-8">
+            🍛 Try our NEW Chicken Tikka Masala - Chef's Special!
+          </span>
+          <span className="inline-block px-4 mx-8">
+            🎊 Happy Hour: 10% OFF on weekdays 2PM-5PM!
+          </span>
+          <span className="inline-block px-4 mx-8">
+            🎉 SPECIAL OFFER: 20% OFF on all orders above ¥3000!
+          </span>
+          <span className="inline-block px-4 mx-8">
+            ⭐ FREE DELIVERY within 3km radius!
+          </span>
+        </div>
+      </div>
+
       {/* Hero Section - Split Screen Design */}
       <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-emerald-900 text-white overflow-hidden min-h-[90vh] flex items-center">
         {/* Animated Background Pattern */}
@@ -426,6 +450,169 @@ export default function HomePage() {
                 <span className="font-semibold">4.9 Rating</span>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Career & Catering Banners */}
+      <section className="section-padding bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="container-custom">
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Career Banner */}
+            <Link href="/careers" className="group">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 md:p-12 shadow-elegant hover-lift">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-500"></div>
+                <div className="relative z-10">
+                  <div className="text-5xl mb-4">💼</div>
+                  <h3 className="text-3xl font-bold text-white mb-3">Join Our Team</h3>
+                  <p className="text-blue-100 mb-6">
+                    Explore exciting career opportunities at The Curry House Yokosuka
+                  </p>
+                  <div className="inline-flex items-center gap-2 text-white font-semibold">
+                    <span>View Open Positions</span>
+                    <svg className="w-5 h-5 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* Catering Banner */}
+            <Link href="#catering" className="group">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 to-pink-600 p-8 md:p-12 shadow-elegant hover-lift">
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mb-32 group-hover:scale-110 transition-transform duration-500"></div>
+                <div className="relative z-10">
+                  <div className="text-5xl mb-4">🎉</div>
+                  <h3 className="text-3xl font-bold text-white mb-3">Party & Catering</h3>
+                  <p className="text-purple-100 mb-6">
+                    Make your events memorable with our authentic cuisine
+                  </p>
+                  <div className="inline-flex items-center gap-2 text-white font-semibold">
+                    <span>Get a Quote</span>
+                    <svg className="w-5 h-5 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Catering Service Section with Form */}
+      <section id="catering" className="section-padding bg-white">
+        <div className="container-custom max-w-4xl">
+          <div className="text-center mb-12 animate-fadeIn">
+            <div className="inline-block px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-bold mb-4">
+              PARTY & CATERING
+            </div>
+            <h2 className="heading-2 mb-4">Host Unforgettable Events</h2>
+            <p className="text-xl text-gray-600">
+              From intimate gatherings to grand celebrations, we bring authentic flavors to your special occasions
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 md:p-12 shadow-elegant">
+            <form className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold mb-2">Your Name *</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2">Phone Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="+81 90-1234-5678"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold mb-2">Email Address *</label>
+                <input
+                  type="email"
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold mb-2">Event Type *</label>
+                  <select
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="">Select event type</option>
+                    <option value="birthday">Birthday Party</option>
+                    <option value="wedding">Wedding</option>
+                    <option value="corporate">Corporate Event</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2">Number of Guests *</label>
+                  <input
+                    type="number"
+                    required
+                    min="10"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="50"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold mb-2">Event Date *</label>
+                  <input
+                    type="date"
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold mb-2">Preferred Time</label>
+                  <input
+                    type="time"
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold mb-2">Special Requirements</label>
+                <textarea
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Any dietary restrictions, menu preferences, or special requests..."
+                ></textarea>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800 text-center">
+                  📞 Our manager will call you within 24 hours to discuss your requirements and provide a custom quote
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 rounded-xl transition-all shadow-elegant hover-lift"
+              >
+                Submit Catering Request
+              </button>
+            </form>
           </div>
         </div>
       </section>

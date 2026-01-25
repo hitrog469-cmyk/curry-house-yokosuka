@@ -362,8 +362,15 @@ export default function RegisterPage() {
             </button>
           </form>
 
+          {/* Privacy Notice */}
+          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-xs text-blue-800 dark:text-blue-300 text-center">
+              🔒 We only collect your name for orders. No other personal information is stored.
+            </p>
+          </div>
+
           {/* Sign In Link */}
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <p className="text-gray-600 dark:text-gray-400">
               Already have an account?{' '}
               <Link

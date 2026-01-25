@@ -34,7 +34,7 @@ export default function OrderPage() {
   const [promoCode, setPromoCode] = useState('')
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [promoError, setPromoError] = useState('')
-  const [deliveryFee, setDeliveryFee] = useState(500) // Default ¥500
+  const [deliveryFee, setDeliveryFee] = useState(0) // Free delivery within 3km
 
   // Load cart from localStorage
   const [cart, setCart] = useState<{[key: string]: number}>({})
@@ -401,9 +401,9 @@ export default function OrderPage() {
                           <span className="font-bold">-{formatPrice(getDiscount())}</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-gray-700">
-                        <span className="font-semibold">Delivery Fee:</span>
-                        <span className="font-bold">{formatPrice(deliveryFee)}</span>
+                      <div className="flex justify-between text-green-600">
+                        <span className="font-semibold">Delivery Fee (within 3km):</span>
+                        <span className="font-bold">FREE ✓</span>
                       </div>
                       <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t-2">
                         <span>Total:</span>
