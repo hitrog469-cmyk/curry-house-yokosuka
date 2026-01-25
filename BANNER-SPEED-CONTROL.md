@@ -17,7 +17,7 @@ The scrolling announcements banner speed can be easily controlled through CSS.
 
 ```css
 .animate-scroll-slow {
-  animation: scroll 45s linear infinite;
+  animation: scroll 60s linear infinite;
 }
 ```
 

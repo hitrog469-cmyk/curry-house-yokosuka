@@ -735,9 +735,9 @@ img[loading="lazy"].loaded {
   animation-play-state: paused;
 }
 
-/* Slower scroll for easier reading */
+/* Faster scroll - good reading speed */
 .animate-scroll-slow {
-  animation: scroll 45s linear infinite;
+  animation: scroll 25s linear infinite;
 }
 
 .animate-scroll-slow:hover {

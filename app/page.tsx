@@ -95,23 +95,25 @@ export default function HomePage() {
         </div>
       </Link>
 
-      {/* QR Code Table Ordering Banner */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-6 shadow-lg">
+      {/* Party & Catering Banner */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-6 shadow-lg">
         <div className="container-custom">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="text-5xl">📱</div>
+              <div className="text-5xl">🎉</div>
               <div>
-                <h3 className="text-xl font-bold mb-1">Dining In? Scan QR Code at Your Table!</h3>
-                <p className="text-indigo-100 text-sm">Order directly from your table - No waiting, instant to kitchen</p>
+                <h3 className="text-xl font-bold mb-1">Host Your Events With Us!</h3>
+                <p className="text-purple-100 text-sm">Weddings, Birthdays, Corporate Events - We cater them all!</p>
               </div>
             </div>
-            <div className="flex gap-3">
-              <div className="bg-white/20 backdrop-blur-sm px-6 py-3 rounded-lg">
-                <div className="text-2xl font-bold">15 Tables</div>
-                <div className="text-xs text-indigo-100">Quick Service</div>
+            <Link href="/catering" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all px-6 py-3 rounded-lg group">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">Get a Quote</span>
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
@@ -474,7 +476,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Career & Catering Banners */}
+      {/* Career & Dine In Banners */}
       <section className="section-padding bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="container-custom">
           <div className="grid md:grid-cols-2 gap-8">
@@ -498,25 +500,25 @@ export default function HomePage() {
               </div>
             </Link>
 
-            {/* Catering Banner */}
-            <Link href="/catering" className="group">
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-600 to-pink-600 p-8 md:p-12 shadow-elegant hover-lift">
+            {/* Dine In - QR Code Ordering */}
+            <div className="group">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 p-8 md:p-12 shadow-elegant hover-lift">
                 <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mb-32 group-hover:scale-110 transition-transform duration-500"></div>
                 <div className="relative z-10">
-                  <div className="text-5xl mb-4">🎉</div>
-                  <h3 className="text-3xl font-bold text-white mb-3">Party & Catering</h3>
-                  <p className="text-purple-100 mb-6">
-                    Make your events memorable with our authentic cuisine
+                  <div className="text-5xl mb-4">📱</div>
+                  <h3 className="text-3xl font-bold text-white mb-3">Dine In - QR Ordering</h3>
+                  <p className="text-indigo-100 mb-6">
+                    Scan QR at your table, order instantly - Direct to kitchen!
                   </p>
                   <div className="inline-flex items-center gap-2 text-white font-semibold">
-                    <span>Get a Quote</span>
-                    <svg className="w-5 h-5 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    <span>15 Tables Available</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
               </div>
-            </Link>
+            </div>
           </div>
         </div>
       </section>
