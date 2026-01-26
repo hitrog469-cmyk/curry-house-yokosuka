@@ -29,7 +29,7 @@ interface AuthContextType {
   signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: Error | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
-  signInWithFacebook: () => Promise<{ error: Error | null }>;
+  signInWithApple: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
@@ -226,10 +226,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInWithFacebook = async () => {
+  const signInWithApple = async () => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
+        provider: 'apple',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
         },
@@ -298,7 +298,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signInWithEmail,
     signInWithGoogle,
-    signInWithFacebook,
+    signInWithApple,
     signOut,
     resetPassword,
     updatePassword,
