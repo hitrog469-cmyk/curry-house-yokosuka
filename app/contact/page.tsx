@@ -146,7 +146,7 @@ export default function ContactPage() {
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-4 py-4 bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-orange-500 dark:focus:border-orange-400 outline-none transition-colors text-gray-900 dark:text-white"
-                      placeholder="Rohit acharya"
+                      placeholder="Rohit Acharya"
                     />
                   </div>
 

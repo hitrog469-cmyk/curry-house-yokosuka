@@ -152,7 +152,7 @@ export default function RegisterPage() {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            The Curry House
+            The Curry House Yokosuka
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
             Create your account to start ordering
@@ -233,7 +233,7 @@ export default function RegisterPage() {
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
-                placeholder="Rohit acharya"
+                placeholder="Rohit Acharya"
                 disabled={loading}
               />
             </div>

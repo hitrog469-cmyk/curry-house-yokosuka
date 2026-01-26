@@ -224,7 +224,7 @@ export default function HomePage() {
             </div>
             <h2 className="heading-2 mb-4">How It Works</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              From browsing to delivery, we make it incredibly easy to enjoy authentic Indian cuisine
+              From browsing to delivery, we make it incredibly easy to enjoy authentic Indian, Nepalese, Mexican & Japanese-fusion cuisine
             </p>
           </div>
 
