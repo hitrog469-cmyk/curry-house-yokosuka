@@ -24,10 +24,14 @@ function MenuContent() {
   const [searchTerm, setSearchTerm] = useState(searchQuery)
   const [selectedAddOns, setSelectedAddOns] = useState<{[itemId: string]: string[]}>({})
   const [selectedVariations, setSelectedVariations] = useState<{[itemId: string]: number}>({})
+  const [selectedSpiceLevels, setSelectedSpiceLevels] = useState<{[itemId: string]: string}>({})
   const [showAddOnModal, setShowAddOnModal] = useState<string | null>(null)
+  const [showSpiceLevelModal, setShowSpiceLevelModal] = useState<string | null>(null)
   const [pendingItemId, setPendingItemId] = useState<string | null>(null)
   const [showSuggestedModal, setShowSuggestedModal] = useState<string | null>(null)
   const [suggestedQuantities, setSuggestedQuantities] = useState<{[itemId: string]: number}>({})
+  const [showBeverageModal, setShowBeverageModal] = useState<string | null>(null)
+  const [beverageQuantities, setBeverageQuantities] = useState<{[itemId: string]: number}>({})
 
   useEffect(() => {
     // Load cart from localStorage
@@ -37,10 +41,11 @@ function MenuContent() {
       setCart(JSON.parse(savedCart))
     }
 
-    // Load add-ons and variations from localStorage
+    // Load add-ons, variations, and spice levels from localStorage
     // But validate they match current cart items
     const savedAddOns = localStorage.getItem('selectedAddOns')
     const savedVariations = localStorage.getItem('selectedVariations')
+    const savedSpiceLevels = localStorage.getItem('selectedSpiceLevels')
 
     if (savedAddOns) {
       try {
@@ -75,6 +80,24 @@ function MenuContent() {
         localStorage.setItem('selectedVariations', JSON.stringify(validVariations))
       } catch (e) {
         localStorage.removeItem('selectedVariations')
+      }
+    }
+
+    if (savedSpiceLevels) {
+      try {
+        const spiceLevels = JSON.parse(savedSpiceLevels)
+        // Only keep spice levels for items currently in cart
+        const validSpiceLevels: {[key: string]: string} = {}
+        Object.keys(spiceLevels).forEach(itemId => {
+          const cartItem = JSON.parse(savedCart || '{}')
+          if (cartItem[itemId]) {
+            validSpiceLevels[itemId] = spiceLevels[itemId]
+          }
+        })
+        setSelectedSpiceLevels(validSpiceLevels)
+        localStorage.setItem('selectedSpiceLevels', JSON.stringify(validSpiceLevels))
+      } catch (e) {
+        localStorage.removeItem('selectedSpiceLevels')
       }
     }
   }, [])
@@ -155,6 +178,12 @@ function MenuContent() {
           localStorage.setItem('selectedVariations', JSON.stringify(newVars))
           return newVars
         })
+        setSelectedSpiceLevels(prevLevels => {
+          const newLevels = { ...prevLevels }
+          delete newLevels[itemId]
+          localStorage.setItem('selectedSpiceLevels', JSON.stringify(newLevels))
+          return newLevels
+        })
       } else {
         newCart[itemId] = newQty
       }
@@ -174,7 +203,17 @@ function MenuContent() {
 
     const item = menuItems.find(i => i.id === itemId)
 
-    // If item has add-ons, show modal first
+    // Check if item can have spice level (curry dishes, etc.)
+    const needsSpiceLevel = item?.spiceLevel || item?.category === 'curry' || item?.category === 'nepalese'
+
+    // If item needs spice level and doesn't have one selected, show spice modal first
+    if (needsSpiceLevel && !selectedSpiceLevels[itemId]) {
+      setPendingItemId(itemId)
+      setShowSpiceLevelModal(itemId)
+      return
+    }
+
+    // If item has add-ons, show modal
     if (item?.addOns && item.addOns.length > 0) {
       setPendingItemId(itemId)
       setShowAddOnModal(itemId)
@@ -186,6 +225,13 @@ function MenuContent() {
       if (item?.suggestedItems && item.suggestedItems.length > 0) {
         setPendingItemId(itemId)
         setShowSuggestedModal(itemId)
+      } else {
+        // No suggested items, check for beverage pairing
+        const beverageSuggestions = getBeverageSuggestions(itemId)
+        if (beverageSuggestions.length > 0) {
+          setPendingItemId(itemId)
+          setShowBeverageModal(itemId)
+        }
       }
     }
   }
@@ -214,13 +260,22 @@ function MenuContent() {
         return updated
       })
       updateCart(pendingItemId, 1)
+      const tempItemId = pendingItemId
       setPendingItemId(null)
       setShowAddOnModal(null)
 
       // Check for suggested items after adding
-      const item = menuItems.find(i => i.id === pendingItemId)
+      const item = menuItems.find(i => i.id === tempItemId)
       if (item?.suggestedItems && item.suggestedItems.length > 0) {
-        setShowSuggestedModal(pendingItemId)
+        setPendingItemId(tempItemId)
+        setShowSuggestedModal(tempItemId)
+      } else {
+        // No suggested items, check for beverage pairing
+        const beverageSuggestions = getBeverageSuggestions(tempItemId)
+        if (beverageSuggestions.length > 0) {
+          setPendingItemId(tempItemId)
+          setShowBeverageModal(tempItemId)
+        }
       }
     }
   }
@@ -238,13 +293,31 @@ function MenuContent() {
 
     setSuggestedQuantities({})
     setShowSuggestedModal(null)
-    setPendingItemId(null)
+
+    // After adding suggested items, check for beverage suggestions
+    const suggestions = getBeverageSuggestions(pendingItemId)
+    if (suggestions.length > 0) {
+      setShowBeverageModal(pendingItemId)
+    } else {
+      setPendingItemId(null)
+    }
   }
 
   const skipSuggested = () => {
     setSuggestedQuantities({})
     setShowSuggestedModal(null)
-    setPendingItemId(null)
+
+    // After skipping suggested items, check for beverage suggestions
+    if (pendingItemId) {
+      const suggestions = getBeverageSuggestions(pendingItemId)
+      if (suggestions.length > 0) {
+        setShowBeverageModal(pendingItemId)
+      } else {
+        setPendingItemId(null)
+      }
+    } else {
+      setPendingItemId(null)
+    }
   }
 
   const updateSuggestedQty = (itemId: string, change: number) => {
@@ -316,6 +389,124 @@ function MenuContent() {
       const newVars = { ...prev, [itemId]: variationIndex }
       localStorage.setItem('selectedVariations', JSON.stringify(newVars))
       return newVars
+    })
+  }
+
+  const selectSpiceLevel = (itemId: string, level: string) => {
+    setSelectedSpiceLevels(prev => {
+      const newLevels = { ...prev, [itemId]: level }
+      localStorage.setItem('selectedSpiceLevels', JSON.stringify(newLevels))
+      return newLevels
+    })
+  }
+
+  const confirmSpiceLevel = () => {
+    if (!pendingItemId) return
+
+    setShowSpiceLevelModal(null)
+
+    const item = menuItems.find(i => i.id === pendingItemId)
+
+    // After spice level, check for add-ons
+    if (item?.addOns && item.addOns.length > 0) {
+      setShowAddOnModal(pendingItemId)
+    } else {
+      // Add to cart
+      updateCart(pendingItemId, 1)
+
+      // Check for suggested items
+      if (item?.suggestedItems && item.suggestedItems.length > 0) {
+        setShowSuggestedModal(pendingItemId)
+      } else {
+        setPendingItemId(null)
+      }
+    }
+  }
+
+  const getSpiceLevelEmoji = (level: string) => {
+    const emojis: any = {
+      'MILD': '🟢',
+      'NORMAL': '🟡',
+      'MEDIUM': '🟠',
+      'HOT': '🔴',
+      'VERY HOT': '🔥'
+    }
+    return emojis[level] || '🌶️'
+  }
+
+  const getSpiceLevelJapanese = (level: string) => {
+    const japanese: any = {
+      'MILD': '甘口',
+      'NORMAL': '普通',
+      'MEDIUM': '中辛',
+      'HOT': '辛口',
+      'VERY HOT': '激辛'
+    }
+    return japanese[level] || ''
+  }
+
+  const getBeverageSuggestions = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId)
+    if (!item) return []
+
+    const beverageItems: string[] = []
+
+    // Suggest beer for curry dishes
+    if (item.category.includes('curry') || item.category === 'nepalese' || item.category === 'sets') {
+      beverageItems.push('beer-2', 'beer-3') // Nepal Ice, King Fisher
+    }
+
+    // Suggest margaritas/corona for Mexican dishes
+    if (item.category === 'mexican' || item.category === 'starters') {
+      beverageItems.push('beer-1', 'marg-1') // Corona, Regular Margarita
+    }
+
+    // Suggest Asahi for tandoori and fried items
+    if (item.category === 'tandoori' || item.category === 'fried') {
+      beverageItems.push('beer-4', 'beer-5') // Asahi Draft, Asahi Bottle
+    }
+
+    // General suggestions - Lassi for all spicy dishes
+    if (item.spiceLevel || beverageItems.length === 0) {
+      beverageItems.push('drink-1', 'drink-2') // Lassi, Mango Lassi
+    }
+
+    // Get actual menu items
+    return menuItems.filter(i => beverageItems.includes(i.id)).slice(0, 3) // Max 3 suggestions
+  }
+
+  const addBeverageSuggestions = () => {
+    if (!pendingItemId) return
+
+    const suggestions = getBeverageSuggestions(pendingItemId)
+    suggestions.forEach(beverage => {
+      const qty = beverageQuantities[beverage.id] || 0
+      if (qty > 0) {
+        // Actually add to cart
+        updateCart(beverage.id, qty)
+      }
+    })
+
+    setBeverageQuantities({})
+    setShowBeverageModal(null)
+    setPendingItemId(null)
+  }
+
+  const skipBeverage = () => {
+    setBeverageQuantities({})
+    setShowBeverageModal(null)
+    setPendingItemId(null)
+  }
+
+  const updateBeverageQty = (beverageId: string, change: number) => {
+    setBeverageQuantities(prev => {
+      const current = prev[beverageId] || 0
+      const newQty = Math.max(0, current + change)
+      if (newQty === 0) {
+        const { [beverageId]: removed, ...rest } = prev
+        return rest
+      }
+      return { ...prev, [beverageId]: newQty }
     })
   }
 
@@ -497,11 +688,11 @@ function MenuContent() {
 
                 {/* Content Section - HAS PADDING */}
                 <div className="p-2 flex flex-col flex-1">
-                  {/* Spice Level */}
-                  {item.spiceLevel && (
+                  {/* Spice Level - Show selected or default */}
+                  {(item.spiceLevel || selectedSpiceLevels[item.id]) && (
                     <div className="mb-3">
-                      <span className={`text-xs px-3 py-1 rounded-full font-bold border ${getSpiceColor(item.spiceLevel)}`}>
-                        {item.spiceLevel}
+                      <span className={`text-xs px-3 py-1 rounded-full font-bold border ${getSpiceColor(selectedSpiceLevels[item.id] || item.spiceLevel || '')}`}>
+                        {selectedSpiceLevels[item.id] ? `🌶️ ${selectedSpiceLevels[item.id]}` : item.spiceLevel}
                       </span>
                     </div>
                   )}
@@ -592,6 +783,78 @@ function MenuContent() {
           </div>
         )}
       </div>
+
+      {/* Spice Level Modal */}
+      {showSpiceLevelModal && pendingItemId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            {(() => {
+              const item = menuItems.find(i => i.id === pendingItemId)
+              if (!item) return null
+
+              const spiceLevels = ['MILD', 'NORMAL', 'MEDIUM', 'HOT', 'VERY HOT']
+
+              return (
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="mb-4 text-center">
+                    <div className="text-4xl mb-2">🌶️</div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">Choose Your Spice Level</h3>
+                    <p className="text-gray-600 text-sm mb-2">{item.name}</p>
+                    <p className="text-gray-500 text-xs">{item.nameJp}</p>
+                  </div>
+
+                  {/* Spice Level Options */}
+                  <div className="space-y-3 mb-6">
+                    {spiceLevels.map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => selectSpiceLevel(item.id, level)}
+                        className={`w-full p-4 rounded-xl border-2 transition-all ${
+                          selectedSpiceLevels[item.id] === level
+                            ? `${getSpiceColor(level)} border-current shadow-lg scale-105`
+                            : 'bg-white border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{getSpiceLevelEmoji(level)}</span>
+                            <div className="text-left">
+                              <span className="block font-bold text-gray-900">{level}</span>
+                              <span className="block text-sm text-gray-600">{getSpiceLevelJapanese(level)}</span>
+                            </div>
+                          </div>
+                          {selectedSpiceLevels[item.id] === level && (
+                            <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-800 text-center">
+                      💡 You can always adjust spice level for each order
+                    </p>
+                  </div>
+
+                  {/* Continue Button */}
+                  <button
+                    onClick={confirmSpiceLevel}
+                    disabled={!selectedSpiceLevels[item.id]}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {selectedSpiceLevels[item.id] ? 'Continue' : 'Select Spice Level'}
+                  </button>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
 
       {/* Add-On Modal */}
       {showAddOnModal && pendingItemId && (
@@ -725,6 +988,106 @@ function MenuContent() {
                     >
                       Add to Cart
                     </button>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Beverage Pairing Modal */}
+      {showBeverageModal && pendingItemId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            {(() => {
+              const item = menuItems.find(i => i.id === pendingItemId)
+              if (!item) return null
+
+              const suggestions = getBeverageSuggestions(pendingItemId)
+              if (suggestions.length === 0) return null
+
+              return (
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="mb-4 text-center">
+                    <div className="text-4xl mb-2">🍺</div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">Perfect Pairing?</h3>
+                    <p className="text-gray-600 text-sm mb-2">Enhance your {item.name} with a refreshing drink</p>
+                    <p className="text-gray-500 text-xs">✨ Recommended by our chef</p>
+                  </div>
+
+                  {/* Beverage Suggestions */}
+                  <div className="space-y-3 mb-6">
+                    {suggestions.map((beverage) => {
+                      const emoji = beverage.category === 'margaritas' ? '🍹' : beverage.category === 'cocktails' ? '🍺' : '🥤'
+                      return (
+                      <div key={beverage.id} className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-3xl">{emoji}</span>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-lg text-gray-900">{beverage.name}</h4>
+                              <p className="text-sm text-gray-600">{beverage.nameJp}</p>
+                              <p className="text-blue-600 font-bold text-lg mt-1">{formatPrice(beverage.price)}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Quantity Selector */}
+                        {beverageQuantities[beverage.id] !== undefined && beverageQuantities[beverage.id] > 0 ? (
+                          <div className="flex items-center gap-3 bg-white rounded-lg p-2">
+                            <button
+                              onClick={() => updateBeverageQty(beverage.id, -1)}
+                              className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center transition-colors"
+                            >
+                              −
+                            </button>
+                            <span className="flex-1 text-center font-black text-2xl text-gray-900">
+                              {beverageQuantities[beverage.id]}
+                            </span>
+                            <button
+                              onClick={() => updateBeverageQty(beverage.id, 1)}
+                              className="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-bold text-xl flex items-center justify-center transition-colors"
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => updateBeverageQty(beverage.id, 1)}
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-colors"
+                          >
+                            Add {emoji} {beverage.name}
+                          </button>
+                        )}
+                      </div>
+                    )})}
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="mb-6 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-xs text-yellow-800 text-center">
+                      💡 Perfect pairings enhance your dining experience!
+                    </p>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={skipBeverage}
+                      className="flex-1 px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+                    >
+                      No Thanks
+                    </button>
+                    {Object.values(beverageQuantities).some(q => q > 0) && (
+                      <button
+                        onClick={addBeverageSuggestions}
+                        className="flex-1 px-6 py-4 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                      >
+                        Add Drinks
+                      </button>
+                    )}
                   </div>
                 </div>
               )

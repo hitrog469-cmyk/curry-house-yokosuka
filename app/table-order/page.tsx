@@ -14,6 +14,9 @@ function TableOrderContent() {
   const tableNumber = searchParams.get('table') || '1'
 
   const [cart, setCart] = useState<{[key: string]: number}>({})
+  const [selectedSpiceLevels, setSelectedSpiceLevels] = useState<{[itemId: string]: string}>({})
+  const [showSpiceLevelModal, setShowSpiceLevelModal] = useState<string | null>(null)
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [loading, setLoading] = useState(false)
   const [orderSubmitted, setOrderSubmitted] = useState(false)
@@ -30,6 +33,19 @@ function TableOrderContent() {
     : menuItems.filter(item => item.category === selectedCategory)
 
   const addToCart = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId)
+
+    // Check if item needs spice level
+    const needsSpiceLevel = item?.spiceLevel || item?.category === 'curry' || item?.category === 'nepalese'
+
+    // If item needs spice level and doesn't have one selected, show modal first
+    if (needsSpiceLevel && !selectedSpiceLevels[itemId]) {
+      setPendingItemId(itemId)
+      setShowSpiceLevelModal(itemId)
+      return
+    }
+
+    // Add to cart
     setCart(prev => ({
       ...prev,
       [itemId]: (prev[itemId] || 0) + 1
@@ -43,9 +59,70 @@ function TableOrderContent() {
         newCart[itemId]--
       } else {
         delete newCart[itemId]
+        // Clear spice level when item fully removed
+        setSelectedSpiceLevels(prevLevels => {
+          const newLevels = { ...prevLevels }
+          delete newLevels[itemId]
+          return newLevels
+        })
       }
       return newCart
     })
+  }
+
+  const selectSpiceLevel = (itemId: string, level: string) => {
+    setSelectedSpiceLevels(prev => ({
+      ...prev,
+      [itemId]: level
+    }))
+  }
+
+  const confirmSpiceLevel = () => {
+    if (!pendingItemId) return
+
+    setShowSpiceLevelModal(null)
+
+    // Add to cart
+    setCart(prev => ({
+      ...prev,
+      [pendingItemId]: (prev[pendingItemId] || 0) + 1
+    }))
+
+    setPendingItemId(null)
+  }
+
+  const getSpiceLevelEmoji = (level: string) => {
+    const emojis: any = {
+      'MILD': '🟢',
+      'NORMAL': '🟡',
+      'MEDIUM': '🟠',
+      'HOT': '🔴',
+      'VERY HOT': '🔥'
+    }
+    return emojis[level] || '🌶️'
+  }
+
+  const getSpiceLevelJapanese = (level: string) => {
+    const japanese: any = {
+      'MILD': '甘口',
+      'NORMAL': '普通',
+      'MEDIUM': '中辛',
+      'HOT': '辛口',
+      'VERY HOT': '激辛'
+    }
+    return japanese[level] || ''
+  }
+
+  const getSpiceColor = (level?: string) => {
+    if (!level) return ''
+    const colors: any = {
+      'MILD': 'bg-green-100 text-green-800 border-green-300',
+      'NORMAL': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      'MEDIUM': 'bg-orange-100 text-orange-800 border-orange-300',
+      'HOT': 'bg-red-100 text-red-800 border-red-300',
+      'VERY HOT': 'bg-red-200 text-red-900 border-red-400'
+    }
+    return colors[level] || ''
   }
 
   const getCartTotal = () => {
@@ -72,7 +149,8 @@ function TableOrderContent() {
           name: item?.name,
           quantity,
           price: item?.price,
-          subtotal: (item?.price || 0) * quantity
+          subtotal: (item?.price || 0) * quantity,
+          spiceLevel: selectedSpiceLevels[itemId] || null
         }
       })
 
@@ -195,6 +273,16 @@ function TableOrderContent() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-lg text-gray-900 truncate">{item.name}</h3>
                     <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
+
+                    {/* Show selected spice level if item is in cart */}
+                    {selectedSpiceLevels[item.id] && (
+                      <div className="mt-1">
+                        <span className={`inline-block text-xs px-2 py-1 rounded-full font-bold border ${getSpiceColor(selectedSpiceLevels[item.id])}`}>
+                          🌶️ {selectedSpiceLevels[item.id]}
+                        </span>
+                      </div>
+                    )}
+
                     <div className="mt-2 flex items-center justify-between">
                       <span className="text-xl font-bold text-green-600">{formatPrice(item.price)}</span>
 
@@ -242,6 +330,78 @@ function TableOrderContent() {
             >
               {loading ? 'Sending to Kitchen...' : `Send Order to Kitchen • ${formatPrice(getCartTotal())}`}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Spice Level Modal */}
+      {showSpiceLevelModal && pendingItemId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            {(() => {
+              const item = menuItems.find(i => i.id === pendingItemId)
+              if (!item) return null
+
+              const spiceLevels = ['MILD', 'NORMAL', 'MEDIUM', 'HOT', 'VERY HOT']
+
+              return (
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="mb-4 text-center">
+                    <div className="text-4xl mb-2">🌶️</div>
+                    <h3 className="text-2xl font-bold text-gray-900 mb-1">Choose Your Spice Level</h3>
+                    <p className="text-gray-600 text-sm mb-2">{item.name}</p>
+                    <p className="text-gray-500 text-xs">{item.nameJp}</p>
+                  </div>
+
+                  {/* Spice Level Options */}
+                  <div className="space-y-3 mb-6">
+                    {spiceLevels.map((level) => (
+                      <button
+                        key={level}
+                        onClick={() => selectSpiceLevel(item.id, level)}
+                        className={`w-full p-4 rounded-xl border-2 transition-all ${
+                          selectedSpiceLevels[item.id] === level
+                            ? `${getSpiceColor(level)} border-current shadow-lg scale-105`
+                            : 'bg-white border-gray-300 hover:border-gray-400'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{getSpiceLevelEmoji(level)}</span>
+                            <div className="text-left">
+                              <span className="block font-bold text-gray-900">{level}</span>
+                              <span className="block text-sm text-gray-600">{getSpiceLevelJapanese(level)}</span>
+                            </div>
+                          </div>
+                          {selectedSpiceLevels[item.id] === level && (
+                            <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-xs text-blue-800 text-center">
+                      💡 You can always adjust spice level for each order
+                    </p>
+                  </div>
+
+                  {/* Continue Button */}
+                  <button
+                    onClick={confirmSpiceLevel}
+                    disabled={!selectedSpiceLevels[item.id]}
+                    className="w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {selectedSpiceLevels[item.id] ? 'Add to Order' : 'Select Spice Level'}
+                  </button>
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}

@@ -51,6 +51,10 @@ export default function Navbar() {
             <Link href="/menu" className="text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors font-medium">
               Menu
             </Link>
+            <Link href="/offers" className="text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors font-medium flex items-center gap-1">
+              <span>🎉</span>
+              <span>Offers</span>
+            </Link>
             <Link href="/gallery" className="text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-colors font-medium">
               Gallery
             </Link>
@@ -199,6 +203,13 @@ export default function Navbar() {
               className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
             >
               Menu
+            </Link>
+            <Link
+              href="/offers"
+              onClick={() => setShowMobileMenu(false)}
+              className="block px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors font-medium"
+            >
+              🎉 Special Offers
             </Link>
             <Link
               href="/gallery"

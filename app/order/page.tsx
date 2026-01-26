@@ -40,12 +40,14 @@ export default function OrderPage() {
   const [cart, setCart] = useState<{[key: string]: number}>({})
   const [selectedAddOns, setSelectedAddOns] = useState<{[itemId: string]: string[]}>({})
   const [selectedVariations, setSelectedVariations] = useState<{[itemId: string]: number}>({})
+  const [selectedSpiceLevels, setSelectedSpiceLevels] = useState<{[itemId: string]: string}>({})
 
   useEffect(() => {
     // Load cart from localStorage
     const savedCart = localStorage.getItem('cart')
     const savedAddOns = localStorage.getItem('selectedAddOns')
     const savedVariations = localStorage.getItem('selectedVariations')
+    const savedSpiceLevels = localStorage.getItem('selectedSpiceLevels')
 
     if (savedCart) {
       setCart(JSON.parse(savedCart))
@@ -55,6 +57,9 @@ export default function OrderPage() {
     }
     if (savedVariations) {
       setSelectedVariations(JSON.parse(savedVariations))
+    }
+    if (savedSpiceLevels) {
+      setSelectedSpiceLevels(JSON.parse(savedSpiceLevels))
     }
   }, [])
 
@@ -78,6 +83,12 @@ export default function OrderPage() {
           delete newVars[itemId]
           localStorage.setItem('selectedVariations', JSON.stringify(newVars))
           return newVars
+        })
+        setSelectedSpiceLevels(prevLevels => {
+          const newLevels = { ...prevLevels }
+          delete newLevels[itemId]
+          localStorage.setItem('selectedSpiceLevels', JSON.stringify(newLevels))
+          return newLevels
         })
       } else {
         newCart[itemId] = newQty
@@ -107,6 +118,12 @@ export default function OrderPage() {
       delete newVars[itemId]
       localStorage.setItem('selectedVariations', JSON.stringify(newVars))
       return newVars
+    })
+    setSelectedSpiceLevels(prevLevels => {
+      const newLevels = { ...prevLevels }
+      delete newLevels[itemId]
+      localStorage.setItem('selectedSpiceLevels', JSON.stringify(newLevels))
+      return newLevels
     })
   }
 
@@ -212,7 +229,8 @@ export default function OrderPage() {
           price: getItemPrice(itemId),
           quantity: qty,
           addOns: selectedAddOns[itemId] || [],
-          variation: selectedVariations[itemId]
+          variation: selectedVariations[itemId],
+          spiceLevel: selectedSpiceLevels[itemId] || null
         }
       }),
       total_amount: getTotal(),
@@ -243,9 +261,11 @@ export default function OrderPage() {
       localStorage.removeItem('cart')
       localStorage.removeItem('selectedAddOns')
       localStorage.removeItem('selectedVariations')
+      localStorage.removeItem('selectedSpiceLevels')
       setCart({})
       setSelectedAddOns({})
       setSelectedVariations({})
+      setSelectedSpiceLevels({})
       setStep('confirmation')
     }
   }
@@ -313,6 +333,16 @@ export default function OrderPage() {
                             <div className="flex-1">
                               <h3 className="font-bold text-lg text-gray-900">{item.name}</h3>
                               <p className="text-gray-500 text-sm">{item.nameJp}</p>
+
+                              {/* Spice Level Display */}
+                              {selectedSpiceLevels[itemId] && (
+                                <div className="mt-2">
+                                  <span className="inline-block text-xs px-2 py-1 rounded-full font-bold bg-red-100 text-red-800 border border-red-300">
+                                    🌶️ {selectedSpiceLevels[itemId]}
+                                  </span>
+                                </div>
+                              )}
+
                               <p className="text-orange-600 font-bold mt-1">
                                 {formatPrice(getItemPrice(itemId))}
                               </p>

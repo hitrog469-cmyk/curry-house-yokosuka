@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
+import OffersSection from '@/components/OffersSection'
 import { getMenuItemImage } from '@/lib/image-mapping'
 
 export default function HomePage() {
@@ -259,6 +260,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Special Offers Section */}
+      <OffersSection />
 
       {/* Features Section - Enhanced Grid */}
       <section className="section-padding bg-white">
