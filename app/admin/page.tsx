@@ -39,20 +39,35 @@ export default function AdminDashboard() {
   const [staff, setStaff] = useState<Staff[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState('all')
+  const [adminSession, setAdminSession] = useState<any>(null)
 
-  // Auth guard - only admin can access
+  // Auth guard - check both OAuth and admin session
   useEffect(() => {
+    // Check for admin session from admin login
+    const session = localStorage.getItem('admin_session')
+    if (session) {
+      const sessionData = JSON.parse(session)
+      // Check if session is less than 24 hours old
+      if (Date.now() - sessionData.timestamp < 24 * 60 * 60 * 1000) {
+        setAdminSession(sessionData)
+        return
+      } else {
+        localStorage.removeItem('admin_session')
+      }
+    }
+
+    // Otherwise check OAuth user role
     if (!authLoading && (!user || user.role !== 'admin')) {
-      router.push('/menu')
+      router.push('/admin/login')
     }
   }, [user, authLoading, router])
 
   useEffect(() => {
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || adminSession?.role === 'admin') {
       fetchOrders()
       fetchStaff()
     }
-  }, [selectedStatus, user])
+  }, [selectedStatus, user, adminSession])
 
   async function fetchOrders() {
     setLoading(true)

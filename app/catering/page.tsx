@@ -84,18 +84,18 @@ export default function CateringPage() {
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             <div className="text-center p-6">
               <div className="text-6xl mb-4">🎂</div>
-              <h3 className="text-xl font-bold mb-2">Birthday Parties</h3>
+              <h3 className="text-xl font-bold mb-2">Birthday & Anniversary Parties</h3>
               <p className="text-gray-600">Celebrate your special day with delicious food that everyone will love</p>
             </div>
             <div className="text-center p-6">
-              <div className="text-6xl mb-4">💼</div>
+              <div className="text-6xl mb-4">👔</div>
               <h3 className="text-xl font-bold mb-2">Corporate Events</h3>
               <p className="text-gray-600">Professional catering for meetings, conferences, and team celebrations</p>
             </div>
             <div className="text-center p-6">
-              <div className="text-6xl mb-4">💑</div>
-              <h3 className="text-xl font-bold mb-2">Weddings & Parties</h3>
-              <p className="text-gray-600">Premium catering for your most important celebrations</p>
+              <div className="text-6xl mb-4">🥂</div>
+              <h3 className="text-xl font-bold mb-2">Social Gatherings</h3>
+              <p className="text-gray-600">Premium food for every occasion. Relive old memories and toast to new ones.</p>
             </div>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function CateringPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
                 <p className="text-blue-900 font-semibold mb-2">📞 What happens next?</p>
                 <p className="text-blue-800">
-                  Our manager will contact you within 24 hours to discuss your requirements and provide a custom quote.
+                  Our manager will contact you within few hours to discuss your requirements and provide a custom quote.
                 </p>
               </div>
               <div className="flex gap-4 justify-center">
@@ -152,7 +152,7 @@ export default function CateringPage() {
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="John Doe"
+                        placeholder="Rohit Acharya"
                       />
                     </div>
                     <div>
@@ -191,7 +191,8 @@ export default function CateringPage() {
                       >
                         <option value="">Select event type</option>
                         <option value="birthday">Birthday Party</option>
-                        <option value="wedding">Wedding</option>
+                        <option value="wedding">Anniversary Party</option>
+                        <option value="corporate">Social Gathering</option>
                         <option value="corporate">Corporate Event</option>
                         <option value="other">Other</option>
                       </select>
@@ -245,7 +246,7 @@ export default function CateringPage() {
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-800 text-center">
-                      📞 Our manager will call you within 24 hours to discuss your requirements and provide a custom quote
+                      📞 Our manager will call you within few hours to discuss your requirements and provide a custom quote
                     </p>
                   </div>
 

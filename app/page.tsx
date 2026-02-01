@@ -9,25 +9,25 @@ export default function HomePage() {
     {
       title: 'Authentic Flavors',
       description: 'Traditional recipes passed down through generations, crafted by expert chefs',
-      icon: '🍛',
+      icon: '/images/icons/curry.png', // [ICON: Curry dish]
       color: 'from-orange-500 to-red-600'
     },
     {
       title: 'Fast Delivery',
       description: 'Hot, fresh food delivered to your door in 30 minutes or less',
-      icon: '🚗',
+      icon: '/images/icons/delivery.png', // [ICON: Delivery truck]
       color: 'from-blue-500 to-indigo-600'
     },
     {
       title: 'Quality Ingredients',
       description: 'Fresh, premium ingredients sourced daily for the best taste',
-      icon: '⭐',
+      icon: '/images/icons/quality.png', // [ICON: Star/Quality]
       color: 'from-yellow-500 to-orange-600'
     },
     {
       title: 'Halal Certified',
       description: 'All our meat products are 100% halal certified',
-      icon: '✅',
+      icon: '/images/icons/halal.png', // [ICON: Halal certification]
       color: 'from-green-500 to-emerald-600'
     }
   ]
@@ -63,34 +63,34 @@ export default function HomePage() {
   ]
 
   const howItWorks = [
-    { step: '1', title: 'Browse Menu', description: 'Explore our delicious curry selection', icon: '📱' },
-    { step: '2', title: 'Place Order', description: 'Choose your favorites and customize', icon: '🛒' },
-    { step: '3', title: 'Fast Delivery', description: 'Fresh food delivered to your door', icon: '🚚' },
-    { step: '4', title: 'Enjoy!', description: 'Savor authentic Indian flavors', icon: '😋' }
+    { step: '1', title: 'Browse Menu', description: 'Explore our delicious curry selection', icon: '/images/icons/phone.png' }, // [ICON: Phone]
+    { step: '2', title: 'Place Order', description: 'Choose your favorites and customize', icon: '/images/icons/cart.png' }, // [ICON: Shopping cart]
+    { step: '3', title: 'Fast Delivery', description: 'Fresh food delivered to your door', icon: '/images/icons/truck.png' }, // [ICON: Delivery truck]
+    { step: '4', title: 'Enjoy!', description: 'Savor authentic Indian flavors', icon: '/images/icons/enjoy.png' } // [ICON: Happy face]
   ]
 
   return (
     <div className="min-h-screen">
       <Navbar />
 
-      {/* Rotating Announcements Banner - Clickable to Menu */}
-      <Link href="/menu" className="block">
-        <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white py-3 overflow-hidden relative cursor-pointer hover:from-orange-700 hover:via-red-700 hover:to-orange-700 transition-all">
+      {/* Rotating Announcements Banner - Sticky */}
+      <Link href="/menu" className="block sticky top-16 z-40">
+        <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white py-3 overflow-hidden relative cursor-pointer hover:from-orange-700 hover:via-red-700 hover:to-orange-700 transition-all shadow-lg">
           <div className="animate-scroll-slow whitespace-nowrap">
             <span className="inline-block px-4">
-              🎉 2026 Special - Order Now!
+              {/* [ICON: Party] */} 2026 Special - Order Now!
             </span>
             <span className="inline-block px-4 mx-8">
-              ⭐ FREE DELIVERY on all orders!
+              {/* [ICON: Star] */} FREE DELIVERY on all orders!
             </span>
             <span className="inline-block px-4 mx-8">
-              🍛 Authentic Indian, Mexican, Japanese & Nepalese Cuisine!
+              {/* [ICON: Food] */} Authentic Indian, Mexican, Japanese & Nepalese Cuisine!
             </span>
             <span className="inline-block px-4 mx-8">
-              🎉 2026 Special - Order Now!
+              {/* [ICON: Party] */} 2026 Special - Order Now!
             </span>
             <span className="inline-block px-4 mx-8">
-              ⭐ FREE DELIVERY on all orders!
+              {/* [ICON: Star] */} FREE DELIVERY on all orders!
             </span>
           </div>
         </div>
@@ -101,10 +101,10 @@ export default function HomePage() {
         <div className="container-custom">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="text-5xl">🎉</div>
+              <img src="/images/icons/party.png" alt="Catering" className="w-16 h-16 object-contain" />
               <div>
                 <h3 className="text-xl font-bold mb-1">Host Your Events With Us!</h3>
-                <p className="text-purple-100 text-sm">Weddings, Birthdays, Corporate Events - We cater them all!</p>
+                <p className="text-purple-100 text-sm">Birthdays, Corporate Events, Gatherings - We cater them all!</p>
               </div>
             </div>
             <Link href="/catering" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all px-6 py-3 rounded-lg group">
@@ -171,11 +171,11 @@ export default function HomePage() {
                   <div className="text-sm text-green-100 font-medium mt-1">Menu Items</div>
                 </div>
                 <div className="text-center p-4 bg-white/10 backdrop-blur-sm rounded-xl hover-lift">
-                  <div className="text-4xl font-black text-yellow-300">5000+</div>
+                  <div className="text-4xl font-black text-yellow-300">10000+</div>
                   <div className="text-sm text-green-100 font-medium mt-1">Customers</div>
                 </div>
                 <div className="text-center p-4 bg-white/10 backdrop-blur-sm rounded-xl hover-lift">
-                  <div className="text-4xl font-black text-yellow-300">4.9★</div>
+                  <div className="text-4xl font-black text-yellow-300">4.8★</div>
                   <div className="text-sm text-green-100 font-medium mt-1">Average Rating</div>
                 </div>
               </div>
@@ -241,8 +241,8 @@ export default function HomePage() {
                   </div>
 
                   {/* Icon */}
-                  <div className="text-5xl mb-4 animate-float" style={{animationDelay: `${i * 0.2}s`}}>
-                    {item.icon}
+                  <div className="mb-4 animate-float flex justify-center" style={{animationDelay: `${i * 0.2}s`}}>
+                    <img src={item.icon} alt={item.title} className="w-16 h-16 object-contain" />
                   </div>
 
                   <h3 className="text-xl font-bold mb-2">{item.title}</h3>
@@ -282,7 +282,7 @@ export default function HomePage() {
               <div key={i} className="group card hover-lift animate-fadeIn border-2 border-gray-100 hover:border-green-200 transition-all duration-300" style={{animationDelay: `${i * 100}ms`}}>
                 {/* Icon with Gradient */}
                 <div className={`w-20 h-20 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <span className="text-4xl filter drop-shadow-lg">{feature.icon}</span>
+                  <img src={feature.icon} alt={feature.title} className="w-12 h-12 object-contain filter drop-shadow-lg" />
                 </div>
 
                 <h3 className="text-xl font-bold mb-3 group-hover:text-green-600 transition-colors">{feature.title}</h3>
