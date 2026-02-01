@@ -6,12 +6,12 @@ Run these SQL commands in your Supabase SQL Editor to add support for the new ta
 
 ---
 
-## 1. Update `orders` Table
+## IMPORTANT: Run These Commands in Order
 
-Add columns for in-house dining, party size, and bill splitting:
+### Step 1: Add Columns to `orders` Table
 
 ```sql
--- Add new columns to orders table
+-- Add new columns to orders table (run this first)
 ALTER TABLE orders
 ADD COLUMN IF NOT EXISTS order_type TEXT DEFAULT 'delivery',
 ADD COLUMN IF NOT EXISTS table_number INTEGER,
@@ -19,7 +19,18 @@ ADD COLUMN IF NOT EXISTS party_size INTEGER,
 ADD COLUMN IF NOT EXISTS split_bill BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS number_of_splits INTEGER DEFAULT 1,
 ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending';
+```
 
+### Step 2: Drop Existing Constraint (if it exists)
+
+```sql
+-- Drop the constraint if it already exists
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_order_type_check;
+```
+
+### Step 3: Add Check Constraints to `orders` Table
+
+```sql
 -- Add check constraint to ensure valid order types
 ALTER TABLE orders
 ADD CONSTRAINT orders_order_type_check
@@ -43,9 +54,7 @@ CHECK (number_of_splits >= 1 AND number_of_splits <= 20);
 
 ---
 
-## 2. Update `table_orders` Table
-
-Add columns for customer info and bill splitting:
+## Step 4: Update `table_orders` Table
 
 ```sql
 -- Add new columns to table_orders table
@@ -69,9 +78,7 @@ CHECK (number_of_splits >= 1 AND number_of_splits <= 20);
 
 ---
 
-## 3. Create Index for Performance
-
-Add indexes for faster queries on table orders:
+## Step 5: Create Indexes for Performance
 
 ```sql
 -- Create index on order_type for faster filtering
@@ -87,17 +94,17 @@ WHERE order_type = 'in-house';
 
 ---
 
-## 4. Update Row-Level Security (RLS) Policies
-
-Ensure proper access control for the new fields:
+## Step 6: Update Row-Level Security (RLS) Policies
 
 ```sql
 -- Allow authenticated users to read their own table orders
+DROP POLICY IF EXISTS "Users can view their table orders" ON table_orders;
 CREATE POLICY "Users can view their table orders" ON table_orders
 FOR SELECT
 USING (auth.role() = 'authenticated');
 
 -- Allow staff to update table orders
+DROP POLICY IF EXISTS "Staff can update table orders" ON table_orders;
 CREATE POLICY "Staff can update table orders" ON table_orders
 FOR UPDATE
 USING (
@@ -111,7 +118,7 @@ USING (
 
 ---
 
-## 5. Verify Changes
+## Verify Changes
 
 Run this query to verify all columns were added successfully:
 
@@ -158,15 +165,6 @@ ORDER BY ordinal_position;
 
 ---
 
-## Migration Notes
-
-1. **Existing Data**: All existing orders will have `order_type = 'delivery'` by default
-2. **Nullable Fields**: `table_number`, `party_size`, and `customer_name` are nullable to support both delivery and in-house orders
-3. **Constraints**: Check constraints ensure data integrity (e.g., table numbers 1-18, valid order types)
-4. **Performance**: Indexes added for common query patterns (filtering by order type, table number)
-
----
-
 ## Testing Queries
 
 After running the migrations, test with these queries:
@@ -203,12 +201,43 @@ GROUP BY order_type;
 
 ---
 
-## Rollback (if needed)
+## Troubleshooting
 
-If you need to rollback these changes:
+### If you get "constraint already exists" error:
+Run this first to drop all existing constraints, then re-run Step 3:
 
 ```sql
--- Remove constraints
+-- Drop all constraints first
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_order_type_check;
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_table_number_check;
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_party_size_check;
+ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_number_of_splits_check;
+ALTER TABLE table_orders DROP CONSTRAINT IF EXISTS table_orders_party_size_check;
+ALTER TABLE table_orders DROP CONSTRAINT IF EXISTS table_orders_number_of_splits_check;
+```
+
+Then re-run the constraint creation commands from Step 3.
+
+### If columns already exist:
+The `IF NOT EXISTS` clause will prevent errors. You can safely run the column creation commands multiple times.
+
+---
+
+## Complete One-Click Migration (Run All At Once)
+
+If you want to run everything at once, use this complete script:
+
+```sql
+-- Step 1: Add columns to orders table
+ALTER TABLE orders
+ADD COLUMN IF NOT EXISTS order_type TEXT DEFAULT 'delivery',
+ADD COLUMN IF NOT EXISTS table_number INTEGER,
+ADD COLUMN IF NOT EXISTS party_size INTEGER,
+ADD COLUMN IF NOT EXISTS split_bill BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS number_of_splits INTEGER DEFAULT 1,
+ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending';
+
+-- Step 2: Drop existing constraints
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_order_type_check;
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_table_number_check;
 ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_party_size_check;
@@ -216,22 +245,45 @@ ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_number_of_splits_check;
 ALTER TABLE table_orders DROP CONSTRAINT IF EXISTS table_orders_party_size_check;
 ALTER TABLE table_orders DROP CONSTRAINT IF EXISTS table_orders_number_of_splits_check;
 
--- Remove indexes
-DROP INDEX IF EXISTS idx_orders_order_type;
-DROP INDEX IF EXISTS idx_orders_table_number;
-DROP INDEX IF EXISTS idx_orders_inhouse;
+-- Step 3: Add constraints to orders table
+ALTER TABLE orders
+ADD CONSTRAINT orders_order_type_check
+CHECK (order_type IN ('delivery', 'in-house'));
 
--- Remove columns (WARNING: This will delete data!)
-ALTER TABLE orders DROP COLUMN IF EXISTS order_type;
-ALTER TABLE orders DROP COLUMN IF EXISTS table_number;
-ALTER TABLE orders DROP COLUMN IF EXISTS party_size;
-ALTER TABLE orders DROP COLUMN IF EXISTS split_bill;
-ALTER TABLE orders DROP COLUMN IF EXISTS number_of_splits;
-ALTER TABLE orders DROP COLUMN IF EXISTS payment_status;
+ALTER TABLE orders
+ADD CONSTRAINT orders_table_number_check
+CHECK (table_number IS NULL OR (table_number >= 1 AND table_number <= 18));
 
-ALTER TABLE table_orders DROP COLUMN IF EXISTS customer_name;
-ALTER TABLE table_orders DROP COLUMN IF EXISTS party_size;
-ALTER TABLE table_orders DROP COLUMN IF EXISTS split_bill;
-ALTER TABLE table_orders DROP COLUMN IF EXISTS number_of_splits;
-ALTER TABLE table_orders DROP COLUMN IF EXISTS amount_per_split;
+ALTER TABLE orders
+ADD CONSTRAINT orders_party_size_check
+CHECK (party_size IS NULL OR party_size >= 1);
+
+ALTER TABLE orders
+ADD CONSTRAINT orders_number_of_splits_check
+CHECK (number_of_splits >= 1 AND number_of_splits <= 20);
+
+-- Step 4: Add columns to table_orders table
+ALTER TABLE table_orders
+ADD COLUMN IF NOT EXISTS customer_name TEXT,
+ADD COLUMN IF NOT EXISTS party_size INTEGER,
+ADD COLUMN IF NOT EXISTS split_bill BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS number_of_splits INTEGER DEFAULT 1,
+ADD COLUMN IF NOT EXISTS amount_per_split DECIMAL(10,2);
+
+-- Step 5: Add constraints to table_orders table
+ALTER TABLE table_orders
+ADD CONSTRAINT table_orders_party_size_check
+CHECK (party_size IS NULL OR party_size >= 1);
+
+ALTER TABLE table_orders
+ADD CONSTRAINT table_orders_number_of_splits_check
+CHECK (number_of_splits >= 1 AND number_of_splits <= 20);
+
+-- Step 6: Create indexes
+CREATE INDEX IF NOT EXISTS idx_orders_order_type ON orders(order_type);
+CREATE INDEX IF NOT EXISTS idx_orders_table_number ON orders(table_number);
+CREATE INDEX IF NOT EXISTS idx_orders_inhouse ON orders(order_type, table_number, created_at DESC)
+WHERE order_type = 'in-house';
 ```
+
+**Copy the entire script above and paste it into Supabase SQL Editor, then click Run.**
