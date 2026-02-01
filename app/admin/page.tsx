@@ -18,6 +18,12 @@ type Order = {
   created_at: string
   assigned_staff_id?: string
   notes?: string
+  order_type?: string
+  table_number?: number
+  party_size?: number
+  split_bill?: boolean
+  number_of_splits?: number
+  payment_status?: string
 }
 
 type Staff = {
@@ -214,13 +220,42 @@ export default function AdminDashboard() {
                   <div className="md:col-span-2">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="font-bold text-lg mb-1">{order.customer_name}</h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-bold text-lg">{order.customer_name}</h3>
+                          {order.order_type === 'in-house' && (
+                            <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-bold">
+                              🍽️ Table {order.table_number}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-gray-600 text-sm">📞 {order.customer_phone}</p>
                         <p className="text-gray-600 text-sm mt-1">📍 {order.delivery_address}</p>
+                        {order.order_type === 'in-house' && order.party_size && (
+                          <p className="text-gray-600 text-sm mt-1">👥 Party of {order.party_size}</p>
+                        )}
+                        {order.split_bill && order.number_of_splits && (
+                          <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-xs font-bold text-blue-900">💳 Split Bill</p>
+                            <p className="text-xs text-blue-800">
+                              {order.number_of_splits} bills • {formatPrice(order.total_amount / order.number_of_splits)} each
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
-                        {getStatusDisplay(order.status)}
-                      </span>
+                      <div className="flex flex-col gap-2 items-end">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
+                          {getStatusDisplay(order.status)}
+                        </span>
+                        {order.order_type && (
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            order.order_type === 'in-house'
+                              ? 'bg-purple-100 text-purple-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {order.order_type === 'in-house' ? '🍽️ Dine-In' : '🚗 Delivery'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     
                     {/* Items */}

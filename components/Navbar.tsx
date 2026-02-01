@@ -32,18 +32,20 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <img
               src="/images/Logo.png"
               alt="The Curry House Yokosuka"
-              className="w-12 h-12 object-contain"
+              className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
             />
-            <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent hidden sm:block">
-              The Curry House Yokosuka
-            </span>
-            <span className="text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent sm:hidden">
-              TCH Yokosuka
-            </span>
+            <div className="flex flex-col sm:block">
+              <span className="text-base sm:text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent leading-tight">
+                The Curry House
+              </span>
+              <span className="text-xs sm:text-xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent leading-tight sm:before:content-['\00a0']">
+                Yokosuka
+              </span>
+            </div>
           </Link>
 
           {/* Main Navigation */}

@@ -515,7 +515,7 @@ export default function HomePage() {
                     Scan QR at your table, order instantly - Direct to kitchen!
                   </p>
                   <div className="inline-flex items-center gap-2 text-white font-semibold">
-                    <span>15 Tables Available</span>
+                    <span>18 Tables Available</span>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
