@@ -10,25 +10,25 @@ export default function HomePage() {
     {
       title: 'Authentic Flavors',
       description: 'Traditional recipes passed down through generations, crafted by expert chefs',
-      icon: '🍛',
+      icon: '/images/icons/curry.png', // [ICON: Curry dish]
       color: 'from-orange-500 to-red-600'
     },
     {
       title: 'Fast Delivery',
       description: 'Hot, fresh food delivered to your door in 30 minutes or less',
-      icon: '🚀',
+      icon: '/images/icons/delivery.png', // [ICON: Delivery truck]
       color: 'from-blue-500 to-indigo-600'
     },
     {
       title: 'Quality Ingredients',
       description: 'Fresh, premium ingredients sourced daily for the best taste',
-      icon: '✨',
+      icon: '/images/icons/quality.png', // [ICON: Star/Quality]
       color: 'from-yellow-500 to-orange-600'
     },
     {
       title: 'Halal Certified',
       description: 'All our meat products are 100% halal certified',
-      icon: '🏅',
+      icon: '/images/icons/halal.png', // [ICON: Halal certification]
       color: 'from-green-500 to-emerald-600'
     }
   ]
@@ -63,148 +63,147 @@ export default function HomePage() {
     }
   ]
 
-  const cuisines = [
-    { name: 'Indian', icon: '🇮🇳', count: '80+' },
-    { name: 'Nepalese', icon: '🇳🇵', count: '30+' },
-    { name: 'Mexican', icon: '🇲🇽', count: '40+' },
-    { name: 'Fusion', icon: '🌏', count: '50+' },
+  const howItWorks = [
+    { step: '1', title: 'Browse Menu', description: 'Explore our delicious curry selection', icon: '/images/icons/phone.png' }, // [ICON: Phone]
+    { step: '2', title: 'Place Order', description: 'Choose your favorites and customize', icon: '/images/icons/cart.png' }, // [ICON: Shopping cart]
+    { step: '3', title: 'Fast Delivery', description: 'Fresh food delivered to your door', icon: '/images/icons/truck.png' }, // [ICON: Delivery truck]
+    { step: '4', title: 'Enjoy!', description: 'Savor authentic Indian flavors', icon: '/images/icons/enjoy.png' } // [ICON: Happy face]
   ]
 
   return (
     <div className="min-h-screen">
       <Navbar />
 
+      {/* Today's Special - Floating Popup */}
+      <TodaysSpecialPopup />
+
       {/* Rotating Announcements Banner - Sticky */}
       <Link href="/menu" className="block sticky top-16 z-40">
-        <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white py-2.5 overflow-hidden relative cursor-pointer hover:from-orange-700 hover:via-red-700 hover:to-orange-700 transition-all shadow-lg">
+        <div className="bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white py-3 overflow-hidden relative cursor-pointer hover:from-orange-700 hover:via-red-700 hover:to-orange-700 transition-all shadow-lg">
           <div className="animate-scroll-slow whitespace-nowrap">
-            <span className="inline-block px-4 text-sm font-semibold">
-              🎊 2026 Special - Order Now!
+            <span className="inline-block px-4">
+              {/* [ICON: Party] */} 2026 Special - Order Now!
             </span>
-            <span className="inline-block px-4 mx-8 text-sm font-semibold">
-              ⭐ FREE DELIVERY on all orders!
+            <span className="inline-block px-4 mx-8">
+              {/* [ICON: Star] */} FREE DELIVERY on all orders!
             </span>
-            <span className="inline-block px-4 mx-8 text-sm font-semibold">
-              🍽️ Authentic Indian, Mexican, Japanese & Nepalese Cuisine!
+            <span className="inline-block px-4 mx-8">
+              {/* [ICON: Food] */} Authentic Indian, Mexican, Japanese & Nepalese Cuisine!
             </span>
-            <span className="inline-block px-4 mx-8 text-sm font-semibold">
-              🎊 2026 Special - Order Now!
+            <span className="inline-block px-4 mx-8">
+              {/* [ICON: Party] */} 2026 Special - Order Now!
             </span>
-            <span className="inline-block px-4 mx-8 text-sm font-semibold">
-              ⭐ FREE DELIVERY on all orders!
+            <span className="inline-block px-4 mx-8">
+              {/* [ICON: Star] */} FREE DELIVERY on all orders!
             </span>
           </div>
         </div>
       </Link>
 
-      {/* Today's Special - Floating Popup */}
-      <TodaysSpecialPopup />
+      {/* Party & Catering Banner */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-6 shadow-lg">
+        <div className="container-custom">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <img src="/images/icons/party.png" alt="Catering" className="w-16 h-16 object-contain" />
+              <div>
+                <h3 className="text-xl font-bold mb-1">Host Your Events With Us!</h3>
+                <p className="text-purple-100 text-sm">Birthdays, Corporate Events, Gatherings - We cater them all!</p>
+              </div>
+            </div>
+            <Link href="/catering" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all px-6 py-3 rounded-lg group">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold">Get a Quote</span>
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </div>
 
-      {/* ===== HERO SECTION - Logo Green Theme ===== */}
-      <section className="relative overflow-hidden min-h-[92vh] flex items-center" style={{background: 'linear-gradient(135deg, #1a3a1a 0%, #1e3e1e 30%, #1a331a 60%, #162b16 100%)'}}>
-        {/* Green ambient glows */}
-        <div className="absolute top-1/3 left-1/4 w-[600px] h-[600px] rounded-full blur-3xl" style={{background: 'radial-gradient(circle, rgba(93,183,97,0.15), transparent 70%)'}}></div>
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-3xl" style={{background: 'radial-gradient(circle, rgba(108,192,112,0.1), transparent 70%)'}}></div>
-        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#162b16]/80 to-transparent"></div>
+      {/* Hero Section - Split Screen Design */}
+      <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-emerald-900 text-white overflow-hidden min-h-[90vh] flex items-center">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 animate-float" style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+            backgroundSize: '50px 50px'
+          }}></div>
+        </div>
 
-        {/* Subtle leaf pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
-        }}></div>
+        {/* Floating Circles */}
+        <div className="absolute top-20 left-10 w-32 h-32 bg-yellow-400 rounded-full blur-3xl opacity-20 animate-float"></div>
+        <div className="absolute bottom-32 right-20 w-48 h-48 bg-orange-400 rounded-full blur-3xl opacity-20 animate-float" style={{animationDelay: '1s'}}></div>
+        <div className="absolute top-1/2 left-1/3 w-24 h-24 bg-blue-400 rounded-full blur-3xl opacity-20 animate-float" style={{animationDelay: '2s'}}></div>
 
         <div className="container-custom relative z-10">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center py-16 lg:py-20">
-            {/* Left - Text Content */}
-            <div className="space-y-8 animate-slideInLeft order-2 lg:order-1">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border" style={{background: 'rgba(93,183,97,0.15)', borderColor: 'rgba(93,183,97,0.3)'}}>
-                <span className="w-2 h-2 rounded-full animate-pulse-slow" style={{background: '#6CC070'}}></span>
-                <span className="text-green-100">4 Cuisines Under One Roof</span>
+          <div className="grid lg:grid-cols-2 gap-16 items-center py-20">
+            {/* Left Content */}
+            <div className="space-y-8 animate-slideInLeft">
+              <div className="inline-flex items-center gap-2 px-5 py-3 bg-white/20 backdrop-blur-md rounded-full text-sm font-semibold shadow-lg hover-lift">
+                <span className="animate-pulse-slow">🌟</span>
+                <span>4 Authentic Cuisines Under One Roof</span>
               </div>
 
-              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight">
-                <span className="text-white">Where</span><br />
-                <span style={{background: 'linear-gradient(to right, #6CC070, #A8E6A3, #6CC070)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'}}>
-                  Spice Meets
-                </span><br />
-                <span className="text-white">Soul</span>
+              <h1 className="text-5xl md:text-7xl font-black leading-tight">
+                Experience<br />
+                <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-yellow-200 bg-clip-text text-transparent" style={{WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
+                  Global Flavors
+                </span>
               </h1>
 
-              <p className="text-lg lg:text-xl leading-relaxed max-w-lg" style={{color: 'rgba(200,230,200,0.8)'}}>
-                From Indian curries to Mexican tacos, Nepalese specialties to Japanese-fusion delights. Over 200 dishes crafted with love.
+              <p className="text-xl md:text-2xl text-green-50 leading-relaxed max-w-xl">
+                From Indian curries to Mexican tacos, Nepalese specialties to Japanese-fusion delights. Over 200 dishes crafted with love and tradition.
               </p>
 
-              {/* Cuisine pills */}
-              <div className="flex flex-wrap gap-3">
-                {cuisines.map((c, i) => (
-                  <div key={i} className="flex items-center gap-2 px-4 py-2 backdrop-blur-sm rounded-full text-sm" style={{background: 'rgba(93,183,97,0.1)', border: '1px solid rgba(93,183,97,0.2)'}}>
-                    <span>{c.icon}</span>
-                    <span className="text-green-100 font-medium">{c.name}</span>
-                    <span className="font-bold text-xs" style={{color: '#6CC070'}}>{c.count}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-wrap gap-4 pt-2">
+              <div className="flex flex-wrap gap-4 pt-4">
                 <Link href="/menu" className="btn-green-vivid green-glow text-lg px-8 py-4">
-                  <span>Explore Menu</span>
+                  <span>View Our Menu</span>
                   <span>→</span>
                 </Link>
-                <Link href="/order" className="group backdrop-blur-sm hover:bg-white/15 text-white font-bold text-lg px-8 py-4 rounded-xl transition-all inline-flex items-center gap-2" style={{background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(93,183,97,0.3)'}}>
+                <Link href="/order" className="btn-green-outline text-lg px-8 py-4">
                   <span>Order Now</span>
-                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
                 </Link>
               </div>
 
-              {/* Stats Row */}
-              <div className="flex items-center gap-8 pt-4">
-                <div>
-                  <div className="text-3xl font-black text-white">200+</div>
-                  <div className="text-xs font-medium uppercase tracking-wider" style={{color: 'rgba(108,192,112,0.7)'}}>Dishes</div>
+              {/* Stats Bar */}
+              <div className="grid grid-cols-3 gap-6 pt-8 max-w-md">
+                <div className="text-center p-4 bg-white/10 backdrop-blur-sm rounded-xl hover-lift">
+                  <div className="text-4xl font-black text-yellow-300">200+</div>
+                  <div className="text-sm text-green-100 font-medium mt-1">Menu Items</div>
                 </div>
-                <div className="w-px h-10" style={{background: 'rgba(93,183,97,0.3)'}}></div>
-                <div>
-                  <div className="text-3xl font-black text-white">10K+</div>
-                  <div className="text-xs font-medium uppercase tracking-wider" style={{color: 'rgba(108,192,112,0.7)'}}>Customers</div>
+                <div className="text-center p-4 bg-white/10 backdrop-blur-sm rounded-xl hover-lift">
+                  <div className="text-4xl font-black text-yellow-300">10000+</div>
+                  <div className="text-sm text-green-100 font-medium mt-1">Customers</div>
                 </div>
-                <div className="w-px h-10" style={{background: 'rgba(93,183,97,0.3)'}}></div>
-                <div>
-                  <div className="text-3xl font-black text-white">4.8</div>
-                  <div className="text-xs font-medium uppercase tracking-wider" style={{color: 'rgba(108,192,112,0.7)'}}>Rating ★</div>
+                <div className="text-center p-4 bg-white/10 backdrop-blur-sm rounded-xl hover-lift">
+                  <div className="text-4xl font-black text-yellow-300">4.8★</div>
+                  <div className="text-sm text-green-100 font-medium mt-1">Average Rating</div>
                 </div>
               </div>
             </div>
 
-            {/* Right - Logo Hero Card */}
-            <div className="order-1 lg:order-2 flex justify-center animate-slideInRight">
+            {/* Right Image Section - Hero Image */}
+            <div className="hidden lg:block animate-slideInRight">
               <div className="relative">
-                {/* Outer glow ring - green tones */}
-                <div className="absolute -inset-6 rounded-full blur-2xl animate-pulse-slow" style={{background: 'radial-gradient(circle, rgba(93,183,97,0.3), rgba(108,192,112,0.15), transparent)'}}></div>
+                {/* Glow Effect */}
+                <div className="absolute -inset-8 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-3xl opacity-30 blur-3xl animate-pulse-slow"></div>
 
-                {/* Logo container */}
-                <div className="relative w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96">
-                  {/* Rotating border ring - green */}
-                  <div className="absolute inset-0 rounded-full border-2 border-dashed animate-spin-slow" style={{borderColor: 'rgba(93,183,97,0.3)'}}></div>
-
-                  {/* Inner glowing circle - green tones */}
-                  <div className="absolute inset-4 rounded-full backdrop-blur-sm shadow-2xl" style={{background: 'linear-gradient(135deg, rgba(93,183,97,0.2), rgba(30,62,30,0.6), rgba(108,192,112,0.15))', border: '1px solid rgba(93,183,97,0.15)'}}></div>
-
-                  {/* Logo */}
-                  <div className="absolute inset-8 flex items-center justify-center">
+                {/* Main Card */}
+                <div className="relative bg-white rounded-3xl shadow-elegant-lg overflow-hidden hover-lift">
+                  <div className="h-[600px] relative">
                     <img
-                      src="/images/Logo.png"
-                      alt="The Curry House Yokosuka"
-                      className="w-full h-full object-contain drop-shadow-2xl animate-float"
+                      src="/images/hero-curry.jpg"
+                      alt="Delicious Curry Dishes"
+                      className="w-full h-full object-cover"
                     />
                   </div>
 
-                  {/* Floating accent badges - logo green */}
-                  <div className="absolute -top-2 right-4 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-float" style={{background: '#5DB761', animationDelay: '0.5s'}}>
-                    Open Now
-                  </div>
-                  <div className="absolute -bottom-2 left-4 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-float" style={{background: '#3E2723', animationDelay: '1s'}}>
-                    Free Delivery
+                  {/* Floating Badge */}
+                  <div className="absolute top-6 right-6 bg-green-600 text-white px-6 py-3 rounded-full font-bold shadow-lg animate-float">
+                    ⚡ Fast Delivery
                   </div>
                 </div>
               </div>
@@ -212,68 +211,54 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Wave divider */}
+        {/* Modern Wave Divider */}
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
-            <path d="M0 80L60 70C120 60 240 40 360 30C480 20 600 20 720 25C840 30 960 40 1080 45C1200 50 1320 50 1380 50L1440 50V80H0Z" fill="rgb(249, 250, 251)"/>
+          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
+            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V120Z" fill="rgb(249, 250, 251)"/>
           </svg>
         </div>
       </section>
 
-      {/* ===== Party & Catering - Compact ===== */}
-      <section className="bg-gray-50 pt-2 pb-6">
-        <div className="container-custom">
-          <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl text-white py-5 px-6 shadow-lg">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="text-3xl">🎉</div>
-                <div>
-                  <h3 className="text-lg font-bold">Host Your Events With Us!</h3>
-                  <p className="text-purple-100 text-sm">Birthdays, Corporate Events, Gatherings</p>
-                </div>
-              </div>
-              <Link href="/catering" className="bg-white/20 backdrop-blur-sm hover:bg-white/30 transition-all px-5 py-2.5 rounded-lg font-bold text-sm inline-flex items-center gap-2 shrink-0">
-                Get a Quote
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ===== How It Works - Minimal ===== */}
+      {/* How It Works Section */}
       <section className="section-padding bg-gray-50">
         <div className="container-custom">
-          <div className="text-center mb-14 animate-fadeIn">
-            <span className="inline-block px-4 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-              Simple Process
-            </span>
-            <h2 className="heading-2 mb-3 text-gray-900">How It Works</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">
-              From browsing to delivery in four easy steps
+          <div className="text-center mb-16 animate-fadeIn">
+            <div className="inline-block px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-bold mb-4">
+              SIMPLE PROCESS
+            </div>
+            <h2 className="heading-2 mb-4">How It Works</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              From browsing to delivery, we make it incredibly easy to enjoy authentic Indian, Nepalese, Mexican & Japanese-fusion cuisine
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-4xl mx-auto">
-            {[
-              { step: '01', title: 'Browse', desc: 'Explore our menu', icon: '📱' },
-              { step: '02', title: 'Order', desc: 'Pick your favorites', icon: '🛒' },
-              { step: '03', title: 'Prepare', desc: 'Freshly cooked for you', icon: '👨‍🍳' },
-              { step: '04', title: 'Enjoy', desc: 'Delivered hot & fresh', icon: '😋' },
-            ].map((item, i) => (
-              <div key={i} className="text-center animate-scaleIn" style={{animationDelay: `${i * 80}ms`}}>
-                <div className="relative inline-block mb-4">
-                  <div className="w-16 h-16 bg-white rounded-2xl shadow-md flex items-center justify-center text-2xl border border-gray-100">
-                    {item.icon}
+          <div className="grid md:grid-cols-4 gap-8">
+            {howItWorks.map((item, i) => (
+              <div key={i} className="relative animate-scaleIn" style={{animationDelay: `${i * 100}ms`}}>
+                <div className="text-center">
+                  {/* Step Number */}
+                  <div className="relative inline-block mb-6">
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl blur-lg opacity-50"></div>
+                    <div className="relative w-20 h-20 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center shadow-elegant">
+                      <span className="text-3xl font-black text-white">{item.step}</span>
+                    </div>
                   </div>
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-500 text-white rounded-full text-[10px] font-black flex items-center justify-center shadow">
-                    {item.step}
+
+                  {/* Icon */}
+                  <div className="mb-4 animate-float flex justify-center" style={{animationDelay: `${i * 0.2}s`}}>
+                    <img src={item.icon} alt={item.title} className="w-16 h-16 object-contain" />
                   </div>
+
+                  <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                  <p className="text-gray-600">{item.description}</p>
                 </div>
-                <h3 className="font-bold text-gray-900 text-sm">{item.title}</h3>
-                <p className="text-gray-500 text-xs mt-1">{item.desc}</p>
+
+                {/* Arrow (except for last item) */}
+                {i < howItWorks.length - 1 && (
+                  <div className="hidden md:block absolute top-10 -right-4 text-3xl text-green-300">
+                    →
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -283,84 +268,92 @@ export default function HomePage() {
       {/* Special Offers Section */}
       <OffersSection />
 
-      {/* ===== Features Section - Clean Cards ===== */}
+      {/* Features Section - Enhanced Grid */}
       <section className="section-padding bg-white">
         <div className="container-custom">
-          <div className="text-center mb-14 animate-fadeIn">
-            <span className="inline-block px-4 py-1.5 bg-orange-50 text-orange-700 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-              Why Choose Us
-            </span>
-            <h2 className="heading-2 mb-3 text-gray-900">What Makes Us Special</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">
-              Experience excellence in every bite
+          <div className="text-center mb-16 animate-fadeIn">
+            <div className="inline-block px-4 py-2 bg-orange-100 text-orange-700 rounded-full text-sm font-bold mb-4">
+              WHY CHOOSE US
+            </div>
+            <h2 className="heading-2 mb-4">What Makes Us Special</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Experience excellence in every bite with our commitment to quality and authenticity
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, i) => (
-              <div key={i} className="group p-6 rounded-2xl border border-gray-100 hover:border-green-200 bg-white hover:shadow-lg transition-all duration-300 animate-fadeIn" style={{animationDelay: `${i * 80}ms`}}>
-                <div className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform text-2xl`}>
-                  {feature.icon}
+              <div key={i} className="group card hover-lift animate-fadeIn border-2 border-gray-100 hover:border-green-200 transition-all duration-300" style={{animationDelay: `${i * 100}ms`}}>
+                {/* Icon with Gradient */}
+                <div className={`w-20 h-20 bg-gradient-to-br ${feature.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                  <img src={feature.icon} alt={feature.title} className="w-12 h-12 object-contain filter drop-shadow-lg" />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-2 group-hover:text-green-600 transition-colors">{feature.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{feature.description}</p>
+
+                <h3 className="text-xl font-bold mb-3 group-hover:text-green-600 transition-colors">{feature.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== Popular Dishes - Premium Grid ===== */}
-      <section className="section-padding bg-gray-50">
+      {/* Popular Dishes - Premium Grid */}
+      <section className="section-padding bg-gradient-to-b from-gray-50 to-white">
         <div className="container-custom">
-          <div className="text-center mb-14 animate-fadeIn">
-            <span className="inline-block px-4 py-1.5 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-              Customer Favorites
-            </span>
-            <h2 className="heading-2 mb-3 text-gray-900">Our Signature Dishes</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">
-              Handpicked favorites loved by thousands across Yokosuka
+          <div className="text-center mb-16 animate-fadeIn">
+            <div className="inline-block px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full text-sm font-bold mb-4">
+              CUSTOMER FAVORITES
+            </div>
+            <h2 className="heading-2 mb-4">Our Signature Dishes</h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Handpicked favorites loved by thousands of customers across Yokosuka
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {popularDishes.map((dish, i) => (
-              <div key={i} className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col" style={{animationDelay: `${i * 80}ms`}}>
-                {/* Image */}
-                <div className="relative h-56 overflow-hidden">
+              <div key={i} className="group bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col" style={{animationDelay: `${i * 100}ms`}}>
+                {/* Image Container - FILLS ENTIRE WIDTH */}
+                <div className="relative h-72 overflow-hidden">
                   {getMenuItemImage(dish.id) ? (
                     <img
                       src={getMenuItemImage(dish.id)!}
                       alt={dish.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-100 to-yellow-100 flex items-center justify-center">
-                      <span className="text-5xl">{['🍛', '🧈', '🍗', '🥘', '🍚', '🥣'][i % 6]}</span>
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-200 via-yellow-200 to-red-200 flex items-center justify-center">
+                      <div className="text-center p-6">
+                        <div className="text-6xl mb-2 animate-float">{['🍛', '🧈', '🍗', '🥘', '🍚', '🥣'][i % 6]}</div>
+                        <span className="text-gray-500 text-sm font-medium">Photo Coming Soon</span>
+                      </div>
                     </div>
                   )}
 
-                  {/* Category */}
-                  <div className="absolute top-3 right-3">
-                    <span className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                  {/* Category Badge */}
+                  <div className="absolute top-4 right-4 z-10">
+                    <span className="badge-green-vivid">
                       {dish.category}
                     </span>
                   </div>
+
+                  {/* Rating Badge */}
+                  <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-sm px-3 py-2 rounded-full font-bold text-sm shadow-lg">
+                    ⭐ 4.8
+                  </div>
                 </div>
 
-                <div className="p-5 flex flex-col flex-1">
-                  <h3 className="font-bold text-lg text-gray-900 group-hover:text-green-600 transition-colors">{dish.name}</h3>
-                  <p className="text-gray-500 text-sm mt-1 leading-relaxed">{dish.description}</p>
+                <div className="p-6 space-y-3 flex flex-col flex-1">
+                  <h3 className="font-black text-2xl group-hover:text-green-600 transition-colors">{dish.name}</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">{dish.description}</p>
 
                   <div className="flex-1"></div>
 
-                  <div className="flex items-center justify-between pt-4 mt-4 border-t border-gray-100">
-                    <div className="text-2xl font-black text-orange-600">{dish.price}</div>
-                    <Link href="/menu" className="bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-2 rounded-lg transition-all text-sm inline-flex items-center gap-1.5">
-                      Order
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                      </svg>
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="text-3xl font-black text-orange-600">{dish.price}</div>
+                    <Link href="/menu" className="btn-green-vivid">
+                      <span>Order Now</span>
+                      <span>→</span>
                     </Link>
                   </div>
                 </div>
@@ -368,7 +361,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          <div className="text-center mt-10 animate-fadeIn">
+          <div className="text-center mt-12 animate-fadeIn">
             <Link href="/menu" className="btn-green-vivid green-glow text-lg px-10 py-4">
               <span>View Full Menu</span>
               <span className="text-xl">→</span>
@@ -377,35 +370,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== Testimonials ===== */}
-      <section className="section-padding bg-white relative overflow-hidden">
+      {/* Testimonials Section */}
+      <section className="section-padding bg-gradient-to-br from-green-600 to-green-800 text-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: 'radial-gradient(circle at 3px 3px, white 2px, transparent 0)',
+            backgroundSize: '60px 60px'
+          }}></div>
+        </div>
+
         <div className="container-custom relative z-10">
-          <div className="text-center mb-14 animate-fadeIn">
-            <span className="inline-block px-4 py-1.5 bg-green-50 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider mb-4">
-              Testimonials
-            </span>
-            <h2 className="heading-2 mb-3 text-gray-900">What Our Customers Say</h2>
-            <p className="text-gray-500 max-w-xl mx-auto">
-              Join thousands of satisfied customers
+          <div className="text-center mb-16 animate-fadeIn">
+            <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-bold mb-4">
+              TESTIMONIALS
+            </div>
+            <h2 className="heading-2 mb-4">What Our Customers Say</h2>
+            <p className="text-xl text-green-50 max-w-2xl mx-auto">
+              Join thousands of satisfied customers who love our authentic flavors
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, i) => (
-              <div key={i} className="p-6 rounded-2xl border border-gray-100 hover:border-green-200 bg-white hover:shadow-lg transition-all duration-300 animate-scaleIn" style={{animationDelay: `${i * 80}ms`}}>
-                <div className="flex items-center gap-0.5 mb-4 text-yellow-400 text-sm">
+              <div key={i} className="bg-white/95 backdrop-blur-md p-8 rounded-2xl hover-lift animate-scaleIn border-2 border-green-200 shadow-xl" style={{animationDelay: `${i * 100}ms`}}>
+                <div className="flex items-center gap-1 mb-4 text-yellow-500 text-xl">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <span key={i}>★</span>
                   ))}
                 </div>
-                <p className="text-gray-700 leading-relaxed mb-5">&ldquo;{testimonial.text}&rdquo;</p>
+                <p className="text-gray-800 text-lg mb-6 leading-relaxed font-medium">&ldquo;{testimonial.text}&rdquo;</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center font-bold text-xl text-white shadow-lg">
                     {testimonial.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="font-bold text-gray-900 text-sm">{testimonial.name}</div>
-                    <div className="text-xs text-gray-400">{testimonial.date}</div>
+                    <div className="font-bold text-gray-900">{testimonial.name}</div>
+                    <div className="text-sm text-gray-600">{testimonial.date}</div>
                   </div>
                 </div>
               </div>
@@ -414,98 +415,118 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ===== Promo Banner - Clean ===== */}
-      <section className="py-14 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white">
+      {/* Special Offers Banner */}
+      <section className="py-16 bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white">
         <div className="container-custom">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 max-w-4xl mx-auto">
-            <div className="text-center md:text-left">
-              <div className="inline-flex items-center gap-2 text-sm bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full font-semibold mb-3">
-                🎉 Limited Time
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex-1 animate-slideInLeft">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-3xl animate-pulse-slow">🎉</span>
+                <span className="font-bold text-sm bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full">LIMITED TIME</span>
               </div>
-              <h3 className="text-3xl md:text-4xl font-black mb-2">15% Off Your First Order</h3>
-              <p className="text-white/80 text-lg">Use code: <span className="font-bold bg-white/20 px-3 py-1 rounded ml-1">WELCOME15</span></p>
+              <h3 className="text-4xl font-black mb-3">Get 15% Off Your First Order!</h3>
+              <p className="text-xl text-white/90">Use code: <span className="font-bold bg-white/20 px-3 py-1 rounded">WELCOME15</span></p>
             </div>
-            <Link href="/menu" className="bg-white text-orange-600 hover:bg-gray-100 font-black py-4 px-8 rounded-xl transition-all shadow-lg hover-lift text-lg shrink-0">
-              Order Now
-            </Link>
+            <div className="animate-slideInRight">
+              <Link href="/menu" className="bg-white text-orange-600 hover:bg-gray-100 font-black py-4 px-10 rounded-xl transition-all duration-300 shadow-elegant hover-lift text-lg inline-block">
+                Order Now & Save
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ===== Final CTA ===== */}
+      {/* Final CTA Section */}
       <section className="section-padding bg-gray-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-green-500/10 rounded-full blur-3xl"></div>
+        {/* Animated Background */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 animate-float" style={{
+            backgroundImage: 'linear-gradient(45deg, transparent 48%, white 49%, white 51%, transparent 52%)',
+            backgroundSize: '40px 40px'
+          }}></div>
         </div>
 
         <div className="container-custom text-center relative z-10">
-          <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn">
-            <img src="/images/Logo.png" alt="The Curry House" className="w-20 h-20 mx-auto mb-4 opacity-80" />
-            <h2 className="heading-2 mb-4">Ready for the Best Curry in Yokosuka?</h2>
-            <p className="text-lg text-gray-400 mb-6 leading-relaxed">
-              Order now for fast delivery. Fresh, authentic cuisine delivered hot to your door.
+          <div className="max-w-3xl mx-auto space-y-8 animate-fadeIn">
+            <div className="text-6xl mb-6 animate-float">📱</div>
+            <h2 className="heading-2 mb-6">Ready to Experience the Best Curry in Yokosuka?</h2>
+            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+              Order now through Uber Eats or Demaecan for fast delivery. Fresh, authentic Indian & Nepalese cuisine delivered hot to your door!
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center">
-              <Link href="/menu" className="btn-green-vivid green-glow text-lg py-4 px-10">
-                <span>Browse Menu</span>
-                <span>🍛</span>
+              <Link href="/menu" className="btn-green-vivid green-glow text-lg py-5 px-12">
+                <span>Browse Full Menu</span>
+                <span className="text-2xl">🍛</span>
               </Link>
-              <Link href="/track" className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-bold py-4 px-10 rounded-xl transition-all border border-white/20 hover:border-white/40 text-lg inline-flex items-center gap-2">
-                <span>Track Order</span>
-                <span>📍</span>
+              <Link href="/track" className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-bold py-5 px-12 rounded-xl transition-all duration-300 border-2 border-white/30 hover:border-white/50 text-lg inline-flex items-center gap-2">
+                <span>Track Your Order</span>
+                <span className="text-2xl">📍</span>
               </Link>
             </div>
 
-            {/* Trust badges */}
-            <div className="flex flex-wrap items-center justify-center gap-6 pt-8 text-gray-500 text-sm">
-              <span className="flex items-center gap-1.5">✅ Halal Certified</span>
-              <span className="flex items-center gap-1.5">🚚 30 Min Delivery</span>
-              <span className="flex items-center gap-1.5">⭐ 4.9 Rating</span>
+            {/* Trust Badges */}
+            <div className="flex flex-wrap items-center justify-center gap-8 pt-12 text-gray-400">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✅</span>
+                <span className="font-semibold">Halal Certified</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🚚</span>
+                <span className="font-semibold">30 Min Delivery</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">⭐</span>
+                <span className="font-semibold">4.9 Rating</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ===== Career & Dine-In ===== */}
-      <section className="section-padding bg-gray-50">
+      {/* Career & Dine In Banners */}
+      <section className="section-padding bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="container-custom">
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Career */}
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Career Banner */}
             <Link href="/careers" className="group">
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 shadow-md hover-lift">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mt-24 group-hover:scale-110 transition-transform duration-500"></div>
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 md:p-12 shadow-elegant hover-lift">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 group-hover:scale-110 transition-transform duration-500"></div>
                 <div className="relative z-10">
-                  <div className="text-4xl mb-3">💼</div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Join Our Team</h3>
-                  <p className="text-blue-200 text-sm mb-4">Exciting career opportunities at The Curry House</p>
-                  <span className="inline-flex items-center gap-1.5 text-white font-semibold text-sm">
-                    View Positions
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <div className="text-5xl mb-4">💼</div>
+                  <h3 className="text-3xl font-bold text-white mb-3">Join Our Team</h3>
+                  <p className="text-blue-100 mb-6">
+                    Explore exciting career opportunities at The Curry House Yokosuka
+                  </p>
+                  <div className="inline-flex items-center gap-2 text-white font-semibold">
+                    <span>View Open Positions</span>
+                    <svg className="w-5 h-5 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                     </svg>
-                  </span>
+                  </div>
                 </div>
               </div>
             </Link>
 
-            {/* Dine In */}
-            <Link href="/table-order" className="group">
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 to-green-700 p-8 shadow-md hover-lift">
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full -ml-24 -mb-24 group-hover:scale-110 transition-transform duration-500"></div>
+            {/* Dine In - QR Code Ordering */}
+            <div className="group">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 to-purple-600 p-8 md:p-12 shadow-elegant hover-lift">
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-white/10 rounded-full -ml-32 -mb-32 group-hover:scale-110 transition-transform duration-500"></div>
                 <div className="relative z-10">
-                  <div className="text-4xl mb-3">📱</div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Dine In - QR Order</h3>
-                  <p className="text-green-200 text-sm mb-4">Scan, order, enjoy - direct to kitchen!</p>
-                  <span className="inline-flex items-center gap-1.5 text-white font-semibold text-sm">
-                    18 Tables Available
-                    <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <div className="text-5xl mb-4">📱</div>
+                  <h3 className="text-3xl font-bold text-white mb-3">Dine In - QR Ordering</h3>
+                  <p className="text-indigo-100 mb-6">
+                    Scan QR at your table, order instantly - Direct to kitchen!
+                  </p>
+                  <div className="inline-flex items-center gap-2 text-white font-semibold">
+                    <span>18 Tables Available</span>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                  </span>
+                  </div>
                 </div>
               </div>
-            </Link>
+            </div>
           </div>
         </div>
       </section>
