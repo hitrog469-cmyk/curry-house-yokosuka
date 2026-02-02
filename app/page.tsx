@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 import OffersSection from '@/components/OffersSection'
-import TodaysSpecial from '@/components/TodaysSpecial'
+import TodaysSpecialPopup from '@/components/TodaysSpecialPopup'
 import { getMenuItemImage } from '@/lib/image-mapping'
 
 export default function HomePage() {
@@ -97,48 +97,49 @@ export default function HomePage() {
         </div>
       </Link>
 
-      {/* Today's Special */}
-      <TodaysSpecial />
+      {/* Today's Special - Floating Popup */}
+      <TodaysSpecialPopup />
 
-      {/* ===== HERO SECTION - Logo Centric ===== */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white overflow-hidden min-h-[92vh] flex items-center">
-        {/* Subtle grain texture */}
+      {/* ===== HERO SECTION - Logo Green Theme ===== */}
+      <section className="relative overflow-hidden min-h-[92vh] flex items-center" style={{background: 'linear-gradient(135deg, #1a3a1a 0%, #1e3e1e 30%, #1a331a 60%, #162b16 100%)'}}>
+        {/* Green ambient glows */}
+        <div className="absolute top-1/3 left-1/4 w-[600px] h-[600px] rounded-full blur-3xl" style={{background: 'radial-gradient(circle, rgba(93,183,97,0.15), transparent 70%)'}}></div>
+        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full blur-3xl" style={{background: 'radial-gradient(circle, rgba(108,192,112,0.1), transparent 70%)'}}></div>
+        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#162b16]/80 to-transparent"></div>
+
+        {/* Subtle leaf pattern overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`
         }}></div>
-
-        {/* Warm ambient glow behind logo area */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-orange-500/20 via-transparent to-transparent rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-gray-900/80 to-transparent"></div>
 
         <div className="container-custom relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center py-16 lg:py-20">
             {/* Left - Text Content */}
             <div className="space-y-8 animate-slideInLeft order-2 lg:order-1">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-full text-sm font-medium border border-white/10">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse-slow"></span>
-                <span className="text-gray-200">4 Cuisines Under One Roof</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border" style={{background: 'rgba(93,183,97,0.15)', borderColor: 'rgba(93,183,97,0.3)'}}>
+                <span className="w-2 h-2 rounded-full animate-pulse-slow" style={{background: '#6CC070'}}></span>
+                <span className="text-green-100">4 Cuisines Under One Roof</span>
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-[1.1] tracking-tight">
                 <span className="text-white">Where</span><br />
-                <span className="bg-gradient-to-r from-orange-400 via-yellow-300 to-orange-400 bg-clip-text text-transparent" style={{WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'}}>
+                <span style={{background: 'linear-gradient(to right, #6CC070, #A8E6A3, #6CC070)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text'}}>
                   Spice Meets
                 </span><br />
                 <span className="text-white">Soul</span>
               </h1>
 
-              <p className="text-lg lg:text-xl text-gray-300 leading-relaxed max-w-lg">
+              <p className="text-lg lg:text-xl leading-relaxed max-w-lg" style={{color: 'rgba(200,230,200,0.8)'}}>
                 From Indian curries to Mexican tacos, Nepalese specialties to Japanese-fusion delights. Over 200 dishes crafted with love.
               </p>
 
               {/* Cuisine pills */}
               <div className="flex flex-wrap gap-3">
                 {cuisines.map((c, i) => (
-                  <div key={i} className="flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-sm rounded-full border border-white/10 text-sm">
+                  <div key={i} className="flex items-center gap-2 px-4 py-2 backdrop-blur-sm rounded-full text-sm" style={{background: 'rgba(93,183,97,0.1)', border: '1px solid rgba(93,183,97,0.2)'}}>
                     <span>{c.icon}</span>
-                    <span className="text-gray-300 font-medium">{c.name}</span>
-                    <span className="text-orange-400 font-bold text-xs">{c.count}</span>
+                    <span className="text-green-100 font-medium">{c.name}</span>
+                    <span className="font-bold text-xs" style={{color: '#6CC070'}}>{c.count}</span>
                   </div>
                 ))}
               </div>
@@ -148,7 +149,7 @@ export default function HomePage() {
                   <span>Explore Menu</span>
                   <span>→</span>
                 </Link>
-                <Link href="/order" className="group bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-bold text-lg px-8 py-4 rounded-xl transition-all border border-white/20 hover:border-white/40 inline-flex items-center gap-2">
+                <Link href="/order" className="group backdrop-blur-sm hover:bg-white/15 text-white font-bold text-lg px-8 py-4 rounded-xl transition-all inline-flex items-center gap-2" style={{background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(93,183,97,0.3)'}}>
                   <span>Order Now</span>
                   <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -160,17 +161,17 @@ export default function HomePage() {
               <div className="flex items-center gap-8 pt-4">
                 <div>
                   <div className="text-3xl font-black text-white">200+</div>
-                  <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">Dishes</div>
+                  <div className="text-xs font-medium uppercase tracking-wider" style={{color: 'rgba(108,192,112,0.7)'}}>Dishes</div>
                 </div>
-                <div className="w-px h-10 bg-white/20"></div>
+                <div className="w-px h-10" style={{background: 'rgba(93,183,97,0.3)'}}></div>
                 <div>
                   <div className="text-3xl font-black text-white">10K+</div>
-                  <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">Customers</div>
+                  <div className="text-xs font-medium uppercase tracking-wider" style={{color: 'rgba(108,192,112,0.7)'}}>Customers</div>
                 </div>
-                <div className="w-px h-10 bg-white/20"></div>
+                <div className="w-px h-10" style={{background: 'rgba(93,183,97,0.3)'}}></div>
                 <div>
                   <div className="text-3xl font-black text-white">4.8</div>
-                  <div className="text-xs text-gray-400 font-medium uppercase tracking-wider">Rating ★</div>
+                  <div className="text-xs font-medium uppercase tracking-wider" style={{color: 'rgba(108,192,112,0.7)'}}>Rating ★</div>
                 </div>
               </div>
             </div>
@@ -178,16 +179,16 @@ export default function HomePage() {
             {/* Right - Logo Hero Card */}
             <div className="order-1 lg:order-2 flex justify-center animate-slideInRight">
               <div className="relative">
-                {/* Outer glow ring */}
-                <div className="absolute -inset-6 bg-gradient-to-r from-orange-500/30 via-yellow-400/20 to-red-500/30 rounded-full blur-2xl animate-pulse-slow"></div>
+                {/* Outer glow ring - green tones */}
+                <div className="absolute -inset-6 rounded-full blur-2xl animate-pulse-slow" style={{background: 'radial-gradient(circle, rgba(93,183,97,0.3), rgba(108,192,112,0.15), transparent)'}}></div>
 
                 {/* Logo container */}
                 <div className="relative w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96">
-                  {/* Rotating border ring */}
-                  <div className="absolute inset-0 rounded-full border-2 border-dashed border-orange-400/30 animate-spin-slow"></div>
+                  {/* Rotating border ring - green */}
+                  <div className="absolute inset-0 rounded-full border-2 border-dashed animate-spin-slow" style={{borderColor: 'rgba(93,183,97,0.3)'}}></div>
 
-                  {/* Inner glowing circle */}
-                  <div className="absolute inset-4 rounded-full bg-gradient-to-br from-orange-900/40 via-gray-800/60 to-red-900/40 backdrop-blur-sm border border-white/10 shadow-2xl"></div>
+                  {/* Inner glowing circle - green tones */}
+                  <div className="absolute inset-4 rounded-full backdrop-blur-sm shadow-2xl" style={{background: 'linear-gradient(135deg, rgba(93,183,97,0.2), rgba(30,62,30,0.6), rgba(108,192,112,0.15))', border: '1px solid rgba(93,183,97,0.15)'}}></div>
 
                   {/* Logo */}
                   <div className="absolute inset-8 flex items-center justify-center">
@@ -198,11 +199,11 @@ export default function HomePage() {
                     />
                   </div>
 
-                  {/* Floating accent badges */}
-                  <div className="absolute -top-2 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-float" style={{animationDelay: '0.5s'}}>
+                  {/* Floating accent badges - logo green */}
+                  <div className="absolute -top-2 right-4 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-float" style={{background: '#5DB761', animationDelay: '0.5s'}}>
                     Open Now
                   </div>
-                  <div className="absolute -bottom-2 left-4 bg-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-float" style={{animationDelay: '1s'}}>
+                  <div className="absolute -bottom-2 left-4 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-float" style={{background: '#3E2723', animationDelay: '1s'}}>
                     Free Delivery
                   </div>
                 </div>
