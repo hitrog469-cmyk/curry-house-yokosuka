@@ -960,12 +960,54 @@ img[loading="lazy"].loaded {
   box-shadow: 0 0 0 8px rgba(251, 191, 36, 0.3);
 }
 
+/* ========================================
+   ADDITIONAL ANIMATIONS & UTILITIES
+   ======================================== */
+
+/* Slow Spin - for rotating borders/rings */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+/* Slide Up - for bottom sheet modals */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Safe Bottom - for fixed bottom bars on mobile (notch) */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Gradient Radial helper (used in hero) */
+.bg-gradient-radial {
+  background: radial-gradient(circle, var(--tw-gradient-from), var(--tw-gradient-to));
+}
+
 /* Reduced Motion Preferences */
 @media (prefers-reduced-motion: reduce) {
   .btn-green-vivid,
   .green-glow,
   .badge-green-vivid,
-  .price-green-vivid {
+  .price-green-vivid,
+  .animate-spin-slow,
+  .animate-slideUp {
     animation: none !important;
   }
 
