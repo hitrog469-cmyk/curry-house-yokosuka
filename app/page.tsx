@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 import OffersSection from '@/components/OffersSection'
+import TodaysSpecial from '@/components/TodaysSpecial'
 import { getMenuItemImage } from '@/lib/image-mapping'
 
 export default function HomePage() {
@@ -118,6 +119,9 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Today's Special */}
+      <TodaysSpecial />
 
       {/* Hero Section - Split Screen Design */}
       <section className="relative bg-gradient-to-br from-green-600 via-green-700 to-emerald-900 text-white overflow-hidden min-h-[90vh] flex items-center">

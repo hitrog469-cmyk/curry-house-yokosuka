@@ -1,9 +1,18 @@
 // Offer Engine: Automatic offer detection and application
 // Handles time-based validation, discount calculations, and offer eligibility
 
-import { getJapanTime, parseTimeToMinutes, getMinutesSinceMidnight, getDayOfWeek } from './restaurant-hours'
+import { getJapanTime, parseTimeToMinutes, getMinutesSinceMidnight } from './restaurant-hours'
 
 export type OfferType = 'percentage' | 'fixed_amount' | 'bogo' | 'bundle'
+
+/**
+ * Get day of week as number (1=Mon, 2=Tue, ..., 7=Sun)
+ */
+function getDayNumber(date: Date): number {
+  const day = date.getDay()
+  // Convert from JavaScript day (0=Sun) to our format (1=Mon, 7=Sun)
+  return day === 0 ? 7 : day
+}
 
 export type TimeWindow = {
   start: string  // "HH:mm" format
@@ -67,7 +76,7 @@ export function checkOfferEligibility(
 
   const now = currentTime || getJapanTime()
   const currentMinutes = getMinutesSinceMidnight(now)
-  const currentDay = getDayOfWeek(now)
+  const currentDay = getDayNumber(now)
 
   // Check if current time falls within any of the offer's time windows
   const isInTimeWindow = offer.timeWindows.some(window => {

@@ -42,7 +42,7 @@ export function getDayOfWeek(date: Date): DayOfWeek {
 /**
  * Parse time string "HH:mm" to minutes since midnight
  */
-function parseTimeToMinutes(timeStr: string): number {
+export function parseTimeToMinutes(timeStr: string): number {
   const [hours, minutes] = timeStr.split(':').map(Number);
   return hours * 60 + minutes;
 }
@@ -50,7 +50,7 @@ function parseTimeToMinutes(timeStr: string): number {
 /**
  * Get minutes since midnight from date
  */
-function getMinutesSinceMidnight(date: Date): number {
+export function getMinutesSinceMidnight(date: Date): number {
   return date.getHours() * 60 + date.getMinutes();
 }
 
