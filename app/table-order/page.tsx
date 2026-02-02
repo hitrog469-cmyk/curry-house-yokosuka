@@ -15,11 +15,11 @@ function TableOrderContent() {
 
   // Order setup state
   const [setupComplete, setSetupComplete] = useState(false)
-  const [tableNumber, setTableNumber] = useState(urlTableNumber || '')
+  const [selectedTables, setSelectedTables] = useState<number[]>(urlTableNumber ? [parseInt(urlTableNumber)] : [])
   const [customerName, setCustomerName] = useState('')
   const [partySize, setPartySize] = useState('1')
   const [splitBill, setSplitBill] = useState(false)
-  const [numberOfSplits, setNumberOfSplits] = useState('1')
+  const [splitPersons, setSplitPersons] = useState<string[]>([''])
 
   // Ordering state
   const [cart, setCart] = useState<{[key: string]: number}>({})
@@ -41,20 +41,36 @@ function TableOrderContent() {
     ? menuItems
     : menuItems.filter(item => item.category === selectedCategory)
 
+  const toggleTable = (tableNum: number) => {
+    setSelectedTables(prev =>
+      prev.includes(tableNum)
+        ? prev.filter(t => t !== tableNum)
+        : [...prev, tableNum]
+    )
+  }
+
+  const addSplitPerson = () => {
+    setSplitPersons(prev => [...prev, ''])
+  }
+
+  const removeSplitPerson = (index: number) => {
+    setSplitPersons(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const updateSplitPerson = (index: number, name: string) => {
+    setSplitPersons(prev => prev.map((p, i) => i === index ? name : p))
+  }
+
   const addToCart = (itemId: string) => {
     const item = menuItems.find(i => i.id === itemId)
-
-    // Check if item needs spice level
     const needsSpiceLevel = item?.spiceLevel || item?.category === 'curry' || item?.category === 'nepalese'
 
-    // If item needs spice level and doesn't have one selected, show modal first
     if (needsSpiceLevel && !selectedSpiceLevels[itemId]) {
       setPendingItemId(itemId)
       setShowSpiceLevelModal(itemId)
       return
     }
 
-    // Add to cart
     setCart(prev => ({
       ...prev,
       [itemId]: (prev[itemId] || 0) + 1
@@ -68,7 +84,6 @@ function TableOrderContent() {
         newCart[itemId]--
       } else {
         delete newCart[itemId]
-        // Clear spice level when item fully removed
         setSelectedSpiceLevels(prevLevels => {
           const newLevels = { ...prevLevels }
           delete newLevels[itemId]
@@ -88,15 +103,11 @@ function TableOrderContent() {
 
   const confirmSpiceLevel = () => {
     if (!pendingItemId) return
-
     setShowSpiceLevelModal(null)
-
-    // Add to cart
     setCart(prev => ({
       ...prev,
       [pendingItemId]: (prev[pendingItemId] || 0) + 1
     }))
-
     setPendingItemId(null)
   }
 
@@ -146,14 +157,21 @@ function TableOrderContent() {
   }
 
   const handleSetupComplete = () => {
-    if (!tableNumber || !customerName || !partySize) {
+    if (selectedTables.length === 0 || !customerName || !partySize) {
       alert('Please fill in all required fields')
       return
     }
 
-    if (splitBill && parseInt(numberOfSplits) > parseInt(partySize)) {
-      alert('Number of splits cannot exceed party size')
-      return
+    if (splitBill) {
+      const validPersons = splitPersons.filter(p => p.trim() !== '')
+      if (validPersons.length < 2) {
+        alert('Please add at least 2 people for bill splitting')
+        return
+      }
+      if (validPersons.length > parseInt(partySize)) {
+        alert('Number of people for bill split cannot exceed party size')
+        return
+      }
     }
 
     setSetupComplete(true)
@@ -178,24 +196,27 @@ function TableOrderContent() {
       })
 
       const totalAmount = getCartTotal()
-      const amountPerSplit = splitBill && numberOfSplits
-        ? totalAmount / parseInt(numberOfSplits)
-        : totalAmount
+      const validSplitPersons = splitBill ? splitPersons.filter(p => p.trim() !== '') : []
+      const numberOfSplits = validSplitPersons.length || 1
+      const amountPerSplit = totalAmount / numberOfSplits
+
+      const tableNumbers = selectedTables.join(', ')
 
       // Create main order with customer info and bill splitting
       const { data: tableOrderData, error: tableError } = await supabase
         .from('table_orders')
         .insert({
-          table_number: parseInt(tableNumber),
+          table_number: selectedTables[0], // Primary table
           customer_name: customerName,
           party_size: parseInt(partySize),
           split_bill: splitBill,
-          number_of_splits: splitBill ? parseInt(numberOfSplits) : 1,
+          number_of_splits: numberOfSplits,
           items: orderItems,
           total_amount: totalAmount,
           amount_per_split: amountPerSplit,
           status: 'pending',
-          order_type: 'in-house'
+          order_type: 'in-house',
+          notes: `Tables: ${tableNumbers}${splitBill ? ` | Split between: ${validSplitPersons.join(', ')}` : ''}`
         })
         .select()
 
@@ -208,14 +229,15 @@ function TableOrderContent() {
           total_amount: totalAmount,
           status: 'pending',
           order_type: 'in-house',
-          table_number: parseInt(tableNumber),
+          table_number: selectedTables[0],
           customer_name: customerName,
           party_size: parseInt(partySize),
           split_bill: splitBill,
-          number_of_splits: splitBill ? parseInt(numberOfSplits) : 1,
+          number_of_splits: numberOfSplits,
           items: orderItems,
           payment_status: 'pending',
-          delivery_address: `Table ${tableNumber} - ${customerName} (Party of ${partySize})`
+          delivery_address: `Tables: ${tableNumbers} - ${customerName} (Party of ${partySize})`,
+          notes: splitBill ? `Split bill: ${validSplitPersons.join(', ')}` : ''
         })
 
       if (orderError) console.error('Failed to sync to orders table:', orderError)
@@ -228,10 +250,11 @@ function TableOrderContent() {
       setTimeout(() => {
         setOrderSubmitted(false)
         setSetupComplete(false)
+        setSelectedTables([])
         setCustomerName('')
         setPartySize('1')
         setSplitBill(false)
-        setNumberOfSplits('1')
+        setSplitPersons([''])
       }, 5000)
     } catch (error) {
       console.error('Error submitting order:', error)
@@ -245,43 +268,52 @@ function TableOrderContent() {
   if (!setupComplete) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-500 via-emerald-600 to-green-700 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
           <div className="text-center mb-6">
-            <div className="text-6xl mb-4">📱</div>
-            <h1 className="text-3xl font-black text-gray-900 mb-2">Welcome!</h1>
-            <p className="text-gray-600">Set up your table order</p>
+            <div className="text-5xl sm:text-6xl mb-4">🍽️</div>
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">Table Order Setup</h1>
+            <p className="text-gray-600">The Curry House Yokosuka</p>
           </div>
 
-          <div className="space-y-4">
-            {/* Table Number Selection */}
+          <div className="space-y-4 sm:space-y-6">
+            {/* Table Selection - Multiple */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Table Number *
+                Select Table(s) * <span className="text-xs font-normal text-gray-500">(You can select multiple tables)</span>
               </label>
-              <select
-                value={tableNumber}
-                onChange={(e) => setTableNumber(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:outline-none text-lg font-semibold"
-                required
-              >
-                <option value="">Select Table</option>
+              <div className="grid grid-cols-6 gap-2">
                 {Array.from({ length: 18 }, (_, i) => i + 1).map(num => (
-                  <option key={num} value={num}>Table {num}</option>
+                  <button
+                    key={num}
+                    onClick={() => toggleTable(num)}
+                    className={`p-3 rounded-lg font-bold transition-all text-sm sm:text-base ${
+                      selectedTables.includes(num)
+                        ? 'bg-green-600 text-white shadow-lg scale-105'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {num}
+                  </button>
                 ))}
-              </select>
+              </div>
+              {selectedTables.length > 0 && (
+                <p className="text-xs text-green-600 mt-2 font-semibold">
+                  Selected: Table {selectedTables.sort((a, b) => a - b).join(', ')}
+                </p>
+              )}
             </div>
 
             {/* Customer Name */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Your Name *
+                Customer Name *
               </label>
               <input
                 type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Rohit Acharya"
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:outline-none text-lg"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:outline-none text-base sm:text-lg"
                 required
               />
             </div>
@@ -289,15 +321,15 @@ function TableOrderContent() {
             {/* Party Size */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Number of People *
+                Party Size *
               </label>
               <input
                 type="number"
                 min="1"
-                max="20"
+                max="50"
                 value={partySize}
                 onChange={(e) => setPartySize(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:outline-none text-lg"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:outline-none text-base sm:text-lg"
                 required
               />
             </div>
@@ -307,31 +339,53 @@ function TableOrderContent() {
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
                   <span className="block text-sm font-bold text-gray-700">Split Bill?</span>
-                  <span className="block text-xs text-gray-500">Divide payment among guests</span>
+                  <span className="block text-xs text-gray-500">Divide payment among multiple people</span>
                 </div>
                 <input
                   type="checkbox"
                   checked={splitBill}
-                  onChange={(e) => setSplitBill(e.target.checked)}
+                  onChange={(e) => {
+                    setSplitBill(e.target.checked)
+                    if (e.target.checked && splitPersons.length === 1 && splitPersons[0] === '') {
+                      setSplitPersons(['', ''])
+                    }
+                  }}
                   className="w-6 h-6 text-green-600 rounded focus:ring-green-500"
                 />
               </label>
 
               {splitBill && (
-                <div className="mt-4">
+                <div className="mt-4 space-y-3">
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Number of Separate Bills
+                    Enter Names for Each Person
                   </label>
-                  <input
-                    type="number"
-                    min="2"
-                    max={partySize}
-                    value={numberOfSplits}
-                    onChange={(e) => setNumberOfSplits(e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:outline-none text-lg"
-                  />
+                  {splitPersons.map((person, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={person}
+                        onChange={(e) => updateSplitPerson(index, e.target.value)}
+                        placeholder={`Person ${index + 1} name`}
+                        className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                      />
+                      {splitPersons.length > 1 && (
+                        <button
+                          onClick={() => removeSplitPerson(index)}
+                          className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <button
+                    onClick={addSplitPerson}
+                    className="w-full py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-semibold text-sm"
+                  >
+                    + Add Another Person
+                  </button>
                   <p className="text-xs text-gray-500 mt-2">
-                    💡 Each person will pay {formatPrice(0)} (calculated after order)
+                    Bill will be split equally between {splitPersons.filter(p => p.trim() !== '').length} people
                   </p>
                 </div>
               )}
@@ -342,7 +396,7 @@ function TableOrderContent() {
               onClick={handleSetupComplete}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-lg"
             >
-              Start Ordering 🍽️
+              Start Ordering
             </button>
           </div>
         </div>
@@ -352,21 +406,27 @@ function TableOrderContent() {
 
   // Order confirmation screen
   if (orderSubmitted) {
+    const validSplitPersons = splitBill ? splitPersons.filter(p => p.trim() !== '') : []
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center p-4">
         <div className="text-center bg-white rounded-2xl p-8 max-w-md shadow-2xl">
           <div className="text-8xl mb-6">✅</div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Order Sent to Kitchen!</h1>
           <div className="space-y-2 text-gray-700 mb-6">
-            <p className="text-2xl font-bold text-green-600">Table {tableNumber}</p>
+            <p className="text-2xl font-bold text-green-600">Table {selectedTables.join(', ')}</p>
             <p className="text-lg">{customerName}</p>
             <p className="text-sm text-gray-500">Party of {partySize}</p>
-            {splitBill && (
+            {splitBill && validSplitPersons.length > 0 && (
               <div className="mt-4 p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
-                <p className="text-sm font-bold text-blue-900 mb-2">💳 Split Bill</p>
-                <p className="text-xs text-blue-800">
-                  {numberOfSplits} separate bills • {formatPrice(getCartTotal() / parseInt(numberOfSplits))} each
-                </p>
+                <p className="text-sm font-bold text-blue-900 mb-2">Split Bill</p>
+                <div className="text-xs text-blue-800 space-y-1">
+                  {validSplitPersons.map((person, idx) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span>{person}</span>
+                      <span className="font-bold">{formatPrice(getCartTotal() / validSplitPersons.length)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -384,15 +444,15 @@ function TableOrderContent() {
         <div className="container-custom">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold">Table {tableNumber}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold">Table {selectedTables.join(', ')}</h1>
               <p className="text-green-100 text-xs sm:text-sm">{customerName} • Party of {partySize}</p>
             </div>
             <div className="text-right">
               <div className="text-2xl sm:text-3xl font-black">{formatPrice(getCartTotal())}</div>
               <div className="text-xs sm:text-sm text-green-100">{getCartCount()} items</div>
-              {splitBill && (
+              {splitBill && splitPersons.filter(p => p.trim() !== '').length > 0 && (
                 <div className="text-xs text-green-200 mt-1">
-                  {formatPrice(getCartTotal() / parseInt(numberOfSplits))} / person
+                  {formatPrice(getCartTotal() / splitPersons.filter(p => p.trim() !== '').length)} / person
                 </div>
               )}
             </div>
@@ -431,13 +491,14 @@ function TableOrderContent() {
             return (
               <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden">
                 <div className="flex gap-3 sm:gap-4 p-3 sm:p-4">
-                  {/* Image */}
-                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0">
+                  {/* Image - Better display with object-cover */}
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100">
                     <Image
                       src={imagePath}
                       alt={item.name}
                       fill
-                      className="object-cover rounded-lg"
+                      className="object-cover"
+                      sizes="(max-width: 640px) 96px, 112px"
                     />
                   </div>
 
@@ -554,13 +615,6 @@ function TableOrderContent() {
                         </div>
                       </button>
                     ))}
-                  </div>
-
-                  {/* Info Box */}
-                  <div className="mb-4 sm:mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-xs text-blue-800 text-center">
-                      💡 You can always adjust spice level for each order
-                    </p>
                   </div>
 
                   {/* Continue Button */}
