@@ -120,10 +120,10 @@ export default function ContactPage() {
           <div className="lg:col-span-2">
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-200 dark:border-gray-700">
               <h2 className="text-4xl font-black text-gray-900 dark:text-white mb-2">
-                Send Us A Message
+                We'd Love to Hear from You
               </h2>
               <p className="text-gray-600 dark:text-gray-400 mb-8">
-                Fill out the form below and we'll get back to you within 24 hours
+                Whether it's a question, feedback, or just to say hello — drop us a message and we'll get back within 24 hours.
               </p>
 
               {status === 'success' && (

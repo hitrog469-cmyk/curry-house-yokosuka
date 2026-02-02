@@ -155,7 +155,7 @@ export default function RegisterPage() {
             The Curry House Yokosuka
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Create your account to start ordering
+            Join us and discover flavors from around the world. Let's get started!
           </p>
         </div>
 
@@ -232,7 +232,7 @@ export default function RegisterPage() {
                 type="text"
                 value={formData.fullName}
                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-orange-500 focus:outline-none dark:bg-gray-700 dark:text-white bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                 placeholder="Rohit Acharya"
                 disabled={loading}
               />
@@ -246,7 +246,7 @@ export default function RegisterPage() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-orange-500 focus:outline-none dark:bg-gray-700 dark:text-white bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                 placeholder="you@example.com"
                 disabled={loading}
               />
@@ -260,7 +260,7 @@ export default function RegisterPage() {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-orange-500 focus:outline-none dark:bg-gray-700 dark:text-white bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                 placeholder="+81 123-4567-8901"
                 disabled={loading}
               />
@@ -275,7 +275,7 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => handlePasswordChange(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                  className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-orange-500 focus:outline-none dark:bg-gray-700 dark:text-white bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                   placeholder="••••••••"
                   disabled={loading}
                 />
@@ -330,7 +330,7 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={formData.confirmPassword}
                   onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                  className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-orange-500 focus:outline-none dark:bg-gray-700 dark:text-white bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                   placeholder="••••••••"
                   disabled={loading}
                 />

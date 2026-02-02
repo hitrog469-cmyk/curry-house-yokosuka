@@ -77,7 +77,7 @@ export default function LoginPage() {
             The Curry House Yokosuka
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Welcome back! Sign in to your account
+            Welcome back! Great to see you again.
           </p>
         </div>
 
@@ -154,7 +154,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-orange-500 focus:outline-none dark:bg-gray-700 dark:text-white bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                 placeholder="you@example.com"
                 disabled={loading}
               />
@@ -169,7 +169,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all"
+                  className="w-full px-4 py-3.5 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:border-orange-500 focus:outline-none dark:bg-gray-700 dark:text-white bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                   placeholder="••••••••"
                   disabled={loading}
                 />

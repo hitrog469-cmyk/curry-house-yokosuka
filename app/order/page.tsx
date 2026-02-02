@@ -282,9 +282,14 @@ export default function OrderPage() {
           </Link>
           <h1 className="text-5xl font-black mt-2">
             {step === 'cart' && 'Your Order'}
-            {step === 'details' && 'Delivery Details'}
+            {step === 'details' && 'Almost There!'}
             {step === 'confirmation' && 'Order Confirmed!'}
           </h1>
+          <p className="text-green-100 mt-2 text-lg">
+            {step === 'cart' && 'Great choices! Review your items below.'}
+            {step === 'details' && 'Just a few details and your food is on its way.'}
+            {step === 'confirmation' && 'Thank you for ordering with us!'}
+          </p>
         </div>
       </div>
 
@@ -316,16 +321,16 @@ export default function OrderPage() {
                         return (
                           <div key={itemId} className="flex items-center gap-4 pb-4 border-b last:border-0">
                             {/* Image */}
-                            <div className="w-20 h-20 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                            <div className="w-20 h-20 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg overflow-hidden flex-shrink-0">
                               {getMenuItemImage(itemId) ? (
                                 <img
                                   src={getMenuItemImage(itemId)!}
                                   alt={item.name}
-                                  className="w-full h-full object-cover"
+                                  className="w-full h-full object-contain p-1"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center">
-                                  <span className="text-gray-400 text-xs">Photo</span>
+                                  <span className="text-2xl">🍽️</span>
                                 </div>
                               )}
                             </div>
@@ -395,7 +400,7 @@ export default function OrderPage() {
                           value={promoCode}
                           onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
                           placeholder="ENTER CODE"
-                          className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent uppercase font-semibold"
+                          className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white uppercase font-semibold transition-all focus:shadow-sm"
                           disabled={promoDiscount > 0}
                         />
                         {promoDiscount > 0 ? (
@@ -459,51 +464,52 @@ export default function OrderPage() {
           {step === 'details' && (
             <div className="space-y-6">
               <div className="card">
-                <h2 className="text-2xl font-bold mb-6">Delivery Information</h2>
+                <h2 className="text-2xl font-bold mb-2">Where Should We Deliver?</h2>
+                <p className="text-gray-500 text-sm mb-6">We'll have your food ready and at your door as fast as we can.</p>
 
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <div>
-                    <label className="block text-sm font-bold mb-2">Full Name *</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Full Name *</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      placeholder="Enter your full name"
+                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
+                      placeholder="What's your name?"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold mb-2">Phone Number *</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number *</label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                       placeholder="090-1234-5678"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold mb-2">Delivery Address *</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Delivery Address *</label>
                     <textarea
                       value={formData.address}
                       onChange={(e) => setFormData({...formData, address: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm resize-none"
                       rows={3}
-                      placeholder="Enter your full delivery address"
+                      placeholder="Full address including building name, room number etc."
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold mb-2">Special Instructions (Optional)</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Special Instructions (Optional)</label>
                     <textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm resize-none"
                       rows={3}
-                      placeholder="Any special requests or delivery instructions"
+                      placeholder="Gate code, extra spice, ring doorbell twice... anything helps!"
                     />
                   </div>
                 </div>

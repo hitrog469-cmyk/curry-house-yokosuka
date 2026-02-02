@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { formatPrice } from '@/lib/utils'
-import { menuItems, menuCategories } from '@/lib/menu-data'
+import { menuItems, menuCategories, type MenuItem, type AddOn } from '@/lib/menu-data'
 import { getMenuItemImage } from '@/lib/image-mapping'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
@@ -24,15 +24,25 @@ function TableOrderContent() {
 
   // Ordering state
   const [cart, setCart] = useState<{[key: string]: number}>({})
+  const [selectedAddOns, setSelectedAddOns] = useState<{[itemId: string]: string[]}>({})
+  const [selectedVariations, setSelectedVariations] = useState<{[itemId: string]: number}>({})
   const [selectedSpiceLevels, setSelectedSpiceLevels] = useState<{[itemId: string]: string}>({})
+
+  // Modals
   const [showSpiceLevelModal, setShowSpiceLevelModal] = useState<string | null>(null)
+  const [showAddOnModal, setShowAddOnModal] = useState<string | null>(null)
+  const [showBeverageModal, setShowBeverageModal] = useState(false)
   const [pendingItemId, setPendingItemId] = useState<string | null>(null)
+
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [orderSubmitted, setOrderSubmitted] = useState(false)
   const [showCart, setShowCart] = useState(false)
   const [showSplitModal, setShowSplitModal] = useState(false)
+
+  // Beverage state for the popup
+  const [beverageQuantities, setBeverageQuantities] = useState<{[itemId: string]: number}>({})
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const categoryScrollRef = useRef<HTMLDivElement>(null)
@@ -42,12 +52,10 @@ function TableOrderContent() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
-  // Use menuCategories from data file for consistent categories
   const categories = menuCategories.filter(c =>
     c.id === 'all' || menuItems.some(item => item.category === c.id)
   )
 
-  // Filter items by category AND search query
   const filteredItems = useMemo(() => {
     let items = selectedCategory === 'all'
       ? menuItems
@@ -88,7 +96,6 @@ function TableOrderContent() {
     setSplitPersons(prev => prev.map((p, i) => i === index ? {...p, name} : p))
   }
 
-  // Toggle an item assignment for a person in by-items split
   const toggleItemForPerson = (personIndex: number, itemId: string) => {
     setSplitPersons(prev => prev.map((p, i) => {
       if (i !== personIndex) return p
@@ -100,16 +107,49 @@ function TableOrderContent() {
     }))
   }
 
+  // ========================
+  // ITEM PRICE CALCULATION (with add-ons & variations)
+  // ========================
+  const getItemPrice = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId)
+    if (!item) return 0
+    let basePrice = item.price
+    if (item.variations && selectedVariations[itemId] !== undefined) {
+      basePrice = item.variations[selectedVariations[itemId]].price
+    }
+    if (selectedAddOns[itemId]) {
+      item.addOns?.forEach(addOn => {
+        if (selectedAddOns[itemId]?.includes(addOn.name)) {
+          basePrice += addOn.price
+        }
+      })
+    }
+    return basePrice
+  }
+
+  // ========================
+  // ADD TO CART FLOW
+  // ========================
   const addToCart = (itemId: string) => {
     const item = menuItems.find(i => i.id === itemId)
-    const needsSpiceLevel = item?.spiceLevel || item?.category?.includes('curry')
+    if (!item) return
 
+    // Step 1: Check if spice level is needed
+    const needsSpiceLevel = item.spiceLevel || item.category?.includes('curry') || item.category === 'nepalese'
     if (needsSpiceLevel && !selectedSpiceLevels[itemId]) {
       setPendingItemId(itemId)
       setShowSpiceLevelModal(itemId)
       return
     }
 
+    // Step 2: Check if add-ons are available
+    if (item.addOns && item.addOns.length > 0) {
+      setPendingItemId(itemId)
+      setShowAddOnModal(itemId)
+      return
+    }
+
+    // No special selections needed - add directly
     setCart(prev => ({
       ...prev,
       [itemId]: (prev[itemId] || 0) + 1
@@ -128,47 +168,137 @@ function TableOrderContent() {
           delete newLevels[itemId]
           return newLevels
         })
+        setSelectedAddOns(prevAddOns => {
+          const newAddOns = { ...prevAddOns }
+          delete newAddOns[itemId]
+          return newAddOns
+        })
+        setSelectedVariations(prevVars => {
+          const newVars = { ...prevVars }
+          delete newVars[itemId]
+          return newVars
+        })
       }
       return newCart
     })
   }
 
   const selectSpiceLevel = (itemId: string, level: string) => {
-    setSelectedSpiceLevels(prev => ({
-      ...prev,
-      [itemId]: level
-    }))
+    setSelectedSpiceLevels(prev => ({ ...prev, [itemId]: level }))
+  }
+
+  const selectVariation = (itemId: string, variationIndex: number) => {
+    setSelectedVariations(prev => ({ ...prev, [itemId]: variationIndex }))
+  }
+
+  const toggleAddOn = (itemId: string, addOnName: string) => {
+    setSelectedAddOns(prev => {
+      const current = prev[itemId] || []
+      const updated = current.includes(addOnName)
+        ? current.filter(name => name !== addOnName)
+        : [...current, addOnName]
+      return { ...prev, [itemId]: updated }
+    })
   }
 
   const confirmSpiceLevel = () => {
     if (!pendingItemId) return
+    const item = menuItems.find(i => i.id === pendingItemId)
     setShowSpiceLevelModal(null)
-    setCart(prev => ({
-      ...prev,
-      [pendingItemId]: (prev[pendingItemId] || 0) + 1
-    }))
+
+    // After spice, check for add-ons
+    if (item?.addOns && item.addOns.length > 0) {
+      setShowAddOnModal(pendingItemId)
+    } else {
+      setCart(prev => ({ ...prev, [pendingItemId]: (prev[pendingItemId] || 0) + 1 }))
+      setPendingItemId(null)
+    }
+  }
+
+  const confirmAddToCart = () => {
+    if (!pendingItemId) return
+    setCart(prev => ({ ...prev, [pendingItemId]: (prev[pendingItemId] || 0) + 1 }))
+    setShowAddOnModal(null)
     setPendingItemId(null)
   }
 
+  const skipAddOns = () => {
+    if (!pendingItemId) return
+    setSelectedAddOns(prev => {
+      const updated = { ...prev }
+      delete updated[pendingItemId]
+      return updated
+    })
+    setCart(prev => ({ ...prev, [pendingItemId]: (prev[pendingItemId] || 0) + 1 }))
+    setShowAddOnModal(null)
+    setPendingItemId(null)
+  }
+
+  // ========================
+  // BEVERAGE SUGGESTIONS
+  // ========================
+  const getBeverageSuggestions = () => {
+    const beverageIds = new Set<string>()
+    const cartItemIds = Object.keys(cart)
+    cartItemIds.forEach(itemId => {
+      const item = menuItems.find(i => i.id === itemId)
+      if (!item) return
+      if (item.category.includes('curry') || item.category === 'nepalese' || item.category === 'sets') {
+        beverageIds.add('beer-2')
+        beverageIds.add('beer-3')
+      }
+      if (item.category === 'mexican' || item.category === 'starters') {
+        beverageIds.add('beer-1')
+        beverageIds.add('marg-1')
+      }
+      if (item.category === 'tandoori' || item.category === 'fried') {
+        beverageIds.add('beer-4')
+        beverageIds.add('beer-5')
+      }
+    })
+    // Always suggest lassi
+    beverageIds.add('drink-1')
+    beverageIds.add('drink-2')
+    return menuItems.filter(i => beverageIds.has(i.id)).slice(0, 4)
+  }
+
+  const updateBeverageQty = (beverageId: string, change: number) => {
+    setBeverageQuantities(prev => {
+      const current = prev[beverageId] || 0
+      const newQty = Math.max(0, current + change)
+      if (newQty === 0) {
+        const { [beverageId]: _, ...rest } = prev
+        return rest
+      }
+      return { ...prev, [beverageId]: newQty }
+    })
+  }
+
+  const addBeverages = () => {
+    Object.entries(beverageQuantities).forEach(([beverageId, qty]) => {
+      if (qty > 0) {
+        setCart(prev => ({ ...prev, [beverageId]: (prev[beverageId] || 0) + qty }))
+      }
+    })
+    setBeverageQuantities({})
+    setShowBeverageModal(false)
+  }
+
+  const skipBeverages = () => {
+    setBeverageQuantities({})
+    setShowBeverageModal(false)
+  }
+
+  // ========================
+  // HELPERS
+  // ========================
   const getSpiceLevelEmoji = (level: string) => {
-    const emojis: Record<string, string> = {
-      'MILD': '🟢',
-      'NORMAL': '🟡',
-      'MEDIUM': '🟠',
-      'HOT': '🔴',
-      'VERY HOT': '🔥'
-    }
+    const emojis: Record<string, string> = { 'MILD': '🟢', 'NORMAL': '🟡', 'MEDIUM': '🟠', 'HOT': '🔴', 'VERY HOT': '🔥' }
     return emojis[level] || '🌶️'
   }
 
   const getSpiceLevelJapanese = (level: string) => {
-    const japanese: Record<string, string> = {
-      'MILD': '甘口',
-      'NORMAL': '普通',
-      'MEDIUM': '中辛',
-      'HOT': '辛口',
-      'VERY HOT': '激辛'
-    }
+    const japanese: Record<string, string> = { 'MILD': '甘口', 'NORMAL': '普通', 'MEDIUM': '中辛', 'HOT': '辛口', 'VERY HOT': '激辛' }
     return japanese[level] || ''
   }
 
@@ -186,8 +316,7 @@ function TableOrderContent() {
 
   const getCartTotal = () => {
     return Object.entries(cart).reduce((total, [itemId, quantity]) => {
-      const item = menuItems.find(i => i.id === itemId)
-      return total + (item?.price || 0) * quantity
+      return total + getItemPrice(itemId) * quantity
     }, 0)
   }
 
@@ -195,13 +324,34 @@ function TableOrderContent() {
     return Object.values(cart).reduce((sum, qty) => sum + qty, 0)
   }
 
-  // Get per-person total for by-items split
   const getPersonTotal = (personItems: string[]) => {
     return personItems.reduce((total, itemId) => {
-      const item = menuItems.find(i => i.id === itemId)
       const qty = cart[itemId] || 0
-      return total + (item?.price || 0) * qty
+      return total + getItemPrice(itemId) * qty
     }, 0)
+  }
+
+  // Get item display name with variation
+  const getItemDisplayName = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId)
+    if (!item) return ''
+    let name = item.name
+    if (item.variations && selectedVariations[itemId] !== undefined) {
+      name += ` (${item.variations[selectedVariations[itemId]].name})`
+    }
+    return name
+  }
+
+  // Get item display details for kitchen
+  const getItemDetails = (itemId: string) => {
+    const details: string[] = []
+    if (selectedSpiceLevels[itemId]) {
+      details.push(`Spice: ${selectedSpiceLevels[itemId]}`)
+    }
+    if (selectedAddOns[itemId] && selectedAddOns[itemId].length > 0) {
+      details.push(`Add-ons: ${selectedAddOns[itemId].join(', ')}`)
+    }
+    return details.join(' | ')
   }
 
   const handleSetupComplete = () => {
@@ -209,7 +359,6 @@ function TableOrderContent() {
       alert('Please fill in all required fields')
       return
     }
-
     if (splitBill) {
       const validPersons = splitPersons.filter(p => p.name.trim() !== '')
       if (validPersons.length < 2) {
@@ -217,13 +366,32 @@ function TableOrderContent() {
         return
       }
     }
-
     setSetupComplete(true)
+  }
+
+  // ========================
+  // SUBMIT ORDER — with beverage prompt
+  // ========================
+  const initiateSubmitOrder = () => {
+    if (Object.keys(cart).length === 0) return
+
+    // Check if there are any alcoholic drink categories already in cart
+    const hasAlcohol = Object.keys(cart).some(id => {
+      const item = menuItems.find(i => i.id === id)
+      return item?.category === 'cocktails' || item?.category === 'margaritas'
+    })
+
+    if (!hasAlcohol) {
+      // Show beverage suggestion popup
+      setShowBeverageModal(true)
+      setShowCart(false)
+    } else {
+      handleSubmitOrder()
+    }
   }
 
   const handleSubmitOrder = async () => {
     if (Object.keys(cart).length === 0) return
-
     setLoading(true)
 
     try {
@@ -231,11 +399,15 @@ function TableOrderContent() {
         const item = menuItems.find(i => i.id === itemId)
         return {
           item_id: itemId,
-          name: item?.name,
+          name: getItemDisplayName(itemId),
           quantity,
-          price: item?.price,
-          subtotal: (item?.price || 0) * quantity,
-          spiceLevel: selectedSpiceLevels[itemId] || null
+          price: getItemPrice(itemId),
+          subtotal: getItemPrice(itemId) * quantity,
+          spiceLevel: selectedSpiceLevels[itemId] || null,
+          addOns: selectedAddOns[itemId] || [],
+          variation: item?.variations && selectedVariations[itemId] !== undefined
+            ? item.variations[selectedVariations[itemId]].name
+            : null
         }
       })
 
@@ -243,19 +415,65 @@ function TableOrderContent() {
       const validSplitPersons = splitBill ? splitPersons.filter(p => p.name.trim() !== '') : []
       const numberOfSplits = validSplitPersons.length || 1
 
-      // For equal split, calculate per-person amount
-      // For by-items split, each person's amount is based on their assigned items
-      const splitDetails = splitBill ? validSplitPersons.map(person => ({
-        name: person.name,
-        amount: splitType === 'equal'
-          ? totalAmount / numberOfSplits
-          : getPersonTotal(person.items),
-        items: splitType === 'by-items' ? person.items : []
-      })) : []
+      // BILL SPLITTING LOGIC — ensure full bill is covered
+      let splitDetails: {name: string, amount: number, items: string[]}[] = []
+
+      if (splitBill && validSplitPersons.length > 0) {
+        if (splitType === 'equal') {
+          // Equal split - simple division
+          const perPerson = Math.ceil(totalAmount / numberOfSplits)
+          splitDetails = validSplitPersons.map(person => ({
+            name: person.name,
+            amount: perPerson,
+            items: []
+          }))
+        } else {
+          // By-items split — AUTO-ASSIGN unassigned items
+          const allCartItemIds = Object.keys(cart)
+          const assignedItems = new Set<string>()
+          validSplitPersons.forEach(p => p.items.forEach(id => assignedItems.add(id)))
+
+          const unassignedItems = allCartItemIds.filter(id => !assignedItems.has(id))
+
+          // Distribute unassigned items equally among people
+          if (unassignedItems.length > 0) {
+            unassignedItems.forEach((itemId, idx) => {
+              const personIdx = idx % validSplitPersons.length
+              const actualPersonIdx = splitPersons.findIndex(p => p.name === validSplitPersons[personIdx].name)
+              if (actualPersonIdx >= 0) {
+                setSplitPersons(prev => prev.map((p, i) => {
+                  if (i !== actualPersonIdx) return p
+                  return { ...p, items: [...p.items, itemId] }
+                }))
+                // Also update local reference for calculation
+                validSplitPersons[personIdx].items.push(itemId)
+              }
+            })
+          }
+
+          // Calculate per-person amounts
+          let totalAssigned = 0
+          splitDetails = validSplitPersons.map((person, idx) => {
+            const personAmount = getPersonTotal(person.items)
+            totalAssigned += personAmount
+            return {
+              name: person.name,
+              amount: personAmount,
+              items: person.items
+            }
+          })
+
+          // If there's a rounding difference, add it to the first person
+          const diff = totalAmount - totalAssigned
+          if (diff !== 0 && splitDetails.length > 0) {
+            splitDetails[0].amount += diff
+          }
+        }
+      }
 
       const tableNumbers = selectedTables.join(', ')
 
-      const { data: tableOrderData, error: tableError } = await supabase
+      const { error: tableError } = await supabase
         .from('table_orders')
         .insert({
           table_number: selectedTables[0],
@@ -265,7 +483,7 @@ function TableOrderContent() {
           number_of_splits: numberOfSplits,
           items: orderItems,
           total_amount: totalAmount,
-          amount_per_split: splitType === 'equal' ? totalAmount / numberOfSplits : 0,
+          amount_per_split: splitType === 'equal' ? Math.ceil(totalAmount / numberOfSplits) : 0,
           status: 'pending',
           order_type: 'in-house',
           notes: `Tables: ${tableNumbers}${splitBill ? ` | Split (${splitType}): ${validSplitPersons.map(p => p.name).join(', ')}` : ''}`
@@ -296,6 +514,8 @@ function TableOrderContent() {
       setOrderSubmitted(true)
       setCart({})
       setSelectedSpiceLevels({})
+      setSelectedAddOns({})
+      setSelectedVariations({})
 
       setTimeout(() => {
         setOrderSubmitted(false)
@@ -320,24 +540,23 @@ function TableOrderContent() {
   if (!setupComplete) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
-        {/* Background glow */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-green-500/10 rounded-full blur-3xl"></div>
         </div>
 
         <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 max-h-[92vh] overflow-y-auto relative z-10">
-          {/* Logo header */}
+          {/* Welcome header */}
           <div className="text-center mb-6">
             <img src="/images/Logo.png" alt="The Curry House" className="w-16 h-16 mx-auto mb-3" />
-            <h1 className="text-2xl font-black text-gray-900">Table Order</h1>
-            <p className="text-gray-500 text-sm mt-1">The Curry House Yokosuka</p>
+            <h1 className="text-2xl font-black text-gray-900">Welcome to The Curry House!</h1>
+            <p className="text-gray-500 text-sm mt-1">We're glad you're here. Let's get your table set up.</p>
           </div>
 
           <div className="space-y-5">
             {/* Table Selection */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Select Table(s) <span className="text-red-500">*</span>
+                Select Your Table(s) <span className="text-red-500">*</span>
               </label>
               <div className="grid grid-cols-6 gap-2">
                 {Array.from({ length: 18 }, (_, i) => i + 1).map(num => (
@@ -370,15 +589,15 @@ function TableOrderContent() {
                 type="text"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Enter your name"
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-base bg-gray-50 focus:bg-white transition-colors"
+                placeholder="What should we call you?"
+                className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-base bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
               />
             </div>
 
             {/* Number of People */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Number of People <span className="text-red-500">*</span>
+                How Many Are Dining? <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -386,7 +605,7 @@ function TableOrderContent() {
                 max="50"
                 value={numberOfPeople}
                 onChange={(e) => setNumberOfPeople(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-base bg-gray-50 focus:bg-white transition-colors"
+                className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none text-base bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
               />
             </div>
 
@@ -394,8 +613,8 @@ function TableOrderContent() {
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
-                  <span className="block text-sm font-bold text-gray-700">Split Bill?</span>
-                  <span className="block text-xs text-gray-500">Split your bill between friends</span>
+                  <span className="block text-sm font-bold text-gray-700">Split the Bill?</span>
+                  <span className="block text-xs text-gray-500">Easy split between friends - we'll handle the math!</span>
                 </div>
                 <div className={`relative w-12 h-7 rounded-full transition-colors ${splitBill ? 'bg-green-500' : 'bg-gray-300'}`}
                   onClick={() => {
@@ -412,11 +631,10 @@ function TableOrderContent() {
 
               {splitBill && (
                 <div className="mt-4 space-y-3">
-                  {/* Split Type */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => setSplitType('equal')}
-                      className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition-all ${
+                      className={`flex-1 py-2.5 px-3 rounded-lg font-semibold text-sm transition-all ${
                         splitType === 'equal'
                           ? 'bg-green-600 text-white shadow-sm'
                           : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -426,7 +644,7 @@ function TableOrderContent() {
                     </button>
                     <button
                       onClick={() => setSplitType('by-items')}
-                      className={`flex-1 py-2 px-3 rounded-lg font-semibold text-sm transition-all ${
+                      className={`flex-1 py-2.5 px-3 rounded-lg font-semibold text-sm transition-all ${
                         splitType === 'by-items'
                           ? 'bg-green-600 text-white shadow-sm'
                           : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
@@ -436,10 +654,9 @@ function TableOrderContent() {
                     </button>
                   </div>
 
-                  {/* Person Names */}
                   <div>
                     <label className="block text-xs font-bold text-gray-600 mb-2">
-                      {splitType === 'equal' ? 'Who\'s splitting?' : 'Add people - assign items while ordering'}
+                      {splitType === 'equal' ? 'Who\'s splitting?' : 'Add people — assign items while ordering'}
                     </label>
                     {splitPersons.map((person, index) => (
                       <div key={index} className="flex gap-2 mb-2">
@@ -448,7 +665,7 @@ function TableOrderContent() {
                           value={person.name}
                           onChange={(e) => updateSplitPersonName(index, e.target.value)}
                           placeholder={`Person ${index + 1}`}
-                          className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:border-green-500 focus:outline-none text-sm bg-white"
+                          className="flex-1 px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none text-sm bg-white focus:shadow-sm transition-all"
                         />
                         {splitPersons.length > 2 && (
                           <button
@@ -473,7 +690,7 @@ function TableOrderContent() {
                   {splitType === 'by-items' && (
                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
                       <p className="text-xs text-blue-700">
-                        💡 You'll assign menu items to each person while ordering. Each person pays for their own items.
+                        You'll assign items to each person while ordering. Any unassigned items will be distributed equally, so no worries — the full bill is always covered!
                       </p>
                     </div>
                   )}
@@ -481,7 +698,7 @@ function TableOrderContent() {
                   {splitType === 'equal' && (
                     <div className="p-3 bg-green-50 rounded-lg border border-green-100">
                       <p className="text-xs text-green-700">
-                        ✨ The total bill will be split equally between everyone.
+                        The total bill will be split equally between everyone. Simple and fair!
                       </p>
                     </div>
                   )}
@@ -494,7 +711,7 @@ function TableOrderContent() {
               onClick={handleSetupComplete}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-lg"
             >
-              Start Ordering
+              Let's Start Ordering!
             </button>
           </div>
         </div>
@@ -516,7 +733,7 @@ function TableOrderContent() {
             </svg>
           </div>
           <h1 className="text-3xl font-black text-gray-900 mb-2">Order Sent!</h1>
-          <p className="text-gray-500 mb-5">Your order is being prepared</p>
+          <p className="text-gray-500 mb-5">Your food is being prepared with care. Sit back and relax!</p>
 
           <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-1">
             <p className="text-2xl font-black text-green-600">Table {selectedTables.join(', ')}</p>
@@ -533,7 +750,7 @@ function TableOrderContent() {
                     <span className="text-blue-800">{person.name}</span>
                     <span className="font-bold text-blue-900">
                       {splitType === 'equal'
-                        ? formatPrice(getCartTotal() / validSplitPersons.length)
+                        ? formatPrice(Math.ceil(getCartTotal() / validSplitPersons.length))
                         : formatPrice(getPersonTotal(person.items))
                       }
                     </span>
@@ -543,7 +760,7 @@ function TableOrderContent() {
             </div>
           )}
 
-          <p className="text-xs text-gray-400">Your meal will be ready shortly. Thank you! 🙏</p>
+          <p className="text-xs text-gray-400">Thank you for dining with us! Your meal will be ready shortly.</p>
         </div>
       </div>
     )
@@ -554,9 +771,9 @@ function TableOrderContent() {
   // ==========================================
   return (
     <div className="min-h-screen bg-gray-100 pb-24">
-      {/* ===== STICKY TOP BAR ===== */}
+      {/* STICKY TOP BAR */}
       <div className="sticky top-0 z-50">
-        {/* Header with table info & total */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white">
           <div className="container-custom py-3">
             <div className="flex items-center justify-between">
@@ -564,7 +781,7 @@ function TableOrderContent() {
                 <img src="/images/Logo.png" alt="" className="w-8 h-8 shrink-0" />
                 <div className="min-w-0">
                   <h1 className="text-base font-bold truncate">Table {selectedTables.join(', ')}</h1>
-                  <p className="text-gray-400 text-xs truncate">{customerName} &middot; {numberOfPeople}p</p>
+                  <p className="text-gray-400 text-xs truncate">Hi {customerName}! Browse and tap to order.</p>
                 </div>
               </div>
               <div className="text-right shrink-0 pl-4">
@@ -587,8 +804,8 @@ function TableOrderContent() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search menu... (English / 日本語)"
-                className="w-full pl-9 pr-8 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:bg-white transition-colors"
+                placeholder="What are you craving? Search here..."
+                className="w-full pl-9 pr-8 py-2.5 bg-gray-50 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-500 focus:bg-white transition-all focus:shadow-sm"
               />
               {searchQuery && (
                 <button
@@ -604,17 +821,14 @@ function TableOrderContent() {
           </div>
         </div>
 
-        {/* Category filter - horizontal scroll */}
+        {/* Category filter */}
         <div className="bg-white border-b border-gray-200 shadow-sm">
           <div className="container-custom py-2">
             <div ref={categoryScrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5">
               {categories.map(category => (
                 <button
                   key={category.id}
-                  onClick={() => {
-                    setSelectedCategory(category.id)
-                    setSearchQuery('')
-                  }}
+                  onClick={() => { setSelectedCategory(category.id); setSearchQuery('') }}
                   className={`px-3.5 py-1.5 rounded-full font-semibold whitespace-nowrap transition-all text-xs ${
                     selectedCategory === category.id
                       ? 'bg-green-600 text-white shadow-sm'
@@ -629,7 +843,7 @@ function TableOrderContent() {
         </div>
       </div>
 
-      {/* ===== MENU ITEMS ===== */}
+      {/* MENU ITEMS */}
       <div className="container-custom py-4">
         {searchQuery && (
           <p className="text-xs text-gray-500 mb-3">
@@ -652,18 +866,18 @@ function TableOrderContent() {
               return (
                 <div key={item.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
                   <div className="flex gap-3 p-3">
-                    {/* Image - matching menu website photos */}
-                    <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 rounded-lg overflow-hidden bg-gray-50">
+                    {/* Image */}
+                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
                       {imagePath ? (
                         <Image
                           src={imagePath}
                           alt={item.name}
                           fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 96px, 112px"
+                          className="object-contain p-1"
+                          sizes="(max-width: 640px) 112px, 128px"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-50 to-yellow-50">
+                        <div className="w-full h-full flex items-center justify-center">
                           <span className="text-3xl">🍽️</span>
                         </div>
                       )}
@@ -679,17 +893,72 @@ function TableOrderContent() {
                       <h3 className="font-bold text-sm text-gray-900 leading-tight">{item.name}</h3>
                       <p className="text-[11px] text-gray-400 mt-0.5">{item.nameJp}</p>
                       {item.description && (
-                        <p className="text-xs text-gray-500 line-clamp-1 mt-1">{item.description}</p>
+                        <p className="text-xs text-gray-500 line-clamp-2 mt-1">{item.description}</p>
                       )}
 
+                      {/* Spice level badge */}
                       {selectedSpiceLevels[item.id] && (
                         <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full font-bold border mt-1 ${getSpiceColor(selectedSpiceLevels[item.id])}`}>
                           {getSpiceLevelEmoji(selectedSpiceLevels[item.id])} {selectedSpiceLevels[item.id]}
                         </span>
                       )}
 
+                      {/* Selected add-ons display */}
+                      {selectedAddOns[item.id] && selectedAddOns[item.id].length > 0 && (
+                        <p className="text-[10px] text-blue-600 mt-0.5 font-medium">
+                          + {selectedAddOns[item.id].join(', ')}
+                        </p>
+                      )}
+
+                      {/* Variation display */}
+                      {item.variations && selectedVariations[item.id] !== undefined && (
+                        <p className="text-[10px] text-purple-600 mt-0.5 font-medium">
+                          {item.variations[selectedVariations[item.id]].name}
+                        </p>
+                      )}
+
+                      {/* Add-ons & Variations indicators for items not yet in cart */}
+                      {!cart[item.id] && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {item.variations && item.variations.length > 0 && (
+                            <span className="text-[9px] bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded-full font-semibold border border-purple-200">
+                              {item.variations.length} Options
+                            </span>
+                          )}
+                          {item.addOns && item.addOns.length > 0 && (
+                            <span className="text-[9px] bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-full font-semibold border border-blue-200">
+                              {item.addOns.length} Add-on{item.addOns.length > 1 ? 's' : ''}
+                            </span>
+                          )}
+                          {(item.spiceLevel || item.category?.includes('curry')) && (
+                            <span className="text-[9px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded-full font-semibold border border-red-200">
+                              🌶️ Spice
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Variations selector (if not in cart yet but has variations) */}
+                      {item.variations && item.variations.length > 0 && !cart[item.id] && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {item.variations.map((v, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => selectVariation(item.id, idx)}
+                              className={`text-[10px] px-2 py-1 rounded-lg font-semibold transition-all ${
+                                (selectedVariations[item.id] ?? 0) === idx
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
+                            >
+                              {v.name} {formatPrice(v.price)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-base font-black text-green-600">{formatPrice(item.price)}</span>
+                        <span className="text-base font-black text-green-600">{formatPrice(getItemPrice(item.id))}</span>
 
                         {quantity === 0 ? (
                           <button
@@ -725,20 +994,17 @@ function TableOrderContent() {
         )}
       </div>
 
-      {/* ===== FIXED BOTTOM BAR ===== */}
+      {/* FIXED BOTTOM BAR */}
       {getCartCount() > 0 && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-2xl z-50 safe-bottom">
           <div className="container-custom py-3">
             <div className="flex gap-2">
-              {/* View Cart button */}
               <button
                 onClick={() => setShowCart(true)}
                 className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-sm"
               >
                 View Cart ({getCartCount()}) &middot; {formatPrice(getCartTotal())}
               </button>
-
-              {/* Split bill button - visible only if split is on */}
               {splitBill && splitType === 'by-items' && (
                 <button
                   onClick={() => setShowSplitModal(true)}
@@ -759,7 +1025,6 @@ function TableOrderContent() {
             className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[85vh] overflow-hidden animate-slideUp"
             onClick={e => e.stopPropagation()}
           >
-            {/* Cart header */}
             <div className="flex items-center justify-between p-5 border-b">
               <h2 className="text-lg font-black text-gray-900">Your Order</h2>
               <button onClick={() => setShowCart(false)} className="text-gray-400 hover:text-gray-600 p-1">
@@ -769,7 +1034,6 @@ function TableOrderContent() {
               </button>
             </div>
 
-            {/* Cart items */}
             <div className="overflow-y-auto max-h-[50vh] p-5 space-y-3">
               {Object.entries(cart).map(([itemId, quantity]) => {
                 const item = menuItems.find(i => i.id === itemId)
@@ -777,20 +1041,23 @@ function TableOrderContent() {
                 const img = getMenuItemImage(itemId)
 
                 return (
-                  <div key={itemId} className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-gray-50 shrink-0">
+                  <div key={itemId} className="flex items-start gap-3">
+                    <div className="w-14 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 shrink-0">
                       {img ? (
-                        <Image src={img} alt={item.name} width={56} height={56} className="w-full h-full object-cover" />
+                        <Image src={img} alt={item.name} width={56} height={56} className="w-full h-full object-contain p-0.5" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl">🍽️</div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 truncate">{item.name}</p>
+                      <p className="font-semibold text-sm text-gray-900 truncate">{getItemDisplayName(itemId)}</p>
                       {selectedSpiceLevels[itemId] && (
                         <p className="text-[10px] text-gray-500">{getSpiceLevelEmoji(selectedSpiceLevels[itemId])} {selectedSpiceLevels[itemId]}</p>
                       )}
-                      <p className="text-sm font-bold text-green-600">{formatPrice(item.price * quantity)}</p>
+                      {selectedAddOns[itemId] && selectedAddOns[itemId].length > 0 && (
+                        <p className="text-[10px] text-blue-600">+ {selectedAddOns[itemId].join(', ')}</p>
+                      )}
+                      <p className="text-sm font-bold text-green-600">{formatPrice(getItemPrice(itemId) * quantity)}</p>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button onClick={() => removeFromCart(itemId)} className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded-md text-sm font-bold text-gray-600 transition-colors">-</button>
@@ -802,7 +1069,7 @@ function TableOrderContent() {
               })}
             </div>
 
-            {/* Split summary in cart */}
+            {/* Split summary */}
             {splitBill && (
               <div className="px-5 py-3 bg-blue-50 border-t border-blue-100">
                 <div className="flex items-center justify-between mb-2">
@@ -818,12 +1085,25 @@ function TableOrderContent() {
                     <span>{person.name}</span>
                     <span className="font-bold">
                       {splitType === 'equal'
-                        ? formatPrice(getCartTotal() / splitPersons.filter(p => p.name.trim()).length)
+                        ? formatPrice(Math.ceil(getCartTotal() / splitPersons.filter(p => p.name.trim()).length))
                         : formatPrice(getPersonTotal(person.items))
                       }
                     </span>
                   </div>
                 ))}
+                {splitType === 'by-items' && (() => {
+                  const assignedItems = new Set<string>()
+                  splitPersons.filter(p => p.name.trim()).forEach(p => p.items.forEach(id => assignedItems.add(id)))
+                  const unassignedCount = Object.keys(cart).filter(id => !assignedItems.has(id)).length
+                  if (unassignedCount > 0) {
+                    return (
+                      <p className="text-[10px] text-orange-600 mt-1 font-medium">
+                        {unassignedCount} item{unassignedCount > 1 ? 's' : ''} not yet assigned — will be split equally when you order
+                      </p>
+                    )
+                  }
+                  return null
+                })()}
               </div>
             )}
 
@@ -834,7 +1114,7 @@ function TableOrderContent() {
                 <span className="text-2xl font-black text-gray-900">{formatPrice(getCartTotal())}</span>
               </div>
               <button
-                onClick={() => { setShowCart(false); handleSubmitOrder() }}
+                onClick={() => { setShowCart(false); initiateSubmitOrder() }}
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg disabled:opacity-50 text-base"
               >
@@ -861,7 +1141,13 @@ function TableOrderContent() {
               </button>
             </div>
 
-            <div className="overflow-y-auto max-h-[60vh] p-5">
+            <div className="px-5 py-2 bg-amber-50 border-b border-amber-100">
+              <p className="text-[11px] text-amber-700 font-medium">
+                Tap items to assign them. Unassigned items will be split equally among everyone.
+              </p>
+            </div>
+
+            <div className="overflow-y-auto max-h-[55vh] p-5">
               {splitPersons.filter(p => p.name.trim()).map((person, pIdx) => (
                 <div key={pIdx} className="mb-6">
                   <h3 className="font-bold text-sm text-gray-900 mb-2 flex items-center gap-2">
@@ -896,8 +1182,8 @@ function TableOrderContent() {
                               </svg>
                             )}
                           </div>
-                          <span className="flex-1 truncate text-gray-800">{item.name} x{qty}</span>
-                          <span className="text-gray-500 text-xs shrink-0">{formatPrice(item.price * qty)}</span>
+                          <span className="flex-1 truncate text-gray-800">{getItemDisplayName(itemId)} x{qty}</span>
+                          <span className="text-gray-500 text-xs shrink-0">{formatPrice(getItemPrice(itemId) * qty)}</span>
                         </button>
                       )
                     })}
@@ -909,7 +1195,7 @@ function TableOrderContent() {
             <div className="p-5 border-t">
               <button
                 onClick={() => setShowSplitModal(false)}
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all text-sm"
+                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl transition-all text-sm"
               >
                 Done
               </button>
@@ -925,7 +1211,6 @@ function TableOrderContent() {
             {(() => {
               const item = menuItems.find(i => i.id === pendingItemId)
               if (!item) return null
-
               const spiceLevels = ['MILD', 'NORMAL', 'MEDIUM', 'HOT', 'VERY HOT']
 
               return (
@@ -934,6 +1219,7 @@ function TableOrderContent() {
                     <div className="text-3xl mb-2">🌶️</div>
                     <h3 className="text-lg font-black text-gray-900">{item.name}</h3>
                     <p className="text-gray-500 text-xs">{item.nameJp}</p>
+                    <p className="text-gray-400 text-xs mt-1">How spicy would you like it?</p>
                   </div>
 
                   <div className="space-y-2 mb-5">
@@ -977,12 +1263,140 @@ function TableOrderContent() {
                       disabled={!selectedSpiceLevels[item.id]}
                       className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm"
                     >
+                      Continue
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ===== ADD-ON MODAL ===== */}
+      {showAddOnModal && pendingItemId && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full shadow-2xl max-h-[80vh] overflow-y-auto animate-slideUp">
+            {(() => {
+              const item = menuItems.find(i => i.id === pendingItemId)
+              if (!item) return null
+
+              return (
+                <div className="p-5">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-black text-gray-900">{item.name}</h3>
+                    <p className="text-gray-500 text-xs">{item.nameJp}</p>
+                    <p className="text-gray-400 text-xs mt-1">Would you like to add extras?</p>
+                  </div>
+
+                  <div className="space-y-2 mb-5">
+                    {item.addOns?.map((addOn, idx) => (
+                      <label key={idx} className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border-2 border-blue-100 hover:border-blue-300 cursor-pointer transition-all">
+                        <input
+                          type="checkbox"
+                          checked={selectedAddOns[item.id]?.includes(addOn.name) || false}
+                          onChange={() => toggleAddOn(item.id, addOn.name)}
+                          className="w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500"
+                        />
+                        <div className="flex-1">
+                          <span className="block font-semibold text-gray-900 text-sm">{addOn.name}</span>
+                          {addOn.note && <span className="text-[10px] text-gray-500">{addOn.note}</span>}
+                        </div>
+                        <span className="font-bold text-green-600 text-sm">+{formatPrice(addOn.price)}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="mb-4 p-3 bg-green-50 rounded-xl border border-green-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-700 font-semibold text-sm">Item Total:</span>
+                      <span className="text-xl font-black text-green-600">{formatPrice(getItemPrice(item.id))}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={skipAddOns}
+                      className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all text-sm"
+                    >
+                      No Add-Ons
+                    </button>
+                    <button
+                      onClick={confirmAddToCart}
+                      className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all text-sm"
+                    >
                       Add to Order
                     </button>
                   </div>
                 </div>
               )
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* ===== BEVERAGE SUGGESTION POPUP ===== */}
+      {showBeverageModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto animate-slideUp">
+            <div className="p-5">
+              <div className="mb-4 text-center">
+                <div className="text-4xl mb-2">🍻</div>
+                <h3 className="text-xl font-black text-gray-900">How About a Drink?</h3>
+                <p className="text-gray-500 text-sm mt-1">A perfect pairing to complete your meal!</p>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                {getBeverageSuggestions().map((beverage) => {
+                  const emoji = beverage.category === 'margaritas' ? '🍹' : beverage.category === 'cocktails' ? '🍺' : '🥤'
+                  const qty = beverageQuantities[beverage.id] || 0
+                  return (
+                    <div key={beverage.id} className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-2xl">{emoji}</span>
+                        <div className="flex-1">
+                          <h4 className="font-bold text-sm text-gray-900">{beverage.name}</h4>
+                          <p className="text-xs text-gray-500">{beverage.nameJp}</p>
+                          <p className="text-amber-700 font-bold text-sm mt-0.5">{formatPrice(beverage.price)}</p>
+                        </div>
+                      </div>
+
+                      {qty > 0 ? (
+                        <div className="flex items-center gap-2 bg-white rounded-lg p-1.5">
+                          <button onClick={() => updateBeverageQty(beverage.id, -1)} className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-md font-bold text-sm flex items-center justify-center">-</button>
+                          <span className="flex-1 text-center font-black text-lg">{qty}</span>
+                          <button onClick={() => updateBeverageQty(beverage.id, 1)} className="w-8 h-8 bg-amber-500 hover:bg-amber-600 text-white rounded-md font-bold text-sm flex items-center justify-center">+</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => updateBeverageQty(beverage.id, 1)}
+                          className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 rounded-lg transition-colors text-xs"
+                        >
+                          Add {beverage.name}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { skipBeverages(); handleSubmitOrder() }}
+                  className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all text-sm"
+                >
+                  No Thanks, Order Now
+                </button>
+                {Object.values(beverageQuantities).some(q => q > 0) && (
+                  <button
+                    onClick={() => { addBeverages(); handleSubmitOrder() }}
+                    className="flex-1 py-3.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold rounded-xl transition-all text-sm"
+                  >
+                    Add & Order
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

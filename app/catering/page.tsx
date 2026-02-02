@@ -135,9 +135,9 @@ export default function CateringPage() {
           ) : (
             <>
               <div className="text-center mb-12">
-                <h2 className="heading-2 mb-4">Request a Quote</h2>
+                <h2 className="heading-2 mb-4">Let's Plan Something Special</h2>
                 <p className="text-xl text-gray-600">
-                  Fill out the form below and our team will get back to you with a customized proposal
+                  Tell us about your event and we'll craft a menu that your guests will remember.
                 </p>
               </div>
 
@@ -151,7 +151,7 @@ export default function CateringPage() {
                         required
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none focus:shadow-sm transition-all bg-gray-50 focus:bg-white"
                         placeholder="Rohit Acharya"
                       />
                     </div>
@@ -162,7 +162,7 @@ export default function CateringPage() {
                         required
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none focus:shadow-sm transition-all bg-gray-50 focus:bg-white"
                         placeholder="+81 90-1234-5678"
                       />
                     </div>
@@ -175,7 +175,7 @@ export default function CateringPage() {
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none focus:shadow-sm transition-all bg-gray-50 focus:bg-white"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -187,12 +187,12 @@ export default function CateringPage() {
                         required
                         value={formData.eventType}
                         onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none focus:shadow-sm transition-all bg-gray-50 focus:bg-white"
                       >
                         <option value="">Select event type</option>
                         <option value="birthday">Birthday Party</option>
-                        <option value="wedding">Anniversary Party</option>
-                        <option value="corporate">Social Gathering</option>
+                        <option value="anniversary">Anniversary Party</option>
+                        <option value="social">Social Gathering</option>
                         <option value="corporate">Corporate Event</option>
                         <option value="other">Other</option>
                       </select>
@@ -205,7 +205,7 @@ export default function CateringPage() {
                         min="10"
                         value={formData.guestCount}
                         onChange={(e) => setFormData({ ...formData, guestCount: e.target.value })}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none focus:shadow-sm transition-all bg-gray-50 focus:bg-white"
                         placeholder="50"
                       />
                     </div>
@@ -219,7 +219,7 @@ export default function CateringPage() {
                         required
                         value={formData.eventDate}
                         onChange={(e) => setFormData({ ...formData, eventDate: e.target.value })}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none focus:shadow-sm transition-all bg-gray-50 focus:bg-white"
                       />
                     </div>
                     <div>
@@ -228,7 +228,7 @@ export default function CateringPage() {
                         type="time"
                         value={formData.eventTime}
                         onChange={(e) => setFormData({ ...formData, eventTime: e.target.value })}
-                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none focus:shadow-sm transition-all bg-gray-50 focus:bg-white"
                       />
                     </div>
                   </div>
@@ -239,7 +239,7 @@ export default function CateringPage() {
                       rows={4}
                       value={formData.specialRequirements}
                       onChange={(e) => setFormData({ ...formData, specialRequirements: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none focus:shadow-sm transition-all bg-gray-50 focus:bg-white"
                       placeholder="Any dietary restrictions, menu preferences, or special requests..."
                     ></textarea>
                   </div>

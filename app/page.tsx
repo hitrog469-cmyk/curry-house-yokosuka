@@ -72,7 +72,7 @@ export default function HomePage() {
 
       {/* Announcement Strip */}
       <Link href="/menu" className="block sticky top-16 z-40">
-        <div className="bg-emerald-800 text-white py-2 overflow-hidden cursor-pointer hover:bg-emerald-900 transition-colors">
+        <div className="bg-red-700 text-white py-2 overflow-hidden cursor-pointer hover:bg-red-800 transition-colors">
           <div className="animate-scroll-slow whitespace-nowrap">
             <span className="inline-block px-6 text-sm font-medium tracking-wide">
               🎊 2026 Special — Order Now
@@ -297,12 +297,12 @@ export default function HomePage() {
             {popularDishes.map((dish, i) => (
               <div key={i} className="group bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300">
                 {/* Image */}
-                <div className="relative h-56 overflow-hidden">
+                <div className="relative h-72 overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
                   {getMenuItemImage(dish.id) ? (
                     <img
                       src={getMenuItemImage(dish.id)!}
                       alt={dish.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">

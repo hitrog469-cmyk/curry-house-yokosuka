@@ -668,14 +668,13 @@ function MenuContent() {
                   </div>
                 )}
 
-                {/* Image - DISH FILLS ENTIRE FRAME */}
-                <div className="relative w-full h-72 bg-white overflow-hidden">
+                {/* Image - DISH FILLS ENTIRE CARD */}
+                <div className="relative w-full h-80 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
                   {getMenuItemImage(item.id) ? (
                     <img
                       src={getMenuItemImage(item.id)!}
                       alt={item.name}
-                      className="w-full h-full object-cover hover:scale-120 transition-transform duration-700"
-                      style={{ objectPosition: 'center' }}
+                      className="w-full h-full object-contain p-3 hover:scale-110 transition-transform duration-700"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">
@@ -686,8 +685,8 @@ function MenuContent() {
                   )}
                 </div>
 
-                {/* Content Section - HAS PADDING */}
-                <div className="p-2 flex flex-col flex-1">
+                {/* Content Section */}
+                <div className="p-5 flex flex-col flex-1">
                   {/* Spice Level - Show selected or default */}
                   {(item.spiceLevel || selectedSpiceLevels[item.id]) && (
                     <div className="mb-3">
