@@ -159,12 +159,12 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-wrap gap-4 pt-4">
-                <Link href="/menu" className="group relative btn-secondary inline-flex items-center gap-2 text-lg px-8 py-4 hover-glow overflow-hidden">
-                  <span className="relative z-10">View Our Menu</span>
-                  <span className="relative z-10 group-hover:translate-x-1 transition-transform">→</span>
+                <Link href="/menu" className="btn-green-vivid green-glow text-lg px-8 py-4">
+                  <span>View Our Menu</span>
+                  <span>→</span>
                 </Link>
-                <Link href="/order" className="bg-white text-green-700 hover:bg-gray-50 font-bold py-4 px-8 rounded-xl transition-all duration-300 shadow-elegant hover-lift text-lg">
-                  Order Now
+                <Link href="/order" className="btn-green-outline text-lg px-8 py-4">
+                  <span>Order Now</span>
                 </Link>
               </div>
 
@@ -332,7 +332,7 @@ export default function HomePage() {
 
                   {/* Category Badge */}
                   <div className="absolute top-4 right-4 z-10">
-                    <span className="bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg px-4 py-2 font-bold rounded-full text-xs">
+                    <span className="badge-green-vivid">
                       {dish.category}
                     </span>
                   </div>
@@ -351,7 +351,7 @@ export default function HomePage() {
 
                   <div className="flex items-center justify-between pt-2">
                     <div className="text-3xl font-black text-orange-600">{dish.price}</div>
-                    <Link href="/menu" className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                    <Link href="/menu" className="btn-green-vivid">
                       <span>Order Now</span>
                       <span>→</span>
                     </Link>
@@ -362,7 +362,7 @@ export default function HomePage() {
           </div>
 
           <div className="text-center mt-12 animate-fadeIn">
-            <Link href="/menu" className="btn-primary inline-flex items-center gap-2 text-lg px-10 py-4 hover-glow">
+            <Link href="/menu" className="btn-green-vivid green-glow text-lg px-10 py-4">
               <span>View Full Menu</span>
               <span className="text-xl">→</span>
             </Link>
@@ -455,7 +455,7 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center">
-              <Link href="/menu" className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-5 px-12 rounded-xl transition-all duration-300 shadow-elegant hover-lift text-lg inline-flex items-center gap-2 hover-glow">
+              <Link href="/menu" className="btn-green-vivid green-glow text-lg py-5 px-12">
                 <span>Browse Full Menu</span>
                 <span className="text-2xl">🍛</span>
               </Link>

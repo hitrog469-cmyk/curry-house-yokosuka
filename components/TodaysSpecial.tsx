@@ -68,8 +68,10 @@ export default function TodaysSpecial() {
               <span className="text-2xl text-gray-400 line-through">
                 {formatPrice(special.original_price)}
               </span>
-              <span className="text-4xl md:text-5xl font-black text-green-600">
-                {formatPrice(special.special_price)}
+              <span className="price-green-vivid">
+                <span className="price-text text-4xl md:text-5xl font-black">
+                  {formatPrice(special.special_price)}
+                </span>
               </span>
               <span className="bg-red-500 text-white px-3 py-1 rounded-full font-bold text-sm md:text-base">
                 {special.discount_percentage}% OFF
@@ -90,15 +92,17 @@ export default function TodaysSpecial() {
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 href={`/table-order?special=${special.menu_item_id}`}
-                className="flex-1 bg-green-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:bg-green-700 transition-all shadow-lg text-center"
+                className="flex-1 btn-green-vivid green-glow text-lg py-4 justify-center"
               >
-                Order In-House →
+                <span>Order In-House</span>
+                <span>→</span>
               </Link>
               <Link
                 href={`/order?special=${special.menu_item_id}`}
-                className="flex-1 bg-blue-600 text-white px-6 py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition-all shadow-lg text-center"
+                className="flex-1 btn-green-outline text-lg py-4 justify-center"
               >
-                Order Delivery →
+                <span>Order Delivery</span>
+                <span>→</span>
               </Link>
             </div>
 
