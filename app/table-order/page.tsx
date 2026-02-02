@@ -17,9 +17,10 @@ function TableOrderContent() {
   const [setupComplete, setSetupComplete] = useState(false)
   const [selectedTables, setSelectedTables] = useState<number[]>(urlTableNumber ? [parseInt(urlTableNumber)] : [])
   const [customerName, setCustomerName] = useState('')
-  const [partySize, setPartySize] = useState('1')
+  const [numberOfPeople, setNumberOfPeople] = useState('1')
   const [splitBill, setSplitBill] = useState(false)
-  const [splitPersons, setSplitPersons] = useState<string[]>([''])
+  const [splitType, setSplitType] = useState<'equal' | 'unequal'>('equal')
+  const [splitPersons, setSplitPersons] = useState<{name: string, amount: string}[]>([{name: '', amount: ''}])
 
   // Ordering state
   const [cart, setCart] = useState<{[key: string]: number}>({})
@@ -50,15 +51,15 @@ function TableOrderContent() {
   }
 
   const addSplitPerson = () => {
-    setSplitPersons(prev => [...prev, ''])
+    setSplitPersons(prev => [...prev, {name: '', amount: ''}])
   }
 
   const removeSplitPerson = (index: number) => {
     setSplitPersons(prev => prev.filter((_, i) => i !== index))
   }
 
-  const updateSplitPerson = (index: number, name: string) => {
-    setSplitPersons(prev => prev.map((p, i) => i === index ? name : p))
+  const updateSplitPerson = (index: number, field: 'name' | 'amount', value: string) => {
+    setSplitPersons(prev => prev.map((p, i) => i === index ? {...p, [field]: value} : p))
   }
 
   const addToCart = (itemId: string) => {
@@ -157,18 +158,18 @@ function TableOrderContent() {
   }
 
   const handleSetupComplete = () => {
-    if (selectedTables.length === 0 || !customerName || !partySize) {
+    if (selectedTables.length === 0 || !customerName || !numberOfPeople) {
       alert('Please fill in all required fields')
       return
     }
 
     if (splitBill) {
-      const validPersons = splitPersons.filter(p => p.trim() !== '')
+      const validPersons = splitPersons.filter(p => p.name.trim() !== '')
       if (validPersons.length < 2) {
         alert('Please add at least 2 people for bill splitting')
         return
       }
-      if (validPersons.length > parseInt(partySize)) {
+      if (validPersons.length > parseInt(numberOfPeople)) {
         alert('Number of people for bill split cannot exceed party size')
         return
       }
@@ -196,7 +197,7 @@ function TableOrderContent() {
       })
 
       const totalAmount = getCartTotal()
-      const validSplitPersons = splitBill ? splitPersons.filter(p => p.trim() !== '') : []
+      const validSplitPersons = splitBill ? splitPersons.filter(p => p.name.trim() !== '') : []
       const numberOfSplits = validSplitPersons.length || 1
       const amountPerSplit = totalAmount / numberOfSplits
 
@@ -208,7 +209,7 @@ function TableOrderContent() {
         .insert({
           table_number: selectedTables[0], // Primary table
           customer_name: customerName,
-          party_size: parseInt(partySize),
+          party_size: parseInt(numberOfPeople),
           split_bill: splitBill,
           number_of_splits: numberOfSplits,
           items: orderItems,
@@ -216,7 +217,7 @@ function TableOrderContent() {
           amount_per_split: amountPerSplit,
           status: 'pending',
           order_type: 'in-house',
-          notes: `Tables: ${tableNumbers}${splitBill ? ` | Split between: ${validSplitPersons.join(', ')}` : ''}`
+          notes: `Tables: ${tableNumbers}${splitBill ? ` | Split between: ${validSplitPersons.map(p => p.name).join(', ')}` : ''}`
         })
         .select()
 
@@ -231,13 +232,13 @@ function TableOrderContent() {
           order_type: 'in-house',
           table_number: selectedTables[0],
           customer_name: customerName,
-          party_size: parseInt(partySize),
+          party_size: parseInt(numberOfPeople),
           split_bill: splitBill,
           number_of_splits: numberOfSplits,
           items: orderItems,
           payment_status: 'pending',
-          delivery_address: `Tables: ${tableNumbers} - ${customerName} (Party of ${partySize})`,
-          notes: splitBill ? `Split bill: ${validSplitPersons.join(', ')}` : ''
+          delivery_address: `Tables: ${tableNumbers} - ${customerName} (${numberOfPeople} ${parseInt(numberOfPeople) === 1 ? 'person' : 'people'})`,
+          notes: splitBill ? `Split bill: ${validSplitPersons.map(p => p.name).join(', ')}` : ''
         })
 
       if (orderError) console.error('Failed to sync to orders table:', orderError)
@@ -252,9 +253,9 @@ function TableOrderContent() {
         setSetupComplete(false)
         setSelectedTables([])
         setCustomerName('')
-        setPartySize('1')
+        setNumberOfPeople('1')
         setSplitBill(false)
-        setSplitPersons([''])
+        setSplitPersons([{name: '', amount: ''}])
       }, 5000)
     } catch (error) {
       console.error('Error submitting order:', error)
@@ -273,6 +274,13 @@ function TableOrderContent() {
             <div className="text-5xl sm:text-6xl mb-4">🍽️</div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-2">Table Order Setup</h1>
             <p className="text-gray-600">The Curry House Yokosuka</p>
+          </div>
+
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 mb-6">
+            <p className="text-sm text-center text-green-800 font-semibold">
+              Thank you for choosing The Curry House Yokosuka!
+              We're delighted to serve you today. 🙏
+            </p>
           </div>
 
           <div className="space-y-4 sm:space-y-6">
@@ -318,17 +326,17 @@ function TableOrderContent() {
               />
             </div>
 
-            {/* Party Size */}
+            {/* Number of People */}
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Party Size *
+                Number of People *
               </label>
               <input
                 type="number"
                 min="1"
                 max="50"
-                value={partySize}
-                onChange={(e) => setPartySize(e.target.value)}
+                value={numberOfPeople}
+                onChange={(e) => setNumberOfPeople(e.target.value)}
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:outline-none text-base sm:text-lg"
                 required
               />
@@ -339,15 +347,15 @@ function TableOrderContent() {
               <label className="flex items-center justify-between cursor-pointer">
                 <div>
                   <span className="block text-sm font-bold text-gray-700">Split Bill?</span>
-                  <span className="block text-xs text-gray-500">Divide payment among multiple people</span>
+                  <span className="block text-xs text-gray-500">We're happy to split your bill any way you like!</span>
                 </div>
                 <input
                   type="checkbox"
                   checked={splitBill}
                   onChange={(e) => {
                     setSplitBill(e.target.checked)
-                    if (e.target.checked && splitPersons.length === 1 && splitPersons[0] === '') {
-                      setSplitPersons(['', ''])
+                    if (e.target.checked && splitPersons.length === 1) {
+                      setSplitPersons([{name: '', amount: ''}, {name: '', amount: ''}])
                     }
                   }}
                   className="w-6 h-6 text-green-600 rounded focus:ring-green-500"
@@ -355,38 +363,112 @@ function TableOrderContent() {
               </label>
 
               {splitBill && (
-                <div className="mt-4 space-y-3">
-                  <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Enter Names for Each Person
-                  </label>
-                  {splitPersons.map((person, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={person}
-                        onChange={(e) => updateSplitPerson(index, e.target.value)}
-                        placeholder={`Person ${index + 1} name`}
-                        className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
-                      />
-                      {splitPersons.length > 1 && (
-                        <button
-                          onClick={() => removeSplitPerson(index)}
-                          className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold"
-                        >
-                          Remove
-                        </button>
-                      )}
+                <div className="mt-4 space-y-4">
+                  {/* Split Type Selection */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSplitType('equal')}
+                      className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
+                        splitType === 'equal'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Split Equally
+                    </button>
+                    <button
+                      onClick={() => setSplitType('unequal')}
+                      className={`flex-1 py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
+                        splitType === 'unequal'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                      }`}
+                    >
+                      Split Custom Amounts
+                    </button>
+                  </div>
+
+                  {splitType === 'equal' ? (
+                    /* Equal Split */
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Enter Names
+                      </label>
+                      {splitPersons.map((person, index) => (
+                        <div key={index} className="flex gap-2 mb-2">
+                          <input
+                            type="text"
+                            value={person.name}
+                            onChange={(e) => updateSplitPerson(index, 'name', e.target.value)}
+                            placeholder={`Person ${index + 1} name`}
+                            className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none"
+                          />
+                          {splitPersons.length > 1 && (
+                            <button
+                              onClick={() => removeSplitPerson(index)}
+                              className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold text-sm"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        onClick={addSplitPerson}
+                        className="w-full py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-semibold text-sm mt-2"
+                      >
+                        + Add Person
+                      </button>
+                      <p className="text-xs text-green-600 mt-2 font-semibold">
+                        ✨ Bill will be split equally between everyone
+                      </p>
                     </div>
-                  ))}
-                  <button
-                    onClick={addSplitPerson}
-                    className="w-full py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-semibold text-sm"
-                  >
-                    + Add Another Person
-                  </button>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Bill will be split equally between {splitPersons.filter(p => p.trim() !== '').length} people
-                  </p>
+                  ) : (
+                    /* Unequal Split */
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-2">
+                        Enter Names & Custom Amounts
+                      </label>
+                      <p className="text-xs text-gray-600 mb-3">Perfect for when people order different amounts!</p>
+                      {splitPersons.map((person, index) => (
+                        <div key={index} className="flex gap-2 mb-2">
+                          <input
+                            type="text"
+                            value={person.name}
+                            onChange={(e) => updateSplitPerson(index, 'name', e.target.value)}
+                            placeholder="Name"
+                            className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm"
+                          />
+                          <input
+                            type="number"
+                            value={person.amount}
+                            onChange={(e) => updateSplitPerson(index, 'amount', e.target.value)}
+                            placeholder="¥ Amount"
+                            className="w-24 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:outline-none text-sm"
+                          />
+                          {splitPersons.length > 1 && (
+                            <button
+                              onClick={() => removeSplitPerson(index)}
+                              className="px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 font-semibold text-xs"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <button
+                        onClick={addSplitPerson}
+                        className="w-full py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-semibold text-sm mt-2"
+                      >
+                        + Add Person
+                      </button>
+                      <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-xs text-blue-800">
+                          💡 <strong>Tip:</strong> Custom amounts let you split based on what each person ordered. You can adjust these amounts anytime!
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -406,31 +488,53 @@ function TableOrderContent() {
 
   // Order confirmation screen
   if (orderSubmitted) {
-    const validSplitPersons = splitBill ? splitPersons.filter(p => p.trim() !== '') : []
+    const validSplitPersons = splitBill ? splitPersons.filter(p => p.name.trim() !== '') : []
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center p-4">
         <div className="text-center bg-white rounded-2xl p-8 max-w-md shadow-2xl">
-          <div className="text-8xl mb-6">✅</div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Order Sent to Kitchen!</h1>
+          <div className="text-8xl mb-6">✨</div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Thank You!</h1>
+          <p className="text-lg text-gray-700 mb-4">Your order has been sent to our kitchen</p>
+
+          <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
+            <p className="text-sm text-green-800 font-semibold">
+              We truly appreciate your visit and can't wait to serve you delicious food! Your satisfaction means everything to us. 🙏
+            </p>
+          </div>
+
           <div className="space-y-2 text-gray-700 mb-6">
             <p className="text-2xl font-bold text-green-600">Table {selectedTables.join(', ')}</p>
             <p className="text-lg">{customerName}</p>
-            <p className="text-sm text-gray-500">Party of {partySize}</p>
+            <p className="text-sm text-gray-500">{numberOfPeople} {parseInt(numberOfPeople) === 1 ? 'person' : 'people'}</p>
             {splitBill && validSplitPersons.length > 0 && (
               <div className="mt-4 p-4 bg-blue-50 rounded-xl border-2 border-blue-200">
-                <p className="text-sm font-bold text-blue-900 mb-2">Split Bill</p>
+                <p className="text-sm font-bold text-blue-900 mb-2">Bill Split Details</p>
                 <div className="text-xs text-blue-800 space-y-1">
-                  {validSplitPersons.map((person, idx) => (
-                    <div key={idx} className="flex justify-between items-center">
-                      <span>{person}</span>
-                      <span className="font-bold">{formatPrice(getCartTotal() / validSplitPersons.length)}</span>
-                    </div>
-                  ))}
+                  {splitType === 'equal' ? (
+                    validSplitPersons.map((person, idx) => (
+                      <div key={idx} className="flex justify-between items-center">
+                        <span>{person.name}</span>
+                        <span className="font-bold">{formatPrice(getCartTotal() / validSplitPersons.length)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    validSplitPersons.map((person, idx) => (
+                      <div key={idx} className="flex justify-between items-center">
+                        <span>{person.name}</span>
+                        <span className="font-bold">{formatPrice(parseFloat(person.amount) || 0)}</span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
           </div>
-          <p className="text-gray-600">Your delicious food will arrive soon...</p>
+
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-xl p-4">
+            <p className="text-xs text-orange-800">
+              ⏱️ Your fresh, delicious meal will be ready shortly. Thank you for your patience!
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -445,14 +549,17 @@ function TableOrderContent() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl sm:text-2xl font-bold">Table {selectedTables.join(', ')}</h1>
-              <p className="text-green-100 text-xs sm:text-sm">{customerName} • Party of {partySize}</p>
+              <p className="text-green-100 text-xs sm:text-sm">{customerName} • {numberOfPeople} {parseInt(numberOfPeople) === 1 ? 'person' : 'people'}</p>
             </div>
             <div className="text-right">
               <div className="text-2xl sm:text-3xl font-black">{formatPrice(getCartTotal())}</div>
               <div className="text-xs sm:text-sm text-green-100">{getCartCount()} items</div>
-              {splitBill && splitPersons.filter(p => p.trim() !== '').length > 0 && (
+              {splitBill && splitPersons.filter(p => p.name.trim() !== '').length > 0 && (
                 <div className="text-xs text-green-200 mt-1">
-                  {formatPrice(getCartTotal() / splitPersons.filter(p => p.trim() !== '').length)} / person
+                  {splitType === 'equal'
+                    ? `${formatPrice(getCartTotal() / splitPersons.filter(p => p.name.trim() !== '').length)} per person`
+                    : 'Custom split amounts'
+                  }
                 </div>
               )}
             </div>
