@@ -532,8 +532,8 @@ export default function HomePage() {
               </div>
             </Link>
 
-            <Link href="/table-order" className="group">
-              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-10 lg:p-12 hover:shadow-2xl hover:shadow-emerald-500/20 transition-all hover:-translate-y-1">
+            <div className="group">
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-10 lg:p-12">
                 <div className="absolute bottom-0 right-0 w-48 h-48 bg-white/10 rounded-full -mr-24 -mb-24"></div>
                 <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full -ml-16 -mt-16"></div>
                 <div className="relative z-10">
@@ -541,14 +541,14 @@ export default function HomePage() {
                     📱
                   </div>
                   <h3 className="text-2xl lg:text-3xl font-bold text-white mb-3">Dine In — QR Order</h3>
-                  <p className="text-emerald-100 mb-5">Scan, order, enjoy — direct to kitchen!</p>
-                  <span className="inline-flex items-center gap-2 text-white font-semibold">
-                    18 Tables Available
-                    <svg className="w-5 h-5 group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                  <p className="text-emerald-100 mb-5">Scan the QR code at your table to order directly!</p>
+                  <span className="inline-flex items-center gap-2 text-white/70 font-medium text-sm">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                    Available via QR code at restaurant
                   </span>
                 </div>
               </div>
-            </Link>
+            </div>
           </div>
         </div>
       </section>
