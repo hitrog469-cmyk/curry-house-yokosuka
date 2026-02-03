@@ -33,6 +33,13 @@ function MenuContent() {
   const [showBeverageModal, setShowBeverageModal] = useState<string | null>(null)
   const [beverageQuantities, setBeverageQuantities] = useState<{[itemId: string]: number}>({})
 
+  // Set Meal Selection State
+  const [showSetMealModal, setShowSetMealModal] = useState<string | null>(null)
+  const [setMealSelections, setSetMealSelections] = useState<{[setId: string]: {curries: string[], naan: string, rice: string}}>({})
+  const [tempSetMealCurries, setTempSetMealCurries] = useState<string[]>([])
+  const [tempSetMealNaan, setTempSetMealNaan] = useState<string>('plain-naan')
+  const [tempSetMealRice, setTempSetMealRice] = useState<string>('plain-rice')
+
   useEffect(() => {
     // Load cart from localStorage
     const savedCart = localStorage.getItem('cart')
@@ -98,6 +105,26 @@ function MenuContent() {
         localStorage.setItem('selectedSpiceLevels', JSON.stringify(validSpiceLevels))
       } catch (e) {
         localStorage.removeItem('selectedSpiceLevels')
+      }
+    }
+
+    // Load set meal selections
+    const savedSetMeals = localStorage.getItem('setMealSelections')
+    if (savedSetMeals) {
+      try {
+        const setMeals = JSON.parse(savedSetMeals)
+        // Only keep selections for set meals currently in cart
+        const validSetMeals: {[key: string]: {curries: string[], naan: string, rice: string}} = {}
+        Object.keys(setMeals).forEach(setId => {
+          const cartItem = JSON.parse(savedCart || '{}')
+          if (cartItem[setId]) {
+            validSetMeals[setId] = setMeals[setId]
+          }
+        })
+        setSetMealSelections(validSetMeals)
+        localStorage.setItem('setMealSelections', JSON.stringify(validSetMeals))
+      } catch (e) {
+        localStorage.removeItem('setMealSelections')
       }
     }
   }, [])
@@ -193,6 +220,88 @@ function MenuContent() {
     })
   }
 
+  // Set Meal Configuration - which sets require how many curries
+  const setMealConfig: {[setId: string]: {curries: number, hasNaan: boolean, hasRice: boolean}} = {
+    'set-1': { curries: 2, hasNaan: true, hasRice: true }, // Cheese Naan Set
+    'set-2': { curries: 1, hasNaan: true, hasRice: true }, // 1 Curry Set
+    'set-3': { curries: 2, hasNaan: true, hasRice: true }, // Yokosuka Set
+    'set-4': { curries: 2, hasNaan: true, hasRice: true }, // CFAY Set
+  }
+
+  // Available curries for set meal selection
+  const availableCurries = menuItems.filter(item =>
+    ['vegetable_curry', 'seafood_curry', 'chicken_curry', 'mutton_curry'].includes(item.category)
+  )
+
+  // Available naan options
+  const naanOptions = [
+    { id: 'plain-naan', name: 'Plain Naan', nameJp: 'プレーンナン' },
+    { id: 'butter-naan', name: 'Butter Naan', nameJp: 'バターナン' },
+    { id: 'garlic-naan', name: 'Garlic Naan', nameJp: 'ガーリックナン' },
+    { id: 'cheese-naan', name: 'Cheese Naan', nameJp: 'チーズナン' },
+  ]
+
+  // Available rice options
+  const riceOptions = [
+    { id: 'plain-rice', name: 'Plain Rice', nameJp: 'ライス' },
+    { id: 'saffron-rice', name: 'Saffron Rice', nameJp: 'サフランライス' },
+    { id: 'jeera-rice', name: 'Jeera Rice', nameJp: 'ジーラライス' },
+  ]
+
+  // Check if item is a set meal
+  const isSetMeal = (itemId: string) => Object.keys(setMealConfig).includes(itemId)
+
+  // Open set meal modal
+  const openSetMealModal = (setId: string) => {
+    setTempSetMealCurries(setMealSelections[setId]?.curries || [])
+    setTempSetMealNaan(setMealSelections[setId]?.naan || 'plain-naan')
+    setTempSetMealRice(setMealSelections[setId]?.rice || 'plain-rice')
+    setShowSetMealModal(setId)
+  }
+
+  // Toggle curry in set meal selection
+  const toggleSetMealCurry = (curryId: string, maxCurries: number) => {
+    setTempSetMealCurries(prev => {
+      if (prev.includes(curryId)) {
+        return prev.filter(id => id !== curryId)
+      } else if (prev.length < maxCurries) {
+        return [...prev, curryId]
+      }
+      return prev
+    })
+  }
+
+  // Confirm set meal selection and add to cart
+  const confirmSetMealSelection = () => {
+    if (!showSetMealModal) return
+    const config = setMealConfig[showSetMealModal]
+    if (!config) return
+
+    // Validate selection
+    if (tempSetMealCurries.length !== config.curries) {
+      alert(`Please select ${config.curries} currie${config.curries > 1 ? 's' : ''}`)
+      return
+    }
+
+    // Save selection
+    setSetMealSelections(prev => {
+      const updated = {
+        ...prev,
+        [showSetMealModal]: {
+          curries: tempSetMealCurries,
+          naan: tempSetMealNaan,
+          rice: tempSetMealRice,
+        }
+      }
+      localStorage.setItem('setMealSelections', JSON.stringify(updated))
+      return updated
+    })
+
+    // Add to cart
+    updateCart(showSetMealModal, 1)
+    setShowSetMealModal(null)
+  }
+
   const handleAddToCart = (itemId: string) => {
     // Check if user is logged in
     if (!user) {
@@ -202,6 +311,12 @@ function MenuContent() {
     }
 
     const item = menuItems.find(i => i.id === itemId)
+
+    // If it's a set meal, show set meal modal instead
+    if (isSetMeal(itemId)) {
+      openSetMealModal(itemId)
+      return
+    }
 
     // Check if item can have spice level (curry dishes, etc.)
     const needsSpiceLevel = item?.spiceLevel || item?.category === 'curry' || item?.category === 'nepalese'
@@ -989,6 +1104,166 @@ function MenuContent() {
                     </button>
                   </div>
                 </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Set Meal Selection Modal */}
+      {showSetMealModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            {(() => {
+              const setItem = menuItems.find(i => i.id === showSetMealModal)
+              const config = setMealConfig[showSetMealModal]
+              if (!setItem || !config) return null
+
+              return (
+                <>
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-5 shrink-0">
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                        <span className="text-3xl">🍛</span>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-bold">{setItem.name}</h3>
+                        <p className="text-green-100 text-sm">{setItem.nameJp}</p>
+                        <p className="text-white font-bold text-lg mt-1">{formatPrice(setItem.price)}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                    {/* Curry Selection */}
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-bold text-gray-900">
+                          Choose {config.curries} Curr{config.curries > 1 ? 'ies' : 'y'}
+                        </h4>
+                        <span className={`text-sm font-bold px-2 py-1 rounded-full ${
+                          tempSetMealCurries.length === config.curries
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-orange-100 text-orange-700'
+                        }`}>
+                          {tempSetMealCurries.length}/{config.curries} selected
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                        {availableCurries.map(curry => {
+                          const isSelected = tempSetMealCurries.includes(curry.id)
+                          const isDisabled = !isSelected && tempSetMealCurries.length >= config.curries
+
+                          return (
+                            <button
+                              key={curry.id}
+                              onClick={() => toggleSetMealCurry(curry.id, config.curries)}
+                              disabled={isDisabled}
+                              className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                                isSelected
+                                  ? 'border-green-500 bg-green-50'
+                                  : isDisabled
+                                    ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                    : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                              }`}
+                            >
+                              <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
+                                isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                              }`}>
+                                {isSelected && (
+                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm text-gray-900 truncate">{curry.name}</p>
+                                <p className="text-xs text-gray-500 truncate">{curry.nameJp}</p>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Naan Selection */}
+                    {config.hasNaan && (
+                      <div>
+                        <h4 className="font-bold text-gray-900 mb-3">Choose Your Naan</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          {naanOptions.map(naan => (
+                            <button
+                              key={naan.id}
+                              onClick={() => setTempSetMealNaan(naan.id)}
+                              className={`p-3 rounded-xl border-2 text-left transition-all ${
+                                tempSetMealNaan === naan.id
+                                  ? 'border-amber-500 bg-amber-50'
+                                  : 'border-gray-200 hover:border-amber-300 hover:bg-amber-50'
+                              }`}
+                            >
+                              <p className="font-semibold text-sm text-gray-900">{naan.name}</p>
+                              <p className="text-xs text-gray-500">{naan.nameJp}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Rice Selection */}
+                    {config.hasRice && (
+                      <div>
+                        <h4 className="font-bold text-gray-900 mb-3">Choose Your Rice</h4>
+                        <div className="grid grid-cols-3 gap-2">
+                          {riceOptions.map(rice => (
+                            <button
+                              key={rice.id}
+                              onClick={() => setTempSetMealRice(rice.id)}
+                              className={`p-3 rounded-xl border-2 text-center transition-all ${
+                                tempSetMealRice === rice.id
+                                  ? 'border-orange-500 bg-orange-50'
+                                  : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                              }`}
+                            >
+                              <p className="font-semibold text-sm text-gray-900">{rice.name}</p>
+                              <p className="text-xs text-gray-500">{rice.nameJp}</p>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Set Contents Summary */}
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <h4 className="font-bold text-gray-700 text-sm mb-2">Set Includes:</h4>
+                      <p className="text-sm text-gray-600">{setItem.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="p-5 border-t bg-gray-50 shrink-0">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowSetMealModal(null)}
+                        className="flex-1 py-3.5 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={confirmSetMealSelection}
+                        disabled={tempSetMealCurries.length !== config.curries}
+                        className={`flex-1 py-3.5 px-4 font-bold rounded-xl transition-all ${
+                          tempSetMealCurries.length === config.curries
+                            ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md'
+                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        Add to Cart — {formatPrice(setItem.price)}
+                      </button>
+                    </div>
+                  </div>
+                </>
               )
             })()}
           </div>

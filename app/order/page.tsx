@@ -33,6 +33,17 @@ export default function OrderPage() {
   const [tempSpiceLevel, setTempSpiceLevel] = useState<string>('')
   const [tempAddOns, setTempAddOns] = useState<string[]>([])
 
+  // Order confirmation state
+  const [confirmedOrder, setConfirmedOrder] = useState<{
+    id: string,
+    orderNumber: string,
+    items: any[],
+    total: number,
+    customerName: string,
+    address: string,
+    estimatedTime: string
+  } | null>(null)
+
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -273,6 +284,34 @@ export default function OrderPage() {
       alert('Error placing order. Please try again.')
       console.error(error)
     } else {
+      // Save confirmed order details before clearing cart
+      const orderItems = Object.entries(cart).map(([itemId, qty]) => {
+        const item = menuItems.find(i => i.id === itemId)
+        return {
+          id: itemId,
+          name: item?.name || '',
+          nameJp: item?.nameJp || '',
+          price: getItemPrice(itemId),
+          quantity: qty,
+          addOns: selectedAddOns[itemId] || [],
+          spiceLevel: selectedSpiceLevels[itemId] || null
+        }
+      })
+
+      // Generate order number (use last 6 chars of ID or timestamp-based)
+      const orderId = data?.[0]?.id || ''
+      const orderNumber = `TCH-${Date.now().toString(36).toUpperCase().slice(-6)}`
+
+      setConfirmedOrder({
+        id: orderId,
+        orderNumber: orderNumber,
+        items: orderItems,
+        total: getTotal(),
+        customerName: formData.name,
+        address: formData.address,
+        estimatedTime: '30-45 minutes'
+      })
+
       // Clear cart after successful order
       localStorage.removeItem('cart')
       localStorage.removeItem('selectedAddOns')
@@ -652,20 +691,91 @@ export default function OrderPage() {
           )}
 
           {/* STEP 3: Confirmation */}
-          {step === 'confirmation' && (
-            <div className="card text-center py-12">
-              <div className="text-6xl mb-6">🎉</div>
-              <h2 className="text-3xl font-bold mb-4 text-green-600">Order Placed Successfully!</h2>
-              <p className="text-gray-600 text-lg mb-8">
-                Thank you for your order. We'll start preparing it right away!
-              </p>
-              <div className="space-y-4">
-                <Link href="/my-orders" className="btn-primary inline-block">
-                  Track Your Order
+          {step === 'confirmation' && confirmedOrder && (
+            <div className="space-y-6">
+              {/* Success Header */}
+              <div className="card text-center py-8 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                <div className="text-6xl mb-4">🎉</div>
+                <h2 className="text-3xl font-black text-green-700 mb-2">Order Confirmed!</h2>
+                <p className="text-gray-600 text-lg">
+                  Thank you, {confirmedOrder.customerName}! Your food is being prepared.
+                </p>
+              </div>
+
+              {/* Order Details Card (Receipt Style) */}
+              <div className="card">
+                <div className="border-b border-dashed border-gray-300 pb-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wider">Order Number</p>
+                      <p className="text-2xl font-black text-gray-900">{confirmedOrder.orderNumber}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider">Estimated Time</p>
+                      <p className="text-lg font-bold text-green-600">🚗 {confirmedOrder.estimatedTime}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Delivery Address */}
+                <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Delivering To</p>
+                  <p className="font-semibold text-gray-900">{confirmedOrder.address}</p>
+                </div>
+
+                {/* Order Items */}
+                <div className="mb-4">
+                  <h3 className="font-bold text-gray-900 mb-3">Your Order</h3>
+                  <div className="space-y-3">
+                    {confirmedOrder.items.map((item, idx) => (
+                      <div key={idx} className="flex items-start justify-between py-2 border-b border-gray-100 last:border-0">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900">{item.quantity}x</span>
+                            <span className="font-semibold text-gray-800">{item.name}</span>
+                          </div>
+                          <p className="text-xs text-gray-500">{item.nameJp}</p>
+                          {item.spiceLevel && (
+                            <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold mt-1">
+                              🌶️ {item.spiceLevel}
+                            </span>
+                          )}
+                          {item.addOns && item.addOns.length > 0 && (
+                            <p className="text-xs text-purple-600 mt-0.5">+ {item.addOns.join(', ')}</p>
+                          )}
+                        </div>
+                        <span className="font-bold text-gray-900">{formatPrice(item.price * item.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Total */}
+                <div className="border-t-2 border-dashed border-gray-300 pt-4">
+                  <div className="flex justify-between text-green-600 mb-2">
+                    <span className="font-semibold">Delivery Fee</span>
+                    <span className="font-bold">FREE ✓</span>
+                  </div>
+                  <div className="flex justify-between text-2xl font-black">
+                    <span>Total Paid</span>
+                    <span className="text-green-700">{formatPrice(confirmedOrder.total)}</span>
+                  </div>
+                </div>
+
+                {/* Receipt Footer */}
+                <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+                  <p className="text-xs text-gray-400">The Curry House Yokosuka</p>
+                  <p className="text-xs text-gray-400">Thank you for your order!</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link href="/my-orders" className="flex-1 btn-primary text-center py-4">
+                  📍 Track Your Order
                 </Link>
-                <br />
-                <Link href="/menu" className="text-green-600 hover:text-green-700 font-bold">
-                  Continue Shopping
+                <Link href="/menu" className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 px-6 rounded-xl transition-colors text-center">
+                  🍛 Order More
                 </Link>
               </div>
             </div>

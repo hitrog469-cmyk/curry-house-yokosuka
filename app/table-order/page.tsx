@@ -881,23 +881,23 @@ function TableOrderContent() {
                 <div key={item.id} className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
                   <div className="flex gap-3 p-3">
                     {/* Image */}
-                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 rounded-lg overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50">
+                    <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100">
                       {imagePath ? (
                         <Image
                           src={imagePath}
                           alt={item.name}
                           fill
-                          className="object-cover scale-[1.8]"
+                          className="object-cover scale-150"
                           sizes="(max-width: 640px) 112px, 128px"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-3xl">🍽️</span>
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
+                          <span className="text-4xl">🍛</span>
                         </div>
                       )}
                       {item.isRecommended && (
-                        <div className="absolute top-1 left-1 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md shadow">
-                          PICK
+                        <div className="absolute top-1.5 left-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md">
+                          ⭐ TOP
                         </div>
                       )}
                     </div>

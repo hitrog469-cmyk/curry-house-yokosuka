@@ -385,6 +385,41 @@ export default function HomePage() {
       </section>
 
       {/* ============================================
+          Recognition & Awards — Subtle Strip
+          ============================================ */}
+      <section className="py-10 bg-white border-y border-gray-100">
+        <div className="container-custom">
+          <div className="text-center mb-6">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-[0.15em]">Recognized By</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-12">
+            {/* Placeholder logos - replace with actual recognition badges/logos */}
+            {[
+              { name: 'Restaurant Guru', year: '2024', placeholder: '🏆' },
+              { name: 'TripAdvisor', year: 'Excellence', placeholder: '🥇' },
+              { name: 'Google', year: '4.8★', placeholder: '⭐' },
+              { name: 'Halal Certified', year: 'Japan', placeholder: '🏅' },
+            ].map((award, i) => (
+              <div key={i} className="flex flex-col items-center group cursor-default">
+                {/* Replace this div with actual logo/certificate image */}
+                <div className="w-16 h-16 bg-gray-100 rounded-xl flex items-center justify-center text-2xl group-hover:bg-gray-50 transition-colors border border-gray-200">
+                  {award.placeholder}
+                </div>
+                <span className="text-xs font-bold text-gray-600 mt-2">{award.name}</span>
+                <span className="text-[10px] text-gray-400">{award.year}</span>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-6">
+            <Link href="/recognitions" className="text-sm text-green-600 hover:text-green-700 font-semibold inline-flex items-center gap-1">
+              View All Certificates
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================
           Promo Banner — Warm, Tight
           ============================================ */}
       <section className="py-12 bg-gradient-to-r from-orange-500 to-red-500 text-white">
