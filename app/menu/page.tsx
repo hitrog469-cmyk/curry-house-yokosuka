@@ -40,12 +40,21 @@ function MenuContent() {
   const [tempSetMealNaan, setTempSetMealNaan] = useState<string>('plain-naan')
   const [tempSetMealRice, setTempSetMealRice] = useState<string>('plain-rice')
 
+  // Favorites State
+  const [favorites, setFavorites] = useState<string[]>([])
+
   useEffect(() => {
     // Load cart from localStorage
     const savedCart = localStorage.getItem('cart')
 
     if (savedCart) {
       setCart(JSON.parse(savedCart))
+    }
+
+    // Load favorites from localStorage
+    const savedFavorites = localStorage.getItem('favorites')
+    if (savedFavorites) {
+      setFavorites(JSON.parse(savedFavorites))
     }
 
     // Load add-ons, variations, and spice levels from localStorage
@@ -515,6 +524,17 @@ function MenuContent() {
     })
   }
 
+  // Toggle favorite
+  const toggleFavorite = (itemId: string) => {
+    setFavorites(prev => {
+      const updated = prev.includes(itemId)
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+      localStorage.setItem('favorites', JSON.stringify(updated))
+      return updated
+    })
+  }
+
   const confirmSpiceLevel = () => {
     if (!pendingItemId) return
 
@@ -774,14 +794,29 @@ function MenuContent() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item) => (
               <div key={item.id} id={`item-${item.id}`} className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden flex flex-col relative">
-                {/* Recommended Badge */}
-                {item.isRecommended && (
-                  <div className="absolute top-3 right-3 z-10">
+                {/* Top badges row */}
+                <div className="absolute top-3 left-3 right-3 z-10 flex items-center justify-between">
+                  {/* Recommended Badge */}
+                  {item.isRecommended ? (
                     <span className="bg-orange-500 text-white shadow-lg text-xs px-3 py-1 rounded-full font-bold">
                       CHEF'S PICK
                     </span>
-                  </div>
-                )}
+                  ) : <span></span>}
+
+                  {/* Favorite Button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleFavorite(item.id) }}
+                    className={`w-9 h-9 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 ${
+                      favorites.includes(item.id)
+                        ? 'bg-red-500 text-white'
+                        : 'bg-white/90 backdrop-blur text-stone-400 hover:text-red-500'
+                    }`}
+                  >
+                    <svg className="w-5 h-5" fill={favorites.includes(item.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
+                </div>
 
                 {/* Image - DISH FILLS ENTIRE CARD */}
                 <div className="relative w-full h-80 bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
