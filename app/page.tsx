@@ -302,7 +302,7 @@ export default function HomePage() {
                     <img
                       src={getMenuItemImage(dish.id)!}
                       alt={dish.name}
-                      className="w-full h-full object-contain p-2 group-hover:scale-110 transition-transform duration-500"
+                      className="w-full h-full object-cover scale-[1.6] group-hover:scale-[1.8] transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center">

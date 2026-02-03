@@ -674,7 +674,7 @@ function MenuContent() {
                     <img
                       src={getMenuItemImage(item.id)!}
                       alt={item.name}
-                      className="w-full h-full object-contain p-3 hover:scale-110 transition-transform duration-700"
+                      className="w-full h-full object-cover scale-[1.6] hover:scale-[1.8] transition-transform duration-700"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 via-gray-200 to-gray-300">

@@ -96,7 +96,21 @@ function TableOrderContent() {
     setSplitPersons(prev => prev.map((p, i) => i === index ? {...p, name} : p))
   }
 
+  // Check if an item is already assigned to another person (for qty=1 items)
+  const isItemAssignedElsewhere = (personIndex: number, itemId: string) => {
+    const qty = cart[itemId] || 0
+    if (qty > 1) return false // Multiple qty items can be assigned to multiple people
+    return splitPersons.some((p, i) => i !== personIndex && p.items.includes(itemId))
+  }
+
   const toggleItemForPerson = (personIndex: number, itemId: string) => {
+    const qty = cart[itemId] || 0
+
+    // If qty is 1 and already assigned to someone else, don't allow
+    if (qty <= 1 && isItemAssignedElsewhere(personIndex, itemId)) {
+      return // Button is disabled anyway, but safety check
+    }
+
     setSplitPersons(prev => prev.map((p, i) => {
       if (i !== personIndex) return p
       const hasItem = p.items.includes(itemId)
@@ -873,7 +887,7 @@ function TableOrderContent() {
                           src={imagePath}
                           alt={item.name}
                           fill
-                          className="object-contain p-1"
+                          className="object-cover scale-[1.8]"
                           sizes="(max-width: 640px) 112px, 128px"
                         />
                       ) : (
@@ -1044,7 +1058,7 @@ function TableOrderContent() {
                   <div key={itemId} className="flex items-start gap-3">
                     <div className="w-14 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-orange-50 to-amber-50 shrink-0">
                       {img ? (
-                        <Image src={img} alt={item.name} width={56} height={56} className="w-full h-full object-contain p-0.5" />
+                        <Image src={img} alt={item.name} width={56} height={56} className="w-full h-full object-cover scale-[1.6]" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-xl">🍽️</div>
                       )}
@@ -1162,27 +1176,39 @@ function TableOrderContent() {
                       const item = menuItems.find(i => i.id === itemId)
                       if (!item) return null
                       const isAssigned = person.items.includes(itemId)
+                      const isDisabled = !isAssigned && isItemAssignedElsewhere(pIdx, itemId)
 
                       return (
                         <button
                           key={itemId}
-                          onClick={() => toggleItemForPerson(pIdx, itemId)}
+                          onClick={() => !isDisabled && toggleItemForPerson(pIdx, itemId)}
+                          disabled={isDisabled}
                           className={`w-full flex items-center gap-2 p-2.5 rounded-lg text-left transition-all text-sm ${
                             isAssigned
                               ? 'bg-green-50 border border-green-200'
-                              : 'bg-gray-50 border border-transparent hover:bg-gray-100'
+                              : isDisabled
+                                ? 'bg-gray-100 border border-gray-200 opacity-40 cursor-not-allowed'
+                                : 'bg-gray-50 border border-transparent hover:bg-gray-100'
                           }`}
                         >
                           <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${
-                            isAssigned ? 'bg-green-500 text-white' : 'bg-gray-200'
+                            isAssigned ? 'bg-green-500 text-white' : isDisabled ? 'bg-gray-300' : 'bg-gray-200'
                           }`}>
                             {isAssigned && (
                               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
+                            {isDisabled && (
+                              <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                              </svg>
+                            )}
                           </div>
-                          <span className="flex-1 truncate text-gray-800">{getItemDisplayName(itemId)} x{qty}</span>
+                          <span className={`flex-1 truncate ${isDisabled ? 'text-gray-400' : 'text-gray-800'}`}>
+                            {getItemDisplayName(itemId)} x{qty}
+                            {isDisabled && <span className="text-[9px] ml-1 text-orange-500 font-semibold">(taken)</span>}
+                          </span>
                           <span className="text-gray-500 text-xs shrink-0">{formatPrice(getItemPrice(itemId) * qty)}</span>
                         </button>
                       )

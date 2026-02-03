@@ -11,11 +11,27 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import RestaurantStatus from '@/components/RestaurantStatus'
 
+// Spice level definitions
+const SPICE_LEVELS = [
+  { level: 'MILD', label: 'Mild', labelJp: 'マイルド', emoji: '🌶️', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  { level: 'NORMAL', label: 'Normal', labelJp: '普通', emoji: '🌶️🌶️', color: 'bg-orange-100 text-orange-800 border-orange-300' },
+  { level: 'MEDIUM', label: 'Medium', labelJp: '中辛', emoji: '🌶️🌶️🌶️', color: 'bg-orange-200 text-orange-900 border-orange-400' },
+  { level: 'HOT', label: 'Hot', labelJp: '辛口', emoji: '🌶️🌶️🌶️🌶️', color: 'bg-red-100 text-red-800 border-red-300' },
+  { level: 'VERY HOT', label: 'Very Hot', labelJp: '激辛', emoji: '🔥', color: 'bg-red-200 text-red-900 border-red-400' },
+]
+
 export default function OrderPage() {
   const router = useRouter()
   const { user } = useAuth()
   const [step, setStep] = useState<'cart' | 'details' | 'confirmation'>('cart')
   const [loading, setLoading] = useState(false)
+
+  // Modal states for spice/add-on editing
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [showSpiceModal, setShowSpiceModal] = useState(false)
+  const [showAddOnsModal, setShowAddOnsModal] = useState(false)
+  const [tempSpiceLevel, setTempSpiceLevel] = useState<string>('')
+  const [tempAddOns, setTempAddOns] = useState<string[]>([])
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -272,6 +288,61 @@ export default function OrderPage() {
 
   const cartItems = Object.keys(cart)
 
+  // Check if item supports spice levels (curries, rice dishes, etc.)
+  const itemSupportsSpice = (itemId: string) => {
+    const item = menuItems.find(i => i.id === itemId)
+    if (!item) return false
+    const spiceCategories = ['vegetable_curry', 'seafood_curry', 'chicken_curry', 'mutton_curry', 'rice', 'biryani', 'noodles']
+    return spiceCategories.includes(item.category) || item.spiceLevel !== undefined
+  }
+
+  // Open spice modal for an item
+  const openSpiceModal = (itemId: string) => {
+    setEditingItemId(itemId)
+    setTempSpiceLevel(selectedSpiceLevels[itemId] || 'NORMAL')
+    setShowSpiceModal(true)
+  }
+
+  // Save spice level
+  const saveSpiceLevel = () => {
+    if (editingItemId && tempSpiceLevel) {
+      setSelectedSpiceLevels(prev => {
+        const updated = { ...prev, [editingItemId]: tempSpiceLevel }
+        localStorage.setItem('selectedSpiceLevels', JSON.stringify(updated))
+        return updated
+      })
+    }
+    setShowSpiceModal(false)
+    setEditingItemId(null)
+  }
+
+  // Open add-ons modal
+  const openAddOnsModal = (itemId: string) => {
+    setEditingItemId(itemId)
+    setTempAddOns(selectedAddOns[itemId] || [])
+    setShowAddOnsModal(true)
+  }
+
+  // Save add-ons
+  const saveAddOns = () => {
+    if (editingItemId) {
+      setSelectedAddOns(prev => {
+        const updated = { ...prev, [editingItemId]: tempAddOns }
+        localStorage.setItem('selectedAddOns', JSON.stringify(updated))
+        return updated
+      })
+    }
+    setShowAddOnsModal(false)
+    setEditingItemId(null)
+  }
+
+  // Toggle add-on in temp state
+  const toggleTempAddOn = (addOnName: string) => {
+    setTempAddOns(prev =>
+      prev.includes(addOnName) ? prev.filter(a => a !== addOnName) : [...prev, addOnName]
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -317,64 +388,111 @@ export default function OrderPage() {
                       {cartItems.map((itemId) => {
                         const item = menuItems.find(i => i.id === itemId)
                         if (!item) return null
+                        const hasSpice = itemSupportsSpice(itemId)
+                        const hasAddOns = item.addOns && item.addOns.length > 0
+                        const spiceInfo = SPICE_LEVELS.find(s => s.level === selectedSpiceLevels[itemId])
 
                         return (
-                          <div key={itemId} className="flex items-center gap-4 pb-4 border-b last:border-0">
-                            {/* Image */}
-                            <div className="w-20 h-20 bg-gradient-to-br from-orange-50 to-amber-50 rounded-lg overflow-hidden flex-shrink-0">
-                              {getMenuItemImage(itemId) ? (
-                                <img
-                                  src={getMenuItemImage(itemId)!}
-                                  alt={item.name}
-                                  className="w-full h-full object-contain p-1"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <span className="text-2xl">🍽️</span>
+                          <div key={itemId} className="flex flex-col sm:flex-row gap-4 pb-5 border-b last:border-0">
+                            <div className="flex items-start gap-4 flex-1">
+                              {/* Image - zoomed in */}
+                              <div className="w-24 h-24 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl overflow-hidden flex-shrink-0">
+                                {getMenuItemImage(itemId) ? (
+                                  <img
+                                    src={getMenuItemImage(itemId)!}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover scale-[1.6]"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <span className="text-3xl">🍽️</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-lg text-gray-900">{item.name}</h3>
+                                <p className="text-gray-500 text-sm">{item.nameJp}</p>
+
+                                {/* Customization badges */}
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {/* Spice Level */}
+                                  {hasSpice && (
+                                    <button
+                                      onClick={() => openSpiceModal(itemId)}
+                                      className={`inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-bold border transition-all hover:shadow-sm ${
+                                        spiceInfo ? spiceInfo.color : 'bg-gray-100 text-gray-600 border-gray-300'
+                                      }`}
+                                    >
+                                      {spiceInfo ? spiceInfo.emoji : '🌶️'}
+                                      <span>{spiceInfo ? spiceInfo.label : 'Set Spice'}</span>
+                                      <svg className="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    </button>
+                                  )}
+
+                                  {/* Add-ons */}
+                                  {hasAddOns && (
+                                    <button
+                                      onClick={() => openAddOnsModal(itemId)}
+                                      className={`inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-bold border transition-all hover:shadow-sm ${
+                                        selectedAddOns[itemId]?.length > 0
+                                          ? 'bg-purple-100 text-purple-800 border-purple-300'
+                                          : 'bg-gray-100 text-gray-600 border-gray-300'
+                                      }`}
+                                    >
+                                      ➕
+                                      <span>
+                                        {selectedAddOns[itemId]?.length > 0
+                                          ? `${selectedAddOns[itemId].length} Add-on${selectedAddOns[itemId].length > 1 ? 's' : ''}`
+                                          : 'Add-ons'}
+                                      </span>
+                                      <svg className="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                      </svg>
+                                    </button>
+                                  )}
                                 </div>
-                              )}
+
+                                {/* Selected add-ons list */}
+                                {selectedAddOns[itemId]?.length > 0 && (
+                                  <div className="text-xs text-purple-700 mt-1.5">
+                                    + {selectedAddOns[itemId].join(', ')}
+                                  </div>
+                                )}
+
+                                <p className="text-green-600 font-bold text-lg mt-2">
+                                  {formatPrice(getItemPrice(itemId))}
+                                </p>
+                              </div>
                             </div>
 
-                            <div className="flex-1">
-                              <h3 className="font-bold text-lg text-gray-900">{item.name}</h3>
-                              <p className="text-gray-500 text-sm">{item.nameJp}</p>
+                            {/* Quantity controls */}
+                            <div className="flex items-center justify-between sm:justify-end gap-3">
+                              <div className="flex items-center gap-2 bg-gray-100 rounded-xl p-1.5">
+                                <button
+                                  onClick={() => updateCart(itemId, -1)}
+                                  className="w-9 h-9 bg-white hover:bg-gray-50 text-gray-800 rounded-lg font-bold text-lg flex items-center justify-center transition-colors shadow-sm"
+                                >
+                                  −
+                                </button>
+                                <span className="min-w-[2.5rem] text-center font-black text-xl text-gray-900">{cart[itemId]}</span>
+                                <button
+                                  onClick={() => updateCart(itemId, 1)}
+                                  className="w-9 h-9 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-lg flex items-center justify-center transition-colors shadow-sm"
+                                >
+                                  +
+                                </button>
+                              </div>
 
-                              {/* Spice Level Display */}
-                              {selectedSpiceLevels[itemId] && (
-                                <div className="mt-2">
-                                  <span className="inline-block text-xs px-2 py-1 rounded-full font-bold bg-red-100 text-red-800 border border-red-300">
-                                    🌶️ {selectedSpiceLevels[itemId]}
-                                  </span>
-                                </div>
-                              )}
-
-                              <p className="text-orange-600 font-bold mt-1">
-                                {formatPrice(getItemPrice(itemId))}
-                              </p>
-                            </div>
-
-                            <div className="flex items-center gap-3 bg-gray-50 rounded-lg p-2">
                               <button
-                                onClick={() => updateCart(itemId, -1)}
-                                className="w-10 h-10 bg-white hover:bg-gray-50 text-gray-800 rounded-lg font-bold text-xl flex items-center justify-center transition-colors shadow-md"
+                                onClick={() => removeItem(itemId)}
+                                className="w-9 h-9 text-red-500 hover:text-white hover:bg-red-500 rounded-lg font-bold text-lg flex items-center justify-center transition-all"
                               >
-                                −
-                              </button>
-                              <span className="min-w-[3rem] text-center font-black text-2xl text-gray-900 px-2">{cart[itemId]}</span>
-                              <button
-                                onClick={() => updateCart(itemId, 1)}
-                                className="w-10 h-10 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-xl flex items-center justify-center transition-colors shadow-md"
-                              >
-                                +
+                                ✕
                               </button>
                             </div>
-
-                            <button
-                              onClick={() => removeItem(itemId)}
-                              className="text-red-500 hover:text-red-700 font-bold px-3 text-2xl"
-                            >
-                              ✕
-                            </button>
                           </div>
                         )
                       })}
@@ -554,6 +672,129 @@ export default function OrderPage() {
           )}
         </div>
       </div>
+
+      {/* Spice Level Modal */}
+      {showSpiceModal && editingItemId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-slideInUp">
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white p-5">
+              <h3 className="text-xl font-bold">How Spicy Would You Like It?</h3>
+              <p className="text-red-100 text-sm mt-1">
+                {menuItems.find(i => i.id === editingItemId)?.name}
+              </p>
+            </div>
+
+            <div className="p-5 space-y-3">
+              {SPICE_LEVELS.map((spice) => (
+                <button
+                  key={spice.level}
+                  onClick={() => setTempSpiceLevel(spice.level)}
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                    tempSpiceLevel === spice.level
+                      ? 'border-red-500 bg-red-50 shadow-md'
+                      : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                  }`}
+                >
+                  <span className="text-2xl w-12 text-center">{spice.emoji}</span>
+                  <div className="flex-1 text-left">
+                    <span className="font-bold text-gray-900">{spice.label}</span>
+                    <span className="text-gray-500 text-sm ml-2">{spice.labelJp}</span>
+                  </div>
+                  {tempSpiceLevel === spice.level && (
+                    <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <div className="p-5 pt-0 flex gap-3">
+              <button
+                onClick={() => { setShowSpiceModal(false); setEditingItemId(null); }}
+                className="flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveSpiceLevel}
+                className="flex-1 py-3 px-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold rounded-xl transition-all shadow-md"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add-ons Modal */}
+      {showAddOnsModal && editingItemId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-slideInUp max-h-[80vh] flex flex-col">
+            <div className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-5 shrink-0">
+              <h3 className="text-xl font-bold">Customize Your Dish</h3>
+              <p className="text-purple-100 text-sm mt-1">
+                {menuItems.find(i => i.id === editingItemId)?.name}
+              </p>
+            </div>
+
+            <div className="p-5 space-y-3 overflow-y-auto flex-1">
+              {menuItems.find(i => i.id === editingItemId)?.addOns?.map((addOn) => (
+                <button
+                  key={addOn.name}
+                  onClick={() => toggleTempAddOn(addOn.name)}
+                  className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
+                    tempAddOns.includes(addOn.name)
+                      ? 'border-purple-500 bg-purple-50 shadow-md'
+                      : 'border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center shrink-0 ${
+                    tempAddOns.includes(addOn.name)
+                      ? 'bg-purple-500 border-purple-500'
+                      : 'border-gray-300'
+                  }`}>
+                    {tempAddOns.includes(addOn.name) && (
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <span className="font-bold text-gray-900">{addOn.name}</span>
+                  </div>
+                  <span className="text-green-600 font-bold">+{formatPrice(addOn.price)}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="p-5 pt-3 border-t bg-gray-50 shrink-0">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-gray-600 font-medium">Selected add-ons:</span>
+                <span className="font-bold text-purple-600">
+                  {tempAddOns.length > 0 ? `${tempAddOns.length} item${tempAddOns.length > 1 ? 's' : ''}` : 'None'}
+                </span>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setShowAddOnsModal(false); setEditingItemId(null); }}
+                  className="flex-1 py-3 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAddOns}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-bold rounded-xl transition-all shadow-md"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
