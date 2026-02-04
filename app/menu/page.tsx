@@ -15,7 +15,7 @@ function MenuContent() {
   const searchParams = useSearchParams()
   const searchQuery = searchParams.get('search') || ''
   const router = useRouter()
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
 
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>(menuItems)
   const [selectedCategory, setSelectedCategory] = useState('all')
@@ -312,6 +312,11 @@ function MenuContent() {
   }
 
   const handleAddToCart = (itemId: string) => {
+    // Check if auth is still loading - don't redirect yet
+    if (authLoading) {
+      return
+    }
+
     // Check if user is logged in
     if (!user) {
       // Redirect to login page

@@ -157,12 +157,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setLoading(false);
 
-      // Handle redirects
-      if (event === 'SIGNED_IN') {
-        router.push('/menu');
-        router.refresh();
-      }
-
+      // Note: We DON'T auto-redirect on SIGNED_IN to prevent loops
+      // The login page handles its own redirect via redirectTo param
+      // Only handle sign out redirect
       if (event === 'SIGNED_OUT') {
         router.push('/');
         router.refresh();
