@@ -1,14 +1,39 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+
+// Pre-generated secure tokens for each table (18 tables)
+// In production, these would be stored in the database and can be regenerated
+const TABLE_TOKENS: { [key: number]: string } = {
+  1: 'tbl1_K9xm2Pq5',
+  2: 'tbl2_Lw8nR3jh',
+  3: 'tbl3_Mb4pS7yk',
+  4: 'tbl4_Nc6qT1zm',
+  5: 'tbl5_Od2rU5an',
+  6: 'tbl6_Pe8sV9bo',
+  7: 'tbl7_Qf4tW3cp',
+  8: 'tbl8_Rg6uX7dq',
+  9: 'tbl9_Sh2vY1er',
+  10: 'tbl10_Ti8wZ5fs',
+  11: 'tbl11_Uj4xA9gt',
+  12: 'tbl12_Vk6yB3hu',
+  13: 'tbl13_Wl2zC7iv',
+  14: 'tbl14_Xm8aD1jw',
+  15: 'tbl15_Yn4bE5kx',
+  16: 'tbl16_Zo6cF9ly',
+  17: 'tbl17_Ap2dG3mz',
+  18: 'tbl18_Bq8eH7na',
+}
 
 export default function QRCodesPage() {
   const [baseUrl, setBaseUrl] = useState('https://curry-house-yokosuka.vercel.app')
-  const totalTables = 15
+  const totalTables = 18
 
   const generateQRCodeUrl = (tableNumber: number) => {
-    const orderUrl = `${baseUrl}/table-order?table=${tableNumber}`
+    const token = TABLE_TOKENS[tableNumber]
+    // Include secure token in URL for QR locking security
+    const orderUrl = `${baseUrl}/table-order?table=${tableNumber}&token=${token}`
     // Using a free QR code API
     return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(orderUrl)}`
   }
@@ -158,11 +183,28 @@ export default function QRCodesPage() {
           <ul className="text-blue-800 space-y-1 text-sm">
             <li>• Click "Print" to print a single QR code with table number</li>
             <li>• Click "Download" to save the QR code image</li>
-            <li>• Click "Download All" to get all 15 QR codes at once</li>
-            <li>• Each QR code links to the table-specific ordering page</li>
+            <li>• Click "Download All" to get all 18 QR codes at once</li>
+            <li>• Each QR code has a unique security token to prevent fraud</li>
             <li>• Print and place QR codes on respective tables</li>
             <li>• View live orders on the <Link href="/kitchen" className="underline font-semibold">Kitchen Display</Link></li>
+            <li>• Manage tables on the <Link href="/staff/dashboard" className="underline font-semibold">Staff Dashboard</Link></li>
           </ul>
+        </div>
+
+        {/* Staff Dashboard Link */}
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl p-6 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-white mb-1">Staff Counter Panel</h3>
+              <p className="text-gray-400 text-sm">Color-coded table grid with one-tap printing</p>
+            </div>
+            <Link
+              href="/staff/dashboard"
+              className="bg-white text-gray-900 hover:bg-gray-100 font-bold px-6 py-3 rounded-xl transition-all"
+            >
+              Open Staff Panel →
+            </Link>
+          </div>
         </div>
 
         {/* QR Code Grid */}
@@ -183,7 +225,7 @@ export default function QRCodesPage() {
                 </div>
 
                 <div className="text-xs text-gray-500 mb-4 font-mono break-all bg-gray-50 p-2 rounded">
-                  {baseUrl}/table-order?table={tableNumber}
+                  {baseUrl}/table-order?table={tableNumber}&token={TABLE_TOKENS[tableNumber]}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">

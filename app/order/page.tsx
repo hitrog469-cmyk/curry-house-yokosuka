@@ -537,6 +537,77 @@ export default function OrderPage() {
                       })}
                     </div>
 
+                    {/* Dynamic Upsell - "People also ordered" */}
+                    {(() => {
+                      // Get suggested items based on cart contents
+                      const cartCategories = new Set(
+                        Object.keys(cart).map(id => menuItems.find(i => i.id === id)?.category).filter(Boolean)
+                      )
+                      const suggestions: typeof menuItems = []
+
+                      // If they have curry, suggest naan
+                      if (Array.from(cartCategories).some(c => c?.includes('curry'))) {
+                        const naan = menuItems.find(i => i.id === 'naan-1' && !cart[i.id])
+                        if (naan) suggestions.push(naan)
+                      }
+                      // If they have starters, suggest a drink
+                      if (cartCategories.has('starters') || cartCategories.has('tandoori')) {
+                        const lassi = menuItems.find(i => i.id === 'drink-1' && !cart[i.id])
+                        if (lassi) suggestions.push(lassi)
+                      }
+                      // Always suggest popular items not in cart
+                      const popular = menuItems.filter(i => i.isRecommended && !cart[i.id]).slice(0, 2)
+                      suggestions.push(...popular)
+
+                      // Remove duplicates and limit to 3
+                      const uniqueSuggestions = [...new Map(suggestions.map(s => [s.id, s])).values()].slice(0, 3)
+
+                      if (uniqueSuggestions.length === 0) return null
+
+                      return (
+                        <div className="mt-6 pt-6 border-t">
+                          <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <span className="text-lg">✨</span>
+                            People also ordered
+                          </h3>
+                          <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+                            {uniqueSuggestions.map(item => (
+                              <div
+                                key={item.id}
+                                className="flex-shrink-0 w-40 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl p-3 border border-orange-100"
+                              >
+                                <div className="w-full h-20 rounded-lg overflow-hidden bg-white mb-2">
+                                  {getMenuItemImage(item.id) ? (
+                                    <img
+                                      src={getMenuItemImage(item.id)!}
+                                      alt={item.name}
+                                      className="w-full h-full object-cover scale-[1.5]"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
+                                  )}
+                                </div>
+                                <p className="font-bold text-xs text-gray-900 line-clamp-1">{item.name}</p>
+                                <p className="text-green-600 font-bold text-sm">{formatPrice(item.price)}</p>
+                                <button
+                                  onClick={() => {
+                                    setCart(prev => {
+                                      const newCart = { ...prev, [item.id]: 1 }
+                                      localStorage.setItem('cart', JSON.stringify(newCart))
+                                      return newCart
+                                    })
+                                  }}
+                                  className="w-full mt-2 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs py-1.5 rounded-lg transition-colors"
+                                >
+                                  + Add
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
                     {/* Add More Items Button */}
                     <div className="mt-6 pt-6 border-t">
                       <Link
@@ -669,6 +740,62 @@ export default function OrderPage() {
                       placeholder="Gate code, extra spice, ring doorbell twice... anything helps!"
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Payment Method Selection */}
+              <div className="card">
+                <h2 className="text-2xl font-bold mb-2">How Would You Like to Pay?</h2>
+                <p className="text-gray-500 text-sm mb-6">Choose the payment method that works best for you.</p>
+
+                <div className="space-y-3">
+                  {/* Pay at Door Option */}
+                  <label className="flex items-start gap-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl cursor-pointer hover:border-green-400 transition-all">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="pay_at_door"
+                      defaultChecked
+                      className="w-5 h-5 mt-1 text-green-600 focus:ring-green-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">💳</span>
+                        <span className="font-bold text-gray-900">Pay at Door</span>
+                        <span className="bg-green-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">RECOMMENDED</span>
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Our delivery partner carries a mobile card terminal. We accept:
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold">💵 Cash</span>
+                        <span className="text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold">💳 Visa/Master</span>
+                        <span className="text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold">📱 PayPay</span>
+                        <span className="text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold">📱 LINE Pay</span>
+                      </div>
+                    </div>
+                  </label>
+
+                  {/* Online Payment Option (disabled/coming soon) */}
+                  <label className="flex items-start gap-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-xl cursor-not-allowed opacity-60">
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="online"
+                      disabled
+                      className="w-5 h-5 mt-1 text-gray-400"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-lg">🌐</span>
+                        <span className="font-bold text-gray-500">Online Payment</span>
+                        <span className="bg-gray-400 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">COMING SOON</span>
+                      </div>
+                      <p className="text-sm text-gray-400">
+                        Pay securely with credit card before delivery
+                      </p>
+                    </div>
+                  </label>
                 </div>
               </div>
 
