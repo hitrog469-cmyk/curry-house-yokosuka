@@ -774,7 +774,29 @@ function TableOrderContent() {
             </div>
           )}
 
-          <p className="text-xs text-gray-400">Thank you for dining with us! Your meal will be ready shortly.</p>
+          <p className="text-xs text-gray-400 mb-6">Thank you for dining with us! Your meal will be ready shortly.</p>
+
+          {/* Action Buttons */}
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                setOrderSubmitted(false)
+                // Keep table and customer info, just reset cart for add-ons
+              }}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-md"
+            >
+              + Order More Items
+            </button>
+            <button
+              onClick={() => {
+                // This would trigger bill request in a full implementation
+                alert('Bill requested! Staff will bring your check shortly.')
+              }}
+              className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white font-bold py-4 rounded-xl transition-all shadow-md"
+            >
+              💰 Request Bill
+            </button>
+          </div>
         </div>
       </div>
     )
