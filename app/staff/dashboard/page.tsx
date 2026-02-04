@@ -69,6 +69,8 @@ interface LegacyOrder {
   updated_at: string
   customer_name?: string
   party_size?: number
+  split_bill?: boolean
+  number_of_splits?: number
 }
 
 interface TableTile {
