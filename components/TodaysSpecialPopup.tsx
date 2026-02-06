@@ -1,23 +1,36 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getTodaysSpecial, isSpecialValid, type DailySpecial } from '@/lib/daily-special-api'
 import { getMenuItemImage } from '@/lib/image-mapping'
 import { formatPrice } from '@/lib/utils'
 
-export default function TodaysSpecialPopup() {
+interface TodaysSpecialPopupProps {
+  forceShow?: boolean // Force show immediately (e.g., on QR scan)
+}
+
+export default function TodaysSpecialPopup({ forceShow = false }: TodaysSpecialPopupProps) {
   const [special, setSpecial] = useState<DailySpecial | null>(null)
   const [loading, setLoading] = useState(true)
   const [dismissed, setDismissed] = useState(false)
   const [visible, setVisible] = useState(false)
+  const searchParams = useSearchParams()
+
+  // Check if coming from QR code scan
+  const isFromQR = searchParams?.get('table') !== null || forceShow
 
   useEffect(() => {
-    // Check if user already dismissed today
+    // Check if user already dismissed today (but always show for QR scans)
     const dismissedDate = sessionStorage.getItem('special-dismissed')
     const today = new Date().toDateString()
-    if (dismissedDate === today) {
+
+    // Reset dismissal if coming from QR
+    if (isFromQR) {
+      sessionStorage.removeItem('special-dismissed')
+    } else if (dismissedDate === today) {
       setDismissed(true)
     }
 
@@ -27,8 +40,10 @@ export default function TodaysSpecialPopup() {
         if (todaysSpecial && isSpecialValid(todaysSpecial)) {
           setSpecial(todaysSpecial)
           // Show popup after a short delay for better UX
-          if (dismissedDate !== today) {
-            setTimeout(() => setVisible(true), 1500)
+          // Show faster (500ms) if from QR, normal delay (1500ms) otherwise
+          const shouldShow = isFromQR || dismissedDate !== today
+          if (shouldShow) {
+            setTimeout(() => setVisible(true), isFromQR ? 500 : 1500)
           }
         }
       } catch (error) {
@@ -39,7 +54,7 @@ export default function TodaysSpecialPopup() {
     }
 
     loadSpecial()
-  }, [])
+  }, [isFromQR])
 
   const handleDismiss = () => {
     setVisible(false)

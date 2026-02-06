@@ -8,6 +8,7 @@ import { getMenuItemImage } from '@/lib/image-mapping'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import TodaysSpecialPopup from '@/components/TodaysSpecialPopup'
 
 function TableOrderContent() {
   const searchParams = useSearchParams()
@@ -554,6 +555,9 @@ function TableOrderContent() {
   if (!setupComplete) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        {/* Today's Special Popup - Shows on QR Scan */}
+        <TodaysSpecialPopup forceShow={!!urlTableNumber} />
+
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-green-500/10 rounded-full blur-3xl"></div>
         </div>

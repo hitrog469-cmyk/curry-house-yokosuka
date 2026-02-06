@@ -3,6 +3,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 import OffersSection from '@/components/OffersSection'
 import TodaysSpecialPopup from '@/components/TodaysSpecialPopup'
+import TopBanner from '@/components/TopBanner'
 import { getMenuItemImage } from '@/lib/image-mapping'
 
 export default function HomePage() {
@@ -61,6 +62,12 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Sticky Red Banner at the Very Top */}
+      <TopBanner />
+
+      {/* Spacer for fixed banner */}
+      <div className="h-10"></div>
+
       <Navbar />
 
       {/* Today's Special - Floating Popup */}
