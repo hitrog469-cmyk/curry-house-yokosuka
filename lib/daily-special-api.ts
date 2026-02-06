@@ -28,11 +28,14 @@ export async function getTodaysSpecial(): Promise<DailySpecial | null> {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  // Use Japan timezone for date (restaurant is in Yokosuka)
+  const japanDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' })
+
   const { data, error } = await supabase
     .from('daily_specials')
     .select('*')
     .eq('is_active', true)
-    .eq('valid_date', new Date().toISOString().split('T')[0])
+    .eq('valid_date', japanDate)
     .single()
 
   if (error) {
@@ -98,12 +101,15 @@ export async function createDailySpecial(special: {
     ((special.original_price - special.special_price) / special.original_price) * 100
   )
 
+  // Use Japan timezone for date
+  const japanDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' })
+
   // Deactivate any existing active specials for today
   await supabase
     .from('daily_specials')
     .update({ is_active: false })
     .eq('is_active', true)
-    .eq('valid_date', new Date().toISOString().split('T')[0])
+    .eq('valid_date', japanDate)
 
   // Create new special
   const { data, error } = await supabase
@@ -112,7 +118,7 @@ export async function createDailySpecial(special: {
       ...special,
       discount_percentage,
       is_active: true,
-      valid_date: new Date().toISOString().split('T')[0],
+      valid_date: japanDate,
       valid_from: special.valid_from || '11:00',
       valid_until: special.valid_until || '22:00'
     })
@@ -210,18 +216,19 @@ export async function deleteDailySpecial(
 }
 
 /**
- * Check if a special is currently valid (time-based)
+ * Check if a special is currently valid (time-based, using Japan timezone)
  */
 export function isSpecialValid(special: DailySpecial): boolean {
   if (!special.is_active) return false
 
+  // Use Japan timezone for date/time checks (restaurant is in Yokosuka)
   const now = new Date()
-  const currentDate = now.toISOString().split('T')[0]
+  const japanDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' }) // YYYY-MM-DD format
+  const japanTime = now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit', hour12: false }) // HH:mm format
 
   // Check date
-  if (special.valid_date !== currentDate) return false
+  if (special.valid_date !== japanDate) return false
 
   // Check time
-  const currentTime = now.toTimeString().slice(0, 5)  // HH:mm format
-  return currentTime >= special.valid_from && currentTime <= special.valid_until
+  return japanTime >= special.valid_from && japanTime <= special.valid_until
 }

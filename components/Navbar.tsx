@@ -168,7 +168,7 @@ export default function Navbar() {
                   </button>
 
                   {showProfileMenu && (
-                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-fadeIn">
+                    <div className="absolute right-0 mt-2 w-72 max-w-[90vw] bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-50 animate-fadeIn">
                       {/* User Info */}
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="font-bold text-gray-900 truncate">

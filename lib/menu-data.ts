@@ -320,3 +320,35 @@ export const searchItems = (query: string) => menuItems.filter(item =>
   item.name.toLowerCase().includes(query.toLowerCase()) ||
   item.nameJp.toLowerCase().includes(query.toLowerCase())
 )
+
+// Curry categories for pairing
+const CURRY_CATEGORIES = ['vegetable_curry', 'seafood_curry', 'chicken_curry', 'mutton_curry', 'keema_curry', 'special_curry']
+const BREAD_RICE_CATEGORIES = ['naan', 'rice']
+
+// Check if an item is a curry dish
+export const isCurryItem = (item: MenuItem) => CURRY_CATEGORIES.includes(item.category)
+
+// Check if an item could pair well with a curry (non-curry food items)
+export const needsCurryPairing = (item: MenuItem) => {
+  const pairableCategories = ['tandoori', 'naan', 'rice', 'fried', 'snacks', 'starters']
+  return pairableCategories.includes(item.category)
+}
+
+// Check if a curry item could pair well with naan/rice
+export const needsBreadRicePairing = (item: MenuItem) => {
+  return CURRY_CATEGORIES.includes(item.category)
+}
+
+// Get popular curry suggestions (for non-curry items)
+export const getCurrySuggestions = (): MenuItem[] => {
+  return menuItems.filter(item =>
+    CURRY_CATEGORIES.includes(item.category) && item.isRecommended
+  ).slice(0, 6)
+}
+
+// Get popular naan/rice suggestions (for curry items)
+export const getBreadRiceSuggestions = (): MenuItem[] => {
+  const naans = menuItems.filter(item => item.category === 'naan').slice(0, 4)
+  const rices = menuItems.filter(item => item.category === 'rice').slice(0, 3)
+  return [...naans, ...rices]
+}

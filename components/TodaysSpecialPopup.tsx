@@ -7,9 +7,44 @@ import Image from 'next/image'
 import { getTodaysSpecial, isSpecialValid, type DailySpecial } from '@/lib/daily-special-api'
 import { getMenuItemImage } from '@/lib/image-mapping'
 import { formatPrice } from '@/lib/utils'
+import { menuItems } from '@/lib/menu-data'
 
 interface TodaysSpecialPopupProps {
   forceShow?: boolean // Force show immediately (e.g., on QR scan)
+}
+
+// Fallback specials from menu when no DB special exists
+// Rotates daily based on day of month
+function getFallbackSpecial(): DailySpecial {
+  const recommendedCurries = menuItems.filter(
+    item => item.isRecommended && ['chicken_curry', 'mutton_curry', 'vegetable_curry', 'seafood_curry', 'special_curry', 'keema_curry'].includes(item.category)
+  )
+
+  // Pick one based on day of month for variety
+  const now = new Date()
+  const japanDay = parseInt(now.toLocaleDateString('en-US', { timeZone: 'Asia/Tokyo', day: 'numeric' }))
+  const index = japanDay % recommendedCurries.length
+  const item = recommendedCurries[index] || recommendedCurries[0]
+
+  const discountPercent = 15
+  const specialPrice = Math.round(item.price * (1 - discountPercent / 100))
+  const japanDate = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' })
+
+  return {
+    id: `fallback-${item.id}`,
+    menu_item_id: item.id,
+    menu_item_name: item.name,
+    original_price: item.price,
+    special_price: specialPrice,
+    discount_percentage: discountPercent,
+    display_text: item.description || `Today's featured dish — ${item.nameJp}`,
+    is_active: true,
+    valid_date: japanDate,
+    valid_from: '11:00',
+    valid_until: '22:00',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
 }
 
 export default function TodaysSpecialPopup({ forceShow = false }: TodaysSpecialPopupProps) {
@@ -32,22 +67,27 @@ export default function TodaysSpecialPopup({ forceShow = false }: TodaysSpecialP
       sessionStorage.removeItem('special-dismissed')
     } else if (dismissedDate === today) {
       setDismissed(true)
+      setLoading(false)
+      return
     }
 
     async function loadSpecial() {
       try {
+        // Try to fetch from database first
         const todaysSpecial = await getTodaysSpecial()
         if (todaysSpecial && isSpecialValid(todaysSpecial)) {
           setSpecial(todaysSpecial)
-          // Show popup after a short delay for better UX
-          // Show faster (500ms) if from QR, normal delay (1500ms) otherwise
-          const shouldShow = isFromQR || dismissedDate !== today
-          if (shouldShow) {
-            setTimeout(() => setVisible(true), isFromQR ? 500 : 1500)
-          }
+        } else {
+          // No DB special found — use fallback from menu
+          setSpecial(getFallbackSpecial())
         }
+        // Show popup after a short delay
+        setTimeout(() => setVisible(true), isFromQR ? 500 : 1500)
       } catch (error) {
         console.error('Error loading today\'s special:', error)
+        // Even on error, show fallback
+        setSpecial(getFallbackSpecial())
+        setTimeout(() => setVisible(true), isFromQR ? 500 : 1500)
       } finally {
         setLoading(false)
       }
@@ -97,7 +137,7 @@ export default function TodaysSpecialPopup({ forceShow = false }: TodaysSpecialP
             </button>
 
             {/* Image */}
-            <div className="relative h-52 overflow-hidden">
+            <div className="relative h-40 sm:h-52 overflow-hidden">
               <Image
                 src={imagePath}
                 alt={special.menu_item_name}
@@ -150,7 +190,7 @@ export default function TodaysSpecialPopup({ forceShow = false }: TodaysSpecialP
               </p>
 
               {/* Action Buttons */}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Link
                   href={`/table-order?special=${special.menu_item_id}`}
                   onClick={handleDismiss}

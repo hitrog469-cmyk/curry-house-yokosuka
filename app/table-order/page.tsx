@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import { formatPrice } from '@/lib/utils'
-import { menuItems, menuCategories, type MenuItem, type AddOn } from '@/lib/menu-data'
+import { menuItems, menuCategories, type MenuItem, type AddOn, needsCurryPairing, needsBreadRicePairing, getCurrySuggestions, getBreadRiceSuggestions } from '@/lib/menu-data'
 import { getMenuItemImage } from '@/lib/image-mapping'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
@@ -44,6 +44,11 @@ function TableOrderContent() {
 
   // Beverage state for the popup
   const [beverageQuantities, setBeverageQuantities] = useState<{[itemId: string]: number}>({})
+
+  // Curry/Bread pairing state
+  const [showPairingModal, setShowPairingModal] = useState(false)
+  const [pairingType, setPairingType] = useState<'curry' | 'bread_rice'>('curry')
+  const [pairingQuantities, setPairingQuantities] = useState<{[itemId: string]: number}>({})
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const categoryScrollRef = useRef<HTMLDivElement>(null)
@@ -169,6 +174,9 @@ function TableOrderContent() {
       ...prev,
       [itemId]: (prev[itemId] || 0) + 1
     }))
+
+    // Check for curry/bread pairing suggestion
+    showPairingSuggestion(item)
   }
 
   const removeFromCart = (itemId: string) => {
@@ -226,19 +234,25 @@ function TableOrderContent() {
       setShowAddOnModal(pendingItemId)
     } else {
       setCart(prev => ({ ...prev, [pendingItemId]: (prev[pendingItemId] || 0) + 1 }))
+      // Show pairing suggestion
+      if (item) showPairingSuggestion(item)
       setPendingItemId(null)
     }
   }
 
   const confirmAddToCart = () => {
     if (!pendingItemId) return
+    const item = menuItems.find(i => i.id === pendingItemId)
     setCart(prev => ({ ...prev, [pendingItemId]: (prev[pendingItemId] || 0) + 1 }))
     setShowAddOnModal(null)
+    // Show pairing suggestion
+    if (item) showPairingSuggestion(item)
     setPendingItemId(null)
   }
 
   const skipAddOns = () => {
     if (!pendingItemId) return
+    const item = menuItems.find(i => i.id === pendingItemId)
     setSelectedAddOns(prev => {
       const updated = { ...prev }
       delete updated[pendingItemId]
@@ -246,6 +260,8 @@ function TableOrderContent() {
     })
     setCart(prev => ({ ...prev, [pendingItemId]: (prev[pendingItemId] || 0) + 1 }))
     setShowAddOnModal(null)
+    // Show pairing suggestion
+    if (item) showPairingSuggestion(item)
     setPendingItemId(null)
   }
 
@@ -302,6 +318,50 @@ function TableOrderContent() {
   const skipBeverages = () => {
     setBeverageQuantities({})
     setShowBeverageModal(false)
+  }
+
+  // ========================
+  // CURRY / BREAD PAIRING
+  // ========================
+  const showPairingSuggestion = (item: MenuItem) => {
+    if (needsCurryPairing(item)) {
+      setPairingType('curry')
+      setPairingQuantities({})
+      setShowPairingModal(true)
+    } else if (needsBreadRicePairing(item)) {
+      setPairingType('bread_rice')
+      setPairingQuantities({})
+      setShowPairingModal(true)
+    }
+  }
+
+  const updatePairingQty = (itemId: string, change: number) => {
+    setPairingQuantities(prev => {
+      const current = prev[itemId] || 0
+      const newQty = Math.max(0, current + change)
+      if (newQty === 0) {
+        const { [itemId]: _, ...rest } = prev
+        return rest
+      }
+      return { ...prev, [itemId]: newQty }
+    })
+  }
+
+  const addPairingItems = () => {
+    Object.entries(pairingQuantities).forEach(([itemId, qty]) => {
+      if (qty > 0) {
+        // For curry items, we need to handle spice level
+        const item = menuItems.find(i => i.id === itemId)
+        setCart(prev => ({ ...prev, [itemId]: (prev[itemId] || 0) + qty }))
+      }
+    })
+    setPairingQuantities({})
+    setShowPairingModal(false)
+  }
+
+  const skipPairing = () => {
+    setPairingQuantities({})
+    setShowPairingModal(false)
   }
 
   // ========================
@@ -1383,6 +1443,84 @@ function TableOrderContent() {
                 </div>
               )
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* ===== CURRY / BREAD PAIRING POPUP ===== */}
+      {showPairingModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto animate-slideUp">
+            <div className="p-5">
+              <div className="mb-4 text-center">
+                <div className="text-4xl mb-2">{pairingType === 'curry' ? '🍛' : '🫓'}</div>
+                <h3 className="text-xl font-black text-gray-900">
+                  {pairingType === 'curry' ? 'Add a Curry?' : 'Add Naan or Rice?'}
+                </h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  {pairingType === 'curry'
+                    ? 'Complete your meal with a delicious curry!'
+                    : 'Perfect your curry with fresh bread or rice!'}
+                </p>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                {(pairingType === 'curry' ? getCurrySuggestions() : getBreadRiceSuggestions()).map((item) => {
+                  const qty = pairingQuantities[item.id] || 0
+                  const img = getMenuItemImage(item.id)
+                  return (
+                    <div key={item.id} className="p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200">
+                      <div className="flex items-center gap-3 mb-2">
+                        {img ? (
+                          <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
+                            <Image src={img} alt={item.name} width={48} height={48} className="w-full h-full object-cover scale-[1.5]" />
+                          </div>
+                        ) : (
+                          <span className="text-2xl">{pairingType === 'curry' ? '🍛' : '🫓'}</span>
+                        )}
+                        <div className="flex-1">
+                          <h4 className="font-bold text-sm text-gray-900">{item.name}</h4>
+                          <p className="text-xs text-gray-500">{item.nameJp}</p>
+                          <p className="text-orange-700 font-bold text-sm mt-0.5">{formatPrice(item.price)}</p>
+                        </div>
+                      </div>
+
+                      {qty > 0 ? (
+                        <div className="flex items-center gap-2 bg-white rounded-lg p-1.5">
+                          <button onClick={() => updatePairingQty(item.id, -1)} className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-md font-bold text-sm flex items-center justify-center">-</button>
+                          <span className="flex-1 text-center font-black text-lg">{qty}</span>
+                          <button onClick={() => updatePairingQty(item.id, 1)} className="w-8 h-8 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-bold text-sm flex items-center justify-center">+</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => updatePairingQty(item.id, 1)}
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg transition-colors text-xs"
+                        >
+                          Add {item.name}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={skipPairing}
+                  className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-all text-sm"
+                >
+                  No Thanks
+                </button>
+                {Object.values(pairingQuantities).some(q => q > 0) && (
+                  <button
+                    onClick={addPairingItems}
+                    className="flex-1 py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all text-sm"
+                  >
+                    Add to Order
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

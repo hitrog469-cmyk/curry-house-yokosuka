@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Suspense } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 import OffersSection from '@/components/OffersSection'
@@ -71,7 +72,9 @@ export default function HomePage() {
       <Navbar />
 
       {/* Today's Special - Floating Popup */}
-      <TodaysSpecialPopup />
+      <Suspense fallback={null}>
+        <TodaysSpecialPopup />
+      </Suspense>
 
       {/* ============================================
           HERO — Green Theme, Mobile First

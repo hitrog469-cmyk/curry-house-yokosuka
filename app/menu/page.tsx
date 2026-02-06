@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { formatPrice } from '@/lib/utils'
-import { menuItems, menuCategories, sortOptions, type MenuItem, type AddOn } from '@/lib/menu-data'
+import { menuItems, menuCategories, sortOptions, type MenuItem, type AddOn, needsCurryPairing, needsBreadRicePairing, getCurrySuggestions, getBreadRiceSuggestions } from '@/lib/menu-data'
 import { getMenuItemImage } from '@/lib/image-mapping'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
@@ -32,6 +32,11 @@ function MenuContent() {
   const [suggestedQuantities, setSuggestedQuantities] = useState<{[itemId: string]: number}>({})
   const [showBeverageModal, setShowBeverageModal] = useState<string | null>(null)
   const [beverageQuantities, setBeverageQuantities] = useState<{[itemId: string]: number}>({})
+
+  // Curry/Bread pairing state
+  const [showPairingModal, setShowPairingModal] = useState(false)
+  const [pairingType, setPairingType] = useState<'curry' | 'bread_rice'>('curry')
+  const [pairingQuantities, setPairingQuantities] = useState<{[itemId: string]: number}>({})
 
   // Set Meal Selection State
   const [showSetMealModal, setShowSetMealModal] = useState<string | null>(null)
@@ -354,6 +359,9 @@ function MenuContent() {
       if (item?.suggestedItems && item.suggestedItems.length > 0) {
         setPendingItemId(itemId)
         setShowSuggestedModal(itemId)
+      } else if (needsCurryPairing(item!) || needsBreadRicePairing(item!)) {
+        // Show curry/bread pairing suggestion
+        showPairingSuggestion(item!)
       } else {
         // No suggested items, check for beverage pairing
         const beverageSuggestions = getBeverageSuggestions(itemId)
@@ -367,14 +375,17 @@ function MenuContent() {
 
   const confirmAddToCart = () => {
     if (pendingItemId) {
+      const tempItemId = pendingItemId
       updateCart(pendingItemId, 1)
       setPendingItemId(null)
       setShowAddOnModal(null)
 
       // Check for suggested items after adding
-      const item = menuItems.find(i => i.id === pendingItemId)
+      const item = menuItems.find(i => i.id === tempItemId)
       if (item?.suggestedItems && item.suggestedItems.length > 0) {
-        setShowSuggestedModal(pendingItemId)
+        setShowSuggestedModal(tempItemId)
+      } else if (item && (needsCurryPairing(item) || needsBreadRicePairing(item))) {
+        showPairingSuggestion(item)
       }
     }
   }
@@ -398,6 +409,8 @@ function MenuContent() {
       if (item?.suggestedItems && item.suggestedItems.length > 0) {
         setPendingItemId(tempItemId)
         setShowSuggestedModal(tempItemId)
+      } else if (item && (needsCurryPairing(item) || needsBreadRicePairing(item))) {
+        showPairingSuggestion(item)
       } else {
         // No suggested items, check for beverage pairing
         const beverageSuggestions = getBeverageSuggestions(tempItemId)
@@ -557,6 +570,9 @@ function MenuContent() {
       // Check for suggested items
       if (item?.suggestedItems && item.suggestedItems.length > 0) {
         setShowSuggestedModal(pendingItemId)
+      } else if (item && (needsCurryPairing(item) || needsBreadRicePairing(item))) {
+        showPairingSuggestion(item)
+        setPendingItemId(null)
       } else {
         setPendingItemId(null)
       }
@@ -636,6 +652,48 @@ function MenuContent() {
     setBeverageQuantities({})
     setShowBeverageModal(null)
     setPendingItemId(null)
+  }
+
+  // ========================
+  // CURRY / BREAD PAIRING
+  // ========================
+  const showPairingSuggestion = (item: MenuItem) => {
+    if (needsCurryPairing(item)) {
+      setPairingType('curry')
+      setPairingQuantities({})
+      setShowPairingModal(true)
+    } else if (needsBreadRicePairing(item)) {
+      setPairingType('bread_rice')
+      setPairingQuantities({})
+      setShowPairingModal(true)
+    }
+  }
+
+  const updatePairingQty = (itemId: string, change: number) => {
+    setPairingQuantities(prev => {
+      const current = prev[itemId] || 0
+      const newQty = Math.max(0, current + change)
+      if (newQty === 0) {
+        const { [itemId]: _, ...rest } = prev
+        return rest
+      }
+      return { ...prev, [itemId]: newQty }
+    })
+  }
+
+  const addPairingItems = () => {
+    Object.entries(pairingQuantities).forEach(([itemId, qty]) => {
+      if (qty > 0) {
+        updateCart(itemId, qty)
+      }
+    })
+    setPairingQuantities({})
+    setShowPairingModal(false)
+  }
+
+  const skipPairing = () => {
+    setPairingQuantities({})
+    setShowPairingModal(false)
   }
 
   const updateBeverageQty = (beverageId: string, change: number) => {
@@ -1406,6 +1464,94 @@ function MenuContent() {
                 </div>
               )
             })()}
+          </div>
+        </div>
+      )}
+
+      {/* Curry / Bread Pairing Modal */}
+      {showPairingModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="p-6">
+              <div className="mb-4 text-center">
+                <div className="text-4xl mb-2">{pairingType === 'curry' ? '🍛' : '🫓'}</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                  {pairingType === 'curry' ? 'Add a Curry?' : 'Add Naan or Rice?'}
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  {pairingType === 'curry'
+                    ? 'Complete your meal with a delicious curry!'
+                    : 'Perfect your curry with fresh bread or rice!'}
+                </p>
+              </div>
+
+              <div className="space-y-3 mb-6">
+                {(pairingType === 'curry' ? getCurrySuggestions() : getBreadRiceSuggestions()).map((item) => {
+                  const qty = pairingQuantities[item.id] || 0
+                  const img = getMenuItemImage(item.id)
+                  return (
+                    <div key={item.id} className="p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border-2 border-orange-200">
+                      <div className="flex items-center gap-3 mb-3">
+                        {img ? (
+                          <div className="w-14 h-14 rounded-lg overflow-hidden shrink-0">
+                            <img src={img} alt={item.name} className="w-full h-full object-cover scale-[1.5]" />
+                          </div>
+                        ) : (
+                          <span className="text-3xl">{pairingType === 'curry' ? '🍛' : '🫓'}</span>
+                        )}
+                        <div className="flex-1">
+                          <h4 className="font-bold text-lg text-gray-900">{item.name}</h4>
+                          <p className="text-xs text-gray-500">{item.nameJp}</p>
+                          <p className="text-orange-600 font-bold text-lg mt-0.5">{formatPrice(item.price)}</p>
+                        </div>
+                      </div>
+
+                      {qty > 0 ? (
+                        <div className="flex items-center gap-3 bg-white rounded-lg p-2">
+                          <button
+                            onClick={() => updatePairingQty(item.id, -1)}
+                            className="w-10 h-10 bg-gray-200 hover:bg-gray-300 rounded-lg font-bold text-xl flex items-center justify-center transition-colors"
+                          >
+                            −
+                          </button>
+                          <span className="flex-1 text-center font-black text-2xl text-gray-900">{qty}</span>
+                          <button
+                            onClick={() => updatePairingQty(item.id, 1)}
+                            className="w-10 h-10 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold text-xl flex items-center justify-center transition-colors"
+                          >
+                            +
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => updatePairingQty(item.id, 1)}
+                          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors text-sm"
+                        >
+                          Add {item.name}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={skipPairing}
+                  className="flex-1 px-6 py-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+                >
+                  No Thanks
+                </button>
+                {Object.values(pairingQuantities).some(q => q > 0) && (
+                  <button
+                    onClick={addPairingItems}
+                    className="flex-1 px-6 py-4 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl"
+                  >
+                    Add to Cart
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
