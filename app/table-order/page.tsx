@@ -50,6 +50,13 @@ function TableOrderContent() {
   const [pairingType, setPairingType] = useState<'curry' | 'bread_rice'>('curry')
   const [pairingQuantities, setPairingQuantities] = useState<{[itemId: string]: number}>({})
 
+  // Set meal selection state
+  const [showSetMealModal, setShowSetMealModal] = useState<string | null>(null)
+  const [setMealSelections, setSetMealSelections] = useState<{[setId: string]: {curries: string[], naan: string, rice: string}}>({})
+  const [tempSetMealCurries, setTempSetMealCurries] = useState<string[]>([])
+  const [tempSetMealNaan, setTempSetMealNaan] = useState<string>('plain-naan')
+  const [tempSetMealRice, setTempSetMealRice] = useState<string>('plain-rice')
+
   const searchInputRef = useRef<HTMLInputElement>(null)
   const categoryScrollRef = useRef<HTMLDivElement>(null)
 
@@ -61,6 +68,76 @@ function TableOrderContent() {
   const categories = menuCategories.filter(c =>
     c.id === 'all' || menuItems.some(item => item.category === c.id)
   )
+
+  // ========================
+  // SET MEAL CONFIG
+  // ========================
+  const setMealConfig: {[setId: string]: {curries: number, hasNaan: boolean, hasRice: boolean}} = {
+    'set-1': { curries: 2, hasNaan: true, hasRice: true }, // Cheese Naan Set
+    'set-2': { curries: 1, hasNaan: true, hasRice: true }, // 1 Curry Set
+    'set-3': { curries: 2, hasNaan: true, hasRice: true }, // Yokosuka Set
+    'set-4': { curries: 2, hasNaan: true, hasRice: true }, // CFAY Set
+  }
+
+  const availableCurries = menuItems.filter(item =>
+    ['vegetable_curry', 'seafood_curry', 'chicken_curry', 'mutton_curry'].includes(item.category)
+  )
+
+  const naanOptions = [
+    { id: 'plain-naan', name: 'Plain Naan', nameJp: 'プレーンナン' },
+    { id: 'butter-naan', name: 'Butter Naan', nameJp: 'バターナン' },
+    { id: 'garlic-naan', name: 'Garlic Naan', nameJp: 'ガーリックナン' },
+    { id: 'cheese-naan', name: 'Cheese Naan', nameJp: 'チーズナン' },
+  ]
+
+  const riceOptions = [
+    { id: 'plain-rice', name: 'Plain Rice', nameJp: 'ライス' },
+    { id: 'saffron-rice', name: 'Saffron Rice', nameJp: 'サフランライス' },
+    { id: 'jeera-rice', name: 'Jeera Rice', nameJp: 'ジーラライス' },
+  ]
+
+  const isSetMeal = (itemId: string) => Object.keys(setMealConfig).includes(itemId)
+
+  const openSetMealModal = (setId: string) => {
+    setTempSetMealCurries(setMealSelections[setId]?.curries || [])
+    setTempSetMealNaan(setMealSelections[setId]?.naan || 'plain-naan')
+    setTempSetMealRice(setMealSelections[setId]?.rice || 'plain-rice')
+    setShowSetMealModal(setId)
+  }
+
+  const toggleSetMealCurry = (curryId: string, maxCurries: number) => {
+    setTempSetMealCurries(prev => {
+      if (prev.includes(curryId)) {
+        return prev.filter(id => id !== curryId)
+      } else if (prev.length < maxCurries) {
+        return [...prev, curryId]
+      }
+      return prev
+    })
+  }
+
+  const confirmSetMealSelection = () => {
+    if (!showSetMealModal) return
+    const config = setMealConfig[showSetMealModal]
+    if (!config) return
+
+    if (tempSetMealCurries.length !== config.curries) {
+      alert(`Please select ${config.curries} currie${config.curries > 1 ? 's' : ''}`)
+      return
+    }
+
+    setSetMealSelections(prev => ({
+      ...prev,
+      [showSetMealModal]: {
+        curries: tempSetMealCurries,
+        naan: tempSetMealNaan,
+        rice: tempSetMealRice,
+      }
+    }))
+
+    setCart(prev => ({ ...prev, [showSetMealModal]: (prev[showSetMealModal] || 0) + 1 }))
+    setShowSetMealModal(null)
+  }
 
   const filteredItems = useMemo(() => {
     let items = selectedCategory === 'all'
@@ -153,6 +230,12 @@ function TableOrderContent() {
   const addToCart = (itemId: string) => {
     const item = menuItems.find(i => i.id === itemId)
     if (!item) return
+
+    // Step 0: Check if it's a set meal — show set meal modal
+    if (isSetMeal(itemId)) {
+      openSetMealModal(itemId)
+      return
+    }
 
     // Step 1: Check if spice level is needed
     const needsSpiceLevel = item.spiceLevel || item.category?.includes('curry') || item.category === 'nepalese'
@@ -472,6 +555,7 @@ function TableOrderContent() {
     try {
       const orderItems = Object.entries(cart).map(([itemId, quantity]) => {
         const item = menuItems.find(i => i.id === itemId)
+        const setSelections = setMealSelections[itemId]
         return {
           item_id: itemId,
           name: getItemDisplayName(itemId),
@@ -482,7 +566,13 @@ function TableOrderContent() {
           addOns: selectedAddOns[itemId] || [],
           variation: item?.variations && selectedVariations[itemId] !== undefined
             ? item.variations[selectedVariations[itemId]].name
-            : null
+            : null,
+          // Set meal curry/naan/rice selections for kitchen
+          setMealChoices: setSelections ? {
+            curries: setSelections.curries.map(cId => menuItems.find(i => i.id === cId)?.name || cId),
+            naan: naanOptions.find(n => n.id === setSelections.naan)?.name || 'Plain Naan',
+            rice: riceOptions.find(r => r.id === setSelections.rice)?.name || 'Plain Rice',
+          } : null
         }
       })
 
@@ -1157,6 +1247,12 @@ function TableOrderContent() {
                       {selectedAddOns[itemId] && selectedAddOns[itemId].length > 0 && (
                         <p className="text-[10px] text-blue-600">+ {selectedAddOns[itemId].join(', ')}</p>
                       )}
+                      {setMealSelections[itemId] && (
+                        <div className="text-[10px] text-purple-600 mt-0.5">
+                          <p>🍛 {setMealSelections[itemId].curries.map(cId => menuItems.find(i => i.id === cId)?.name || cId).join(', ')}</p>
+                          <p>🫓 {naanOptions.find(n => n.id === setMealSelections[itemId].naan)?.name || 'Plain Naan'} · {riceOptions.find(r => r.id === setMealSelections[itemId].rice)?.name || 'Plain Rice'}</p>
+                        </div>
+                      )}
                       <p className="text-sm font-bold text-green-600">{formatPrice(getItemPrice(itemId) * quantity)}</p>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -1446,6 +1542,162 @@ function TableOrderContent() {
           </div>
         </div>
       )}
+
+      {/* ===== SET MEAL SELECTION MODAL ===== */}
+      {showSetMealModal && (() => {
+        const setItem = menuItems.find(i => i.id === showSetMealModal)
+        const config = setMealConfig[showSetMealModal]
+        if (!setItem || !config) return null
+
+        return (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+            <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-5 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
+                    <span className="text-3xl">🍛</span>
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">{setItem.name}</h3>
+                    <p className="text-green-100 text-sm">{setItem.nameJp}</p>
+                    <p className="text-white font-bold text-lg mt-1">{formatPrice(setItem.price)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                {/* Curry Selection */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-bold text-gray-900">
+                      Choose {config.curries} Curr{config.curries > 1 ? 'ies' : 'y'}
+                    </h4>
+                    <span className={`text-sm font-bold px-2 py-1 rounded-full ${
+                      tempSetMealCurries.length === config.curries
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-orange-100 text-orange-700'
+                    }`}>
+                      {tempSetMealCurries.length}/{config.curries} selected
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                    {availableCurries.map(curry => {
+                      const isSelected = tempSetMealCurries.includes(curry.id)
+                      const isDisabled = !isSelected && tempSetMealCurries.length >= config.curries
+
+                      return (
+                        <button
+                          key={curry.id}
+                          onClick={() => toggleSetMealCurry(curry.id, config.curries)}
+                          disabled={isDisabled}
+                          className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                            isSelected
+                              ? 'border-green-500 bg-green-50'
+                              : isDisabled
+                                ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
+                            isSelected ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-gray-900 truncate">{curry.name}</p>
+                            <p className="text-xs text-gray-500 truncate">{curry.nameJp}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Naan Selection */}
+                {config.hasNaan && (
+                  <div>
+                    <h4 className="font-bold text-gray-900 mb-3">Choose Your Naan</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {naanOptions.map(naan => (
+                        <button
+                          key={naan.id}
+                          onClick={() => setTempSetMealNaan(naan.id)}
+                          className={`p-3 rounded-xl border-2 text-left transition-all ${
+                            tempSetMealNaan === naan.id
+                              ? 'border-amber-500 bg-amber-50'
+                              : 'border-gray-200 hover:border-amber-300 hover:bg-amber-50'
+                          }`}
+                        >
+                          <p className="font-semibold text-sm text-gray-900">{naan.name}</p>
+                          <p className="text-xs text-gray-500">{naan.nameJp}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rice Selection */}
+                {config.hasRice && (
+                  <div>
+                    <h4 className="font-bold text-gray-900 mb-3">Choose Your Rice</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      {riceOptions.map(rice => (
+                        <button
+                          key={rice.id}
+                          onClick={() => setTempSetMealRice(rice.id)}
+                          className={`p-3 rounded-xl border-2 text-center transition-all ${
+                            tempSetMealRice === rice.id
+                              ? 'border-orange-500 bg-orange-50'
+                              : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
+                          }`}
+                        >
+                          <p className="font-semibold text-sm text-gray-900">{rice.name}</p>
+                          <p className="text-xs text-gray-500">{rice.nameJp}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Set Contents Summary */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <h4 className="font-bold text-gray-700 text-sm mb-2">Set Includes:</h4>
+                  <p className="text-sm text-gray-600">{setItem.description}</p>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-5 border-t bg-gray-50 shrink-0">
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowSetMealModal(null)}
+                    className="flex-1 py-3.5 px-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmSetMealSelection}
+                    disabled={tempSetMealCurries.length !== config.curries}
+                    className={`flex-1 py-3.5 px-4 font-bold rounded-xl transition-all ${
+                      tempSetMealCurries.length === config.curries
+                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                  >
+                    Add to Order — {formatPrice(setItem.price)}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ===== CURRY / BREAD PAIRING POPUP ===== */}
       {showPairingModal && (
