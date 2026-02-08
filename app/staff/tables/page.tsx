@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -27,14 +27,12 @@ export default function StaffTablesPage() {
   const [staffName, setStaffName] = useState('')
   const [releasing, setReleasing] = useState(false)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
 
   useEffect(() => {
     fetchSessions()
 
+    if (!supabase) return
     // Real-time subscription
     const channel = supabase
       .channel('table_sessions_changes')
@@ -44,11 +42,12 @@ export default function StaffTablesPage() {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      supabase?.removeChannel(channel)
     }
   }, [])
 
   const fetchSessions = async () => {
+    if (!supabase) return
     try {
       const { data, error } = await supabase
         .from('table_sessions')
@@ -71,6 +70,7 @@ export default function StaffTablesPage() {
       return
     }
 
+    if (!supabase) return
     setReleasing(true)
     try {
       const { error } = await supabase

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import type { User, Session } from '@supabase/supabase-js';
+import type { User, Session, SupabaseClient } from '@supabase/supabase-js';
 import { useRouter } from 'next/navigation';
 
 type UserRole = 'customer' | 'staff' | 'admin';
@@ -25,9 +25,11 @@ interface AuthContextType {
   user: AuthUser | null;
   session: Session | null;
   loading: boolean;
+  supabaseConfigured: boolean;
   refreshUser: () => Promise<void>;
   signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<{ error: Error | null }>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
   signInWithGoogle: () => Promise<{ error: Error | null }>;
   signInWithApple: () => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -38,16 +40,37 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Check if Supabase is properly configured
+function checkSupabaseConfig(): boolean {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return false;
+  // Supabase anon keys are JWTs starting with 'eyJ' and are 200+ chars
+  if (!key.startsWith('eyJ') || key.length < 100) {
+    console.error('Supabase anon key appears invalid. It should be a JWT token starting with "eyJ". Current key starts with:', key.substring(0, 10) + '...');
+    return false;
+  }
+  return true;
+}
+
+const NOT_CONFIGURED_ERROR = new Error(
+  'Authentication is not configured. Please set up Supabase with valid credentials.'
+);
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+
+  const [supabaseConfigured] = useState(() => checkSupabaseConfig());
+  const [supabase] = useState<SupabaseClient | null>(() => {
+    if (!checkSupabaseConfig()) return null;
+    return createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  });
 
   // Fetch user profile with proper error handling
   const fetchUserProfile = async (userId: string): Promise<ProfileData> => {
@@ -58,6 +81,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user_id: null
     };
 
+    if (!supabase) return defaultProfile;
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -65,12 +90,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .maybeSingle();
 
-      // If error or no data, return defaults
       if (error || !data) {
         if (error) console.error('Profile fetch error:', error.message);
         return defaultProfile;
       }
-      
+
       return {
         role: (data.role as UserRole) || 'customer',
         full_name: data.full_name || '',
@@ -85,12 +109,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Refresh user data
   const refreshUser = async () => {
+    if (!supabase) return;
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session?.user) {
         const profile = await fetchUserProfile(session.user.id);
-        
+
         setUser({
           ...session.user,
           role: profile.role,
@@ -107,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Update user state with profile data
   const updateUserWithProfile = async (authUser: User) => {
     const profile = await fetchUserProfile(authUser.id);
-    
+
     setUser({
       ...authUser,
       role: profile.role,
@@ -121,14 +146,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     const initAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
+
         if (!mounted) return;
-        
+
         setSession(session);
-        
+
         if (session?.user) {
           await updateUserWithProfile(session.user);
         }
@@ -157,9 +187,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setLoading(false);
 
-      // Note: We DON'T auto-redirect on SIGNED_IN to prevent loops
-      // The login page handles its own redirect via redirectTo param
-      // Only handle sign out redirect
       if (event === 'SIGNED_OUT') {
         router.push('/');
         router.refresh();
@@ -173,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [supabase, router]);
 
   const signUp = async (email: string, password: string, fullName: string, phone?: string) => {
+    if (!supabase) return { error: NOT_CONFIGURED_ERROR };
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -194,6 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithEmail = async (email: string, password: string) => {
+    if (!supabase) return { error: NOT_CONFIGURED_ERROR };
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -207,7 +236,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithMagicLink = async (email: string) => {
+    if (!supabase) return { error: NOT_CONFIGURED_ERROR };
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      });
+
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
   const signInWithGoogle = async () => {
+    if (!supabase) return { error: NOT_CONFIGURED_ERROR };
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
@@ -224,6 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithApple = async () => {
+    if (!supabase) return { error: NOT_CONFIGURED_ERROR };
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
@@ -240,6 +288,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!supabase) return;
     try {
       await supabase.auth.signOut();
       setUser(null);
@@ -252,6 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const resetPassword = async (email: string) => {
+    if (!supabase) return { error: NOT_CONFIGURED_ERROR };
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -265,6 +315,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updatePassword = async (newPassword: string) => {
+    if (!supabase) return { error: NOT_CONFIGURED_ERROR };
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
@@ -279,11 +330,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const hasRole = (role: UserRole | UserRole[]) => {
     if (!user?.role) return false;
-    
+
     if (Array.isArray(role)) {
       return role.includes(user.role);
     }
-    
+
     return user.role === role;
   };
 
@@ -291,9 +342,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     session,
     loading,
+    supabaseConfigured,
     refreshUser,
     signUp,
     signInWithEmail,
+    signInWithMagicLink,
     signInWithGoogle,
     signInWithApple,
     signOut,

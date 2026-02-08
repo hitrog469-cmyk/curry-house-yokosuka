@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/protected-route';
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 import Navbar from '@/components/Navbar';
 
 export default function ProfilePage() {
@@ -16,10 +16,7 @@ export default function ProfilePage() {
     phone: '',
   });
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
     if (user) {
@@ -31,6 +28,7 @@ export default function ProfilePage() {
   }, [user]);
 
   const handleSave = async () => {
+    if (!supabase) return;
     setLoading(true);
     setMessage({ type: '', text: '' });
 

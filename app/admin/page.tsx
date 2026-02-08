@@ -70,6 +70,7 @@ export default function AdminDashboard() {
   }, [selectedStatus, user, adminSession])
 
   async function fetchOrders() {
+    if (!supabase) return
     setLoading(true)
     let query = supabase
       .from('orders')
@@ -89,6 +90,7 @@ export default function AdminDashboard() {
   }
 
   async function fetchStaff() {
+    if (!supabase) return
     const { data } = await supabase
       .from('users')
       .select('id, name, phone')
@@ -101,6 +103,7 @@ export default function AdminDashboard() {
   }
 
   async function updateOrderStatus(orderId: string, newStatus: string) {
+    if (!supabase) return
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
@@ -112,6 +115,7 @@ export default function AdminDashboard() {
   }
 
   async function assignStaff(orderId: string, staffId: string) {
+    if (!supabase) return
     const { error } = await supabase
       .from('orders')
       .update({ 

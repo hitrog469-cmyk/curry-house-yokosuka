@@ -43,6 +43,7 @@ export default function StaffPortal() {
   }, [])
 
   async function fetchMyOrders(staffId: string) {
+    if (!supabase) return
     setLoading(true)
     const { data, error } = await supabase
       .from('orders')
@@ -58,6 +59,7 @@ export default function StaffPortal() {
   }
 
   async function updateOrderStatus(orderId: string, newStatus: string) {
+    if (!supabase) return
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })

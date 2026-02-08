@@ -46,7 +46,7 @@ export default function NotificationBell() {
   }, []);
 
   async function fetchNotifications() {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     const { data, error } = await supabase
       .from('notifications')
@@ -62,7 +62,7 @@ export default function NotificationBell() {
   }
 
   function subscribeToNotifications() {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     const channel = supabase
       .channel('notifications')
@@ -83,11 +83,12 @@ export default function NotificationBell() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase?.removeChannel(channel);
     };
   }
 
   async function markAsRead(notificationId: string) {
+    if (!supabase) return;
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
@@ -102,7 +103,7 @@ export default function NotificationBell() {
   }
 
   async function markAllAsRead() {
-    if (!user) return;
+    if (!user || !supabase) return;
     setLoading(true);
 
     const { error } = await supabase

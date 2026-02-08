@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 
 // Constants
@@ -93,10 +93,7 @@ export default function StaffDashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date())
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
 
   // Play notification sound
   const playNotificationSound = useCallback(() => {
@@ -133,6 +130,7 @@ export default function StaffDashboardPage() {
 
   // Fetch all table data
   const fetchTableData = useCallback(async () => {
+    if (!supabase) return
     try {
       // Fetch from legacy table_orders (current system)
       const { data: legacyOrders, error } = await supabase
@@ -537,6 +535,7 @@ export default function StaffDashboardPage() {
 
   // Mark orders as preparing
   const markOrdersAsPreparing = async (orderIds: string[]) => {
+    if (!supabase) return
     try {
       const { error } = await supabase
         .from('table_orders')
@@ -552,6 +551,7 @@ export default function StaffDashboardPage() {
 
   // Close/reset table session
   const closeTable = async (tableNumber: number) => {
+    if (!supabase) return
     try {
       // Mark all orders for this table as completed
       const { error } = await supabase
@@ -572,6 +572,8 @@ export default function StaffDashboardPage() {
   // Real-time subscription
   useEffect(() => {
     fetchTableData()
+
+    if (!supabase) return
 
     const channel = supabase
       .channel('staff_dashboard_changes')
@@ -599,7 +601,7 @@ export default function StaffDashboardPage() {
     }, 60000)
 
     return () => {
-      supabase.removeChannel(channel)
+      supabase?.removeChannel(channel)
       clearInterval(timeInterval)
     }
   }, [fetchTableData, playNotificationSound, supabase])

@@ -1,7 +1,7 @@
 // Daily Special API Functions
 // CRUD operations for managing Today's Special feature
 
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
 export type DailySpecial = {
   id: string
@@ -23,10 +23,8 @@ export type DailySpecial = {
  * Get today's active special
  */
 export async function getTodaysSpecial(): Promise<DailySpecial | null> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
+  if (!supabase) return null
 
   // Use Japan timezone for date (restaurant is in Yokosuka)
   const japanDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' })
@@ -61,10 +59,8 @@ export async function getTodaysSpecial(): Promise<DailySpecial | null> {
  * Get all daily specials (for admin)
  */
 export async function getAllDailySpecials(): Promise<DailySpecial[]> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
+  if (!supabase) return []
 
   const { data, error } = await supabase
     .from('daily_specials')
@@ -91,10 +87,8 @@ export async function createDailySpecial(special: {
   valid_from?: string
   valid_until?: string
 }): Promise<{ success: boolean; data?: DailySpecial; error?: string }> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
+  if (!supabase) return { success: false, error: 'Supabase client not available' }
 
   // Calculate discount percentage
   const discount_percentage = Math.round(
@@ -140,10 +134,8 @@ export async function updateDailySpecial(
   id: string,
   updates: Partial<DailySpecial>
 ): Promise<{ success: boolean; data?: DailySpecial; error?: string }> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
+  if (!supabase) return { success: false, error: 'Supabase client not available' }
 
   // Recalculate discount percentage if prices changed
   if (updates.original_price && updates.special_price) {
@@ -173,10 +165,8 @@ export async function updateDailySpecial(
 export async function deactivateDailySpecial(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
+  if (!supabase) return { success: false, error: 'Supabase client not available' }
 
   const { error } = await supabase
     .from('daily_specials')
@@ -197,10 +187,8 @@ export async function deactivateDailySpecial(
 export async function deleteDailySpecial(
   id: string
 ): Promise<{ success: boolean; error?: string }> {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
+  if (!supabase) return { success: false, error: 'Supabase client not available' }
 
   const { error } = await supabase
     .from('daily_specials')

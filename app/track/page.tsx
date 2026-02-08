@@ -39,6 +39,7 @@ export default function TrackOrderPage() {
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
+    if (!supabase) { setLoading(false); return }
     setLoading(true)
     setSearched(true)
 
@@ -75,6 +76,7 @@ export default function TrackOrderPage() {
 
   // Handle order cancellation
   const handleCancelOrder = async (orderId: string) => {
+    if (!supabase) return
     setCancellingId(orderId)
 
     const { error } = await supabase

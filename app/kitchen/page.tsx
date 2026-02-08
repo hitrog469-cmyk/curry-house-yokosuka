@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 
 interface OrderItem {
@@ -27,10 +27,7 @@ export default function KitchenDisplayPage() {
   const [loading, setLoading] = useState(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
 
   // Play notification sound for new orders
   const playNotificationSound = () => {
@@ -41,6 +38,7 @@ export default function KitchenDisplayPage() {
 
   // Fetch orders
   const fetchOrders = async () => {
+    if (!supabase) { setLoading(false); return }
     try {
       const { data, error } = await supabase
         .from('table_orders')
@@ -60,6 +58,7 @@ export default function KitchenDisplayPage() {
 
   // Mark order as preparing
   const markAsPreparing = async (orderId: string) => {
+    if (!supabase) return
     try {
       const { error } = await supabase
         .from('table_orders')
@@ -75,6 +74,7 @@ export default function KitchenDisplayPage() {
 
   // Complete order
   const completeOrder = async (orderId: string) => {
+    if (!supabase) return
     try {
       const { error } = await supabase
         .from('table_orders')
@@ -198,6 +198,8 @@ export default function KitchenDisplayPage() {
   useEffect(() => {
     fetchOrders()
 
+    if (!supabase) return
+
     const channel = supabase
       .channel('table_orders_changes')
       .on(
@@ -216,7 +218,7 @@ export default function KitchenDisplayPage() {
       .subscribe()
 
     return () => {
-      supabase.removeChannel(channel)
+      supabase?.removeChannel(channel)
     }
   }, [])
 

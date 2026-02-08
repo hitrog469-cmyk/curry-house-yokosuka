@@ -10,13 +10,16 @@ function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loginMode, setLoginMode] = useState<'password' | 'magic'>('password');
 
-  const { signInWithEmail, signInWithGoogle, user, loading: authLoading } = useAuth();
+  const { signInWithEmail, signInWithMagicLink, signInWithGoogle, user, loading: authLoading, supabaseConfigured } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo') || '/menu';
+  const authError = searchParams.get('error');
 
   // If user is already logged in, redirect them
   useEffect(() => {
@@ -25,20 +28,41 @@ function LoginContent() {
     }
   }, [user, authLoading, router, redirectTo]);
 
+  // Show auth callback errors
+  useEffect(() => {
+    if (authError === 'auth_failed') {
+      const errorMsg = searchParams.get('error_message');
+      setError(errorMsg || 'Authentication failed. Please try again.');
+    }
+  }, [authError, searchParams]);
+
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
-    // Validation
-    if (!email || !password) {
-      setError('Please fill in all fields');
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email address');
       setLoading(false);
       return;
     }
 
-    if (!email.includes('@')) {
-      setError('Please enter a valid email address');
+    if (loginMode === 'magic') {
+      // Magic link login (no password needed)
+      const { error } = await signInWithMagicLink(email);
+      if (error) {
+        setError(error.message || 'Failed to send login link');
+      } else {
+        setSuccess('Check your email! We sent you a login link.');
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Password login
+    if (!password) {
+      setError('Please enter your password');
       setLoading(false);
       return;
     }
@@ -46,10 +70,17 @@ function LoginContent() {
     const { error } = await signInWithEmail(email, password);
 
     if (error) {
-      setError(error.message || 'Invalid email or password');
+      // Provide helpful error messages
+      const msg = error.message || '';
+      if (msg.includes('Invalid login credentials')) {
+        setError('Wrong email or password. Try magic link login instead?');
+      } else if (msg.includes('Email not confirmed')) {
+        setError('Please confirm your email first. Check your inbox for a confirmation link.');
+      } else {
+        setError(msg || 'Login failed. Please try again.');
+      }
       setLoading(false);
     } else {
-      // Redirect to the page they came from or menu
       router.push(redirectTo);
     }
   };
@@ -72,12 +103,49 @@ function LoginContent() {
 
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* Supabase Config Warning */}
+          {!supabaseConfigured && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-xl">
+              <p className="text-sm font-semibold text-amber-800 mb-1">Authentication Setup Required</p>
+              <p className="text-xs text-amber-700">
+                Supabase credentials are missing or invalid. Please check your environment variables
+                (NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY) in Vercel or .env.local.
+                The anon key should be a long JWT token starting with &quot;eyJ&quot;.
+              </p>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+              <p className="text-sm text-green-700">{success}</p>
+            </div>
+          )}
+
+          {/* Login Mode Toggle */}
+          <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => { setLoginMode('password'); setError(''); setSuccess(''); }}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${loginMode === 'password' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+            >
+              Password
+            </button>
+            <button
+              type="button"
+              onClick={() => { setLoginMode('magic'); setError(''); setSuccess(''); }}
+              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${loginMode === 'magic' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+            >
+              Email Link
+            </button>
+          </div>
 
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-5">
@@ -95,47 +163,57 @@ function LoginContent() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all"
-                  placeholder="••••••••"
-                  disabled={loading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                    </svg>
-                  ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
+            {loginMode === 'password' && (
+              <>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all"
+                      placeholder="••••••••"
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-            {/* Forgot Password Link */}
-            <div className="text-right">
-              <Link
-                href="/auth/forgot-password"
-                className="text-sm text-green-600 hover:text-green-700 font-medium"
-              >
-                Forgot password?
-              </Link>
-            </div>
+                {/* Forgot Password Link */}
+                <div className="text-right">
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm text-green-600 hover:text-green-700 font-medium"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+              </>
+            )}
+
+            {loginMode === 'magic' && (
+              <p className="text-sm text-gray-500">
+                We&apos;ll send a login link to your email. No password needed!
+              </p>
+            )}
 
             {/* Submit Button */}
             <button
@@ -149,10 +227,10 @@ function LoginContent() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Signing in...
+                  {loginMode === 'magic' ? 'Sending link...' : 'Signing in...'}
                 </span>
               ) : (
-                'Sign In'
+                loginMode === 'magic' ? 'Send Login Link' : 'Sign In'
               )}
             </button>
           </form>

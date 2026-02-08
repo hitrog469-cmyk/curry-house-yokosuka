@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 import { canPlaceOrder } from '@/lib/restaurant-hours'
 import { menuItems } from '@/lib/menu-data'
@@ -44,10 +44,7 @@ export default function OrderPage() {
     estimatedTime: string
   } | null>(null)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
 
   // Order form data
   const [formData, setFormData] = useState({
@@ -230,6 +227,7 @@ export default function OrderPage() {
   }
 
   const handleSubmitOrder = async () => {
+    if (!supabase) { alert('Order system not configured'); return }
     // Check if restaurant is open
     const orderCheck = canPlaceOrder()
     if (!orderCheck.allowed) {

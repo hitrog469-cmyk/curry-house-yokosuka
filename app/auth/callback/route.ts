@@ -7,6 +7,19 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const next = requestUrl.searchParams.get('next') || '/menu';
+  const errorParam = requestUrl.searchParams.get('error');
+  const errorDescription = requestUrl.searchParams.get('error_description');
+
+  // Handle OAuth error redirects (e.g., user denied access, provider misconfigured)
+  if (errorParam) {
+    console.error('Auth callback received error:', errorParam, errorDescription);
+    const loginUrl = new URL('/auth/login', requestUrl.origin);
+    loginUrl.searchParams.set('error', 'auth_failed');
+    if (errorDescription) {
+      loginUrl.searchParams.set('error_message', errorDescription);
+    }
+    return NextResponse.redirect(loginUrl);
+  }
 
   if (code) {
     const cookieStore = await cookies();

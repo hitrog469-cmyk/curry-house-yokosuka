@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 import { menuItems, menuCategories, type MenuItem, type AddOn, needsCurryPairing, needsBreadRicePairing, getCurrySuggestions, getBreadRiceSuggestions } from '@/lib/menu-data'
 import { getMenuItemImage } from '@/lib/image-mapping'
@@ -60,10 +60,7 @@ function TableOrderContent() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const categoryScrollRef = useRef<HTMLDivElement>(null)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
+  const supabase = getSupabaseBrowserClient()
 
   const categories = menuCategories.filter(c =>
     c.id === 'all' || menuItems.some(item => item.category === c.id)
@@ -550,6 +547,7 @@ function TableOrderContent() {
 
   const handleSubmitOrder = async () => {
     if (Object.keys(cart).length === 0) return
+    if (!supabase) { alert('Order system not configured'); return }
     setLoading(true)
 
     try {

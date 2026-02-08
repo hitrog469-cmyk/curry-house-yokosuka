@@ -20,6 +20,12 @@ export default function AdminLoginPage() {
 
     try {
       // Query users table for admin/staff with username and password
+      if (!supabase) {
+        setError('Database not configured. Please check Supabase credentials.')
+        setLoading(false)
+        return
+      }
+
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('*')

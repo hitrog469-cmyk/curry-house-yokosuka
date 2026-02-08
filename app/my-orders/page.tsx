@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/protected-route';
-import { createBrowserClient } from '@supabase/ssr';
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 import { formatPrice } from '@/lib/utils';
 import { canCancelOrder, formatTimeRemaining, getCancellationBadgeColor } from '@/lib/order-cancellation';
 import Navbar from '@/components/Navbar';
@@ -29,10 +29,7 @@ export default function MyOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
     if (user) {
@@ -41,6 +38,7 @@ export default function MyOrdersPage() {
   }, [user, selectedStatus]);
 
   async function fetchOrders() {
+    if (!supabase) return;
     setLoading(true);
 
     let query = supabase
@@ -77,6 +75,7 @@ export default function MyOrdersPage() {
 
     if (!confirmCancel) return;
 
+    if (!supabase) return;
     try {
       const { data, error } = await supabase.rpc('cancel_order', {
         order_id_param: orderId,
