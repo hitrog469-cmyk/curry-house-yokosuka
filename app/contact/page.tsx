@@ -32,7 +32,7 @@ export default function ContactPage() {
     email: 'thecurryhouseyokosuka@gmail.com',
     whatsapp: '+81468135869',
     address: '2-8-9 Honcho, Yokosuka City, Kanagawa Prefecture 238-0041, Japan',
-    googleMapsUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3257.5!2d139.67!3d35.28!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDE2JzQ4LjAiTiAxMznCsDQwJzEyLjAiRQ!5e0!3m2!1sen!2sjp!4v1234567890',
+    googleMapsUrl: 'https://www.google.com/maps?q=The+Curry+House+2-8-9+Honcho+Yokosuka+Kanagawa+238-0041+Japan&output=embed',
     hours: {
       weekday: '11:00 AM - 10:00 PM',
       weekend: '11:00 AM - 11:00 PM'
@@ -52,7 +52,7 @@ export default function ContactPage() {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium border border-white/10 mb-6">
-              <span className="text-xl">📍</span>
+              <svg className="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               <span className="text-emerald-50">Located in Yokosuka, Japan</span>
             </div>
             <h1 className="text-4xl lg:text-5xl font-black mb-4">We&apos;d Love to Hear from You</h1>
@@ -100,7 +100,6 @@ export default function ContactPage() {
               href="/menu"
               className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-3 rounded-xl transition-colors shadow-sm"
             >
-              <span className="text-lg">🍛</span>
               Order Online
             </Link>
           </div>
@@ -196,14 +195,11 @@ export default function ContactPage() {
             {/* Google Maps */}
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
               <div className="p-4 border-b border-gray-100">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                  <span className="text-lg">📍</span> Find Us on Map
-                </h3>
+                <h3 className="font-bold text-gray-900">Find Us on Map</h3>
               </div>
               <div className="aspect-video bg-gray-100">
-                {/* Replace with actual Google Maps embed URL */}
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3257.5!2d139.67!3d35.28!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDE2JzQ4LjAiTiAxMznCsDQwJzEyLjAiRQ!5e0!3m2!1sen!2sjp!4v1234567890"
+                  src={restaurantInfo.googleMapsUrl}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -215,7 +211,7 @@ export default function ContactPage() {
               </div>
               <div className="p-3 bg-gray-50">
                 <a
-                  href="https://maps.google.com/?q=The+Curry+House+Yokosuka"
+                  href="https://maps.google.com/?q=The+Curry+House+2-8-9+Honcho+Yokosuka+Kanagawa+238-0041+Japan"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-blue-600 hover:text-blue-700 font-semibold flex items-center justify-center gap-1"
@@ -240,7 +236,7 @@ export default function ContactPage() {
               {status === 'success' && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
                   <p className="text-green-700 font-semibold text-center flex items-center justify-center gap-2">
-                    <span className="text-xl">✅</span> Thank you! Your message has been sent.
+                    Thank you! Your message has been sent.
                   </p>
                 </div>
               )}
@@ -337,9 +333,7 @@ export default function ContactPage() {
 
             {/* FAQ Quick Links */}
             <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-6">
-              <h3 className="font-bold text-amber-900 mb-3 flex items-center gap-2">
-                <span className="text-xl">💡</span> Quick Help
-              </h3>
+              <h3 className="font-bold text-amber-900 mb-3">Quick Help</h3>
               <div className="grid sm:grid-cols-2 gap-3">
                 <Link href="/menu" className="text-sm text-amber-800 hover:text-amber-900 font-medium hover:underline">
                   → View our full menu

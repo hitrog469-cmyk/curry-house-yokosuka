@@ -12,22 +12,22 @@ export default function HomePage() {
     {
       title: 'Authentic Flavors',
       description: 'Traditional recipes passed down through generations, crafted by expert chefs',
-      emoji: '🍛',
+      icon: '01',
     },
     {
       title: 'Fast Delivery',
       description: 'Hot, fresh food delivered to your door in 30 minutes or less',
-      emoji: '⚡',
+      icon: '02',
     },
     {
       title: 'Quality Ingredients',
       description: 'Fresh, premium ingredients sourced daily for the best taste',
-      emoji: '✨',
+      icon: '03',
     },
     {
       title: 'Halal Certified',
       description: 'All our meat products are 100% halal certified',
-      emoji: '🏅',
+      icon: '04',
     }
   ]
 
@@ -88,9 +88,9 @@ export default function HomePage() {
           }}></div>
         </div>
 
-        {/* Gradient orbs */}
-        <div className="absolute top-20 right-10 w-72 h-72 bg-green-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-20 left-10 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl"></div>
+        {/* Subtle background accent */}
+        <div className="absolute top-20 right-10 w-72 h-72 bg-green-500/10 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-20 left-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-2xl"></div>
 
         <div className="container-custom relative z-10 py-12 md:py-20">
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
@@ -122,7 +122,7 @@ export default function HomePage() {
                 </Link>
                 <Link href="/menu" className="group bg-white/10 hover:bg-white/20 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-all duration-300 border border-white/30 inline-flex items-center justify-center gap-3 backdrop-blur-sm hover:-translate-y-1">
                   <span>View Menu</span>
-                  <span className="text-xl">🍛</span>
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </Link>
               </div>
 
@@ -147,7 +147,7 @@ export default function HomePage() {
             {/* Right — Hero Image (Desktop) */}
             <div className="hidden lg:block">
               <div className="relative">
-                <div className="absolute -inset-4 bg-gradient-to-br from-yellow-400/20 via-orange-400/20 to-red-400/20 rounded-[2rem] blur-xl"></div>
+                <div className="absolute -inset-4 bg-gradient-to-br from-yellow-400/10 via-orange-400/10 to-red-400/10 rounded-[2rem] blur-lg"></div>
                 <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-white/10">
                   <img
                     src="/images/hero-curry.jpg"
@@ -192,19 +192,19 @@ export default function HomePage() {
       <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 overflow-hidden">
         <div className="animate-scroll-slow whitespace-nowrap">
           <span className="inline-block px-8 text-sm font-medium">
-            🎉 FREE DELIVERY on all orders
+            FREE DELIVERY on all orders
           </span>
           <span className="inline-block px-8 text-sm font-medium">
-            🍽️ Indian · Mexican · Nepalese · Japanese-Fusion
+            Indian · Mexican · Nepalese · Japanese-Fusion
           </span>
           <span className="inline-block px-8 text-sm font-medium">
-            ⭐ Use code WELCOME15 for 15% off
+            Use code WELCOME15 for 15% off
           </span>
           <span className="inline-block px-8 text-sm font-medium">
-            🎉 FREE DELIVERY on all orders
+            FREE DELIVERY on all orders
           </span>
           <span className="inline-block px-8 text-sm font-medium">
-            🍽️ Indian · Mexican · Nepalese · Japanese-Fusion
+            Indian · Mexican · Nepalese · Japanese-Fusion
           </span>
         </div>
       </div>
@@ -217,8 +217,8 @@ export default function HomePage() {
           <Link href="/catering" className="block group">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl px-6 py-4 transition-all hover:shadow-xl hover:-translate-y-0.5">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl">
-                  🎉
+                <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </div>
                 <div>
                   <span className="font-bold text-lg">Planning an Event?</span>
@@ -246,15 +246,15 @@ export default function HomePage() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-4xl mx-auto">
             {[
-              { step: '1', title: 'Browse', desc: 'Explore our menu', emoji: '📱', color: 'bg-green-100' },
-              { step: '2', title: 'Order', desc: 'Pick your favorites', emoji: '🛒', color: 'bg-emerald-100' },
-              { step: '3', title: 'Prepare', desc: 'Freshly cooked', emoji: '👨‍🍳', color: 'bg-teal-100' },
-              { step: '4', title: 'Enjoy', desc: 'Hot & delivered', emoji: '😋', color: 'bg-green-100' },
+              { step: '1', title: 'Browse', desc: 'Explore our menu', color: 'bg-green-100' },
+              { step: '2', title: 'Order', desc: 'Pick your favorites', color: 'bg-emerald-100' },
+              { step: '3', title: 'Prepare', desc: 'Freshly cooked', color: 'bg-teal-100' },
+              { step: '4', title: 'Enjoy', desc: 'Hot & delivered', color: 'bg-green-100' },
             ].map((item, i) => (
               <div key={i} className="text-center group">
                 <div className="relative inline-block mb-4">
-                  <div className={`w-16 h-16 md:w-20 md:h-20 ${item.color} rounded-2xl flex items-center justify-center text-2xl md:text-3xl shadow-sm group-hover:shadow-md transition-all group-hover:-translate-y-1`}>
-                    {item.emoji}
+                  <div className={`w-16 h-16 md:w-20 md:h-20 ${item.color} rounded-2xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all group-hover:-translate-y-1`}>
+                    <span className="text-green-700 font-black text-xl md:text-2xl">{item.step}</span>
                   </div>
                   <div className="absolute -top-2 -right-2 w-6 h-6 bg-green-600 text-white rounded-lg text-xs font-bold flex items-center justify-center shadow-md">
                     {item.step}
@@ -284,8 +284,8 @@ export default function HomePage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, i) => (
               <div key={i} className="group p-6 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-4 text-2xl group-hover:scale-110 transition-transform">
-                  {feature.emoji}
+                <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                  <span className="text-green-700 font-black text-sm">{feature.icon}</span>
                 </div>
                 <h3 className="font-bold text-gray-900 text-lg mb-2">{feature.title}</h3>
                 <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
@@ -321,7 +321,7 @@ export default function HomePage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-5xl group-hover:scale-110 transition-transform">{['🍛', '🧈', '🍗', '🥘', '🍚', '🥣'][i % 6]}</span>
+                      <span className="text-green-600 font-black text-2xl">{dish.name.charAt(0)}</span>
                     </div>
                   )}
 
@@ -367,8 +367,8 @@ export default function HomePage() {
           Testimonials
           ============================================ */}
       <section className="py-16 md:py-20 bg-gradient-to-br from-green-50 to-emerald-50 relative overflow-hidden">
-        <div className="absolute top-10 left-10 w-72 h-72 bg-green-200/30 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-200/30 rounded-full blur-3xl"></div>
+        <div className="absolute top-10 left-10 w-72 h-72 bg-green-200/20 rounded-full blur-2xl"></div>
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-200/20 rounded-full blur-2xl"></div>
 
         <div className="container-custom relative z-10">
           <div className="text-center mb-12">
@@ -408,14 +408,14 @@ export default function HomePage() {
           </div>
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
             {[
-              { name: 'Restaurant Guru', year: '2024', emoji: '🏆' },
-              { name: 'TripAdvisor', year: 'Excellence', emoji: '🥇' },
-              { name: 'Google', year: '4.8★', emoji: '⭐' },
-              { name: 'Halal Certified', year: 'Japan', emoji: '🏅' },
+              { name: 'Restaurant Guru', year: '2024' },
+              { name: 'TripAdvisor', year: 'Excellence' },
+              { name: 'Google', year: '4.8★' },
+              { name: 'Halal Certified', year: 'Japan' },
             ].map((award, i) => (
               <div key={i} className="flex flex-col items-center group">
-                <div className="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center text-2xl group-hover:bg-green-50 transition-colors border border-gray-200 group-hover:scale-105 transform duration-200">
-                  {award.emoji}
+                <div className="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center group-hover:bg-green-50 transition-colors border border-gray-200 group-hover:scale-105 transform duration-200">
+                  <span className="text-green-700 font-black text-xs">{award.name.charAt(0)}</span>
                 </div>
                 <span className="text-sm font-bold text-gray-700 mt-2">{award.name}</span>
                 <span className="text-xs text-gray-500">{award.year}</span>
@@ -464,7 +464,7 @@ export default function HomePage() {
           ============================================ */}
       <section className="py-16 md:py-20 bg-gradient-to-br from-green-900 via-green-800 to-emerald-900 text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('/images/pattern.png')] opacity-5"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-green-500/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-green-500/5 rounded-full blur-2xl"></div>
 
         <div className="container-custom text-center relative z-10">
           <div className="max-w-2xl mx-auto">
@@ -477,11 +477,11 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/menu" className="group bg-white text-green-900 hover:bg-green-50 font-bold text-lg py-4 px-10 rounded-2xl transition-all inline-flex items-center justify-center gap-3 shadow-lg hover:shadow-xl hover:-translate-y-0.5">
                 Browse Menu
-                <span className="text-xl group-hover:rotate-12 transition-transform">🍛</span>
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
               </Link>
               <Link href="/track" className="group bg-white/10 hover:bg-white/20 text-white font-bold text-lg py-4 px-10 rounded-2xl transition-all border border-white/30 inline-flex items-center justify-center gap-3 hover:-translate-y-0.5">
                 Track Order
-                <span className="text-xl group-hover:scale-110 transition-transform">📍</span>
+                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
               </Link>
             </div>
 
@@ -511,8 +511,8 @@ export default function HomePage() {
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-8 md:p-10 hover:shadow-2xl transition-all hover:-translate-y-1">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20"></div>
                 <div className="relative z-10">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl mb-4">
-                    💼
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                   </div>
                   <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Join Our Team</h3>
                   <p className="text-blue-100 mb-4 text-sm">Exciting career opportunities at The Curry House</p>
@@ -528,8 +528,8 @@ export default function HomePage() {
               <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-600 to-emerald-700 p-8 md:p-10">
                 <div className="absolute bottom-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mb-20"></div>
                 <div className="relative z-10">
-                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl mb-4">
-                    📱
+                  <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
                   </div>
                   <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Dine In — QR Order</h3>
                   <p className="text-green-100 mb-4 text-sm">Scan the QR code at your table to order directly!</p>

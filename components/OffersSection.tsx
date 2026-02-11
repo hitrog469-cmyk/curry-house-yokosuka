@@ -22,7 +22,7 @@ export default function OffersSection() {
       <div className="container-custom">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="heading-2 mb-4">🎉 Special Offers</h2>
+          <h2 className="heading-2 mb-4">Special Offers</h2>
           <p className="text-xl text-gray-600">Limited time deals & promotions</p>
         </div>
 
@@ -92,7 +92,7 @@ export default function OffersSection() {
         {/* Footer Note */}
         <div className="mt-12 text-center">
           <p className="text-gray-600">
-            📱 Follow us on Instagram{' '}
+            Follow us on Instagram{' '}
             <a href="https://instagram.com/thecurryh" target="_blank" rel="noopener noreferrer" className="text-purple-600 hover:text-purple-700 font-bold">
               @thecurryh
             </a>

@@ -65,12 +65,12 @@ export default function MyOrdersPage() {
     const cancelCheck = canCancelOrder(createdAt, status);
 
     if (!cancelCheck.canCancel) {
-      alert(`❌ Cannot cancel order\n\n${cancelCheck.reason}`);
+      alert(`Cannot cancel order\n\n${cancelCheck.reason}`);
       return;
     }
 
     const confirmCancel = confirm(
-      `⚠️ Cancel Order?\n\nAre you sure you want to cancel this order?\n\nTime remaining: ${formatTimeRemaining(cancelCheck.minutesRemaining)}\n\nThis action cannot be undone.`
+      `Cancel Order?\n\nAre you sure you want to cancel this order?\n\nTime remaining: ${formatTimeRemaining(cancelCheck.minutesRemaining)}\n\nThis action cannot be undone.`
     );
 
     if (!confirmCancel) return;
@@ -85,15 +85,15 @@ export default function MyOrdersPage() {
 
       if (error) {
         console.error('Error cancelling order:', error);
-        alert('❌ Failed to cancel order. Please try again or call the restaurant.');
+        alert('Failed to cancel order. Please try again or call the restaurant.');
         return;
       }
 
-      alert('✅ Order cancelled successfully!');
+      alert('Order cancelled successfully.');
       fetchOrders(); // Refresh orders list
     } catch (error) {
       console.error('Error:', error);
-      alert('❌ Failed to cancel order. Please try again.');
+      alert('Failed to cancel order. Please try again.');
     }
   }
 
@@ -110,11 +110,11 @@ export default function MyOrdersPage() {
 
   const getStatusDisplay = (status: string) => {
     const displays: any = {
-      pending: '⏳ Pending',
-      preparing: '👨‍🍳 Preparing',
-      out_for_delivery: '🚗 Out for Delivery',
-      delivered: '✅ Delivered',
-      cancelled: '❌ Cancelled',
+      pending: 'Pending',
+      preparing: 'Preparing',
+      out_for_delivery: 'Out for Delivery',
+      delivered: 'Delivered',
+      cancelled: 'Cancelled',
     };
     return displays[status] || status;
   };
@@ -191,7 +191,7 @@ export default function MyOrdersPage() {
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
-                  {status === 'all' ? '📋 All Orders' : getStatusDisplay(status)}
+                  {status === 'all' ? 'All Orders' : getStatusDisplay(status)}
                 </button>
               ))}
             </div>
@@ -206,7 +206,7 @@ export default function MyOrdersPage() {
           ) : orders.length === 0 ? (
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-16 text-center border border-gray-200 dark:border-gray-700">
               <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-full mx-auto mb-8 flex items-center justify-center">
-                <span className="text-6xl">📦</span>
+                <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
               </div>
               <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-4">
                 {selectedStatus === 'all' ? 'No orders yet' : `No ${selectedStatus} orders`}
@@ -265,13 +265,13 @@ export default function MyOrdersPage() {
                           return (
                             <div className="flex items-center gap-3">
                               <div className={`px-4 py-2 rounded-lg ${badgeColors.bg} ${badgeColors.text} border ${badgeColors.border} text-sm font-semibold`}>
-                                ⏱️ {formatTimeRemaining(cancelCheck.minutesRemaining)} to cancel
+                                {formatTimeRemaining(cancelCheck.minutesRemaining)} to cancel
                               </div>
                               <button
                                 onClick={() => handleCancelOrder(order.id, order.created_at, order.status)}
                                 className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl transition-colors shadow-lg hover:shadow-xl"
                               >
-                                ❌ Cancel Order
+                                Cancel Order
                               </button>
                             </div>
                           );
@@ -314,11 +314,11 @@ export default function MyOrdersPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
                         <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-2">DELIVERY ADDRESS</p>
-                        <p className="text-gray-900 dark:text-white font-semibold">📍 {order.delivery_address}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold">{order.delivery_address}</p>
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-500 dark:text-gray-400 mb-2">CONTACT</p>
-                        <p className="text-gray-900 dark:text-white font-semibold">📞 {order.customer_phone}</p>
+                        <p className="text-gray-900 dark:text-white font-semibold">{order.customer_phone}</p>
                       </div>
                     </div>
 

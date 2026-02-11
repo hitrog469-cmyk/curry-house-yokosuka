@@ -81,17 +81,23 @@ export default function CateringPage() {
         <div className="container-custom max-w-6xl">
           <div className="grid md:grid-cols-3 gap-8 mb-16">
             <div className="text-center p-6">
-              <div className="text-6xl mb-4">🎂</div>
+              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              </div>
               <h3 className="text-xl font-bold mb-2">Birthday & Anniversary Parties</h3>
               <p className="text-gray-600">Celebrate your special day with delicious food that everyone will love</p>
             </div>
             <div className="text-center p-6">
-              <div className="text-6xl mb-4">👔</div>
+              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+              </div>
               <h3 className="text-xl font-bold mb-2">Corporate Events</h3>
               <p className="text-gray-600">Professional catering for meetings, conferences, and team celebrations</p>
             </div>
             <div className="text-center p-6">
-              <div className="text-6xl mb-4">🥂</div>
+              <div className="w-16 h-16 bg-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </div>
               <h3 className="text-xl font-bold mb-2">Social Gatherings</h3>
               <p className="text-gray-600">Premium food for every occasion. Relive old memories and toast to new ones.</p>
             </div>
@@ -104,13 +110,15 @@ export default function CateringPage() {
         <div className="container-custom max-w-4xl">
           {submitted ? (
             <div className="bg-white rounded-3xl p-12 shadow-elegant text-center">
-              <div className="text-6xl mb-6">✅</div>
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              </div>
               <h2 className="text-3xl font-bold mb-4">Thank You!</h2>
               <p className="text-xl text-gray-600 mb-6">
                 Your catering inquiry has been received successfully.
               </p>
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-                <p className="text-blue-900 font-semibold mb-2">📞 What happens next?</p>
+                <p className="text-blue-900 font-semibold mb-2">What happens next?</p>
                 <p className="text-blue-800">
                   Our manager will contact you within few hours to discuss your requirements and provide a custom quote.
                 </p>
@@ -244,7 +252,7 @@ export default function CateringPage() {
 
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <p className="text-sm text-blue-800 text-center">
-                      📞 Our manager will call you within few hours to discuss your requirements and provide a custom quote
+                      Our manager will call you within few hours to discuss your requirements and provide a custom quote
                     </p>
                   </div>
 

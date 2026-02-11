@@ -21,9 +21,7 @@ module.exports = {
         },
       },
       boxShadow: {
-        'green-glow': '0 10px 40px rgba(34, 197, 94, 0.4)',
-        'green-glow-lg': '0 15px 50px rgba(34, 197, 94, 0.6)',
-        'green-soft': '0 4px 15px rgba(34, 197, 94, 0.3)',
+        'green-soft': '0 4px 15px rgba(34, 197, 94, 0.15)',
       },
     },
   },

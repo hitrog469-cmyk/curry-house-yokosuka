@@ -139,17 +139,19 @@ export default function CareersPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { icon: '💰', title: 'Competitive Pay', desc: 'Fair compensation with performance bonuses' },
-              { icon: '📈', title: 'Career Growth', desc: 'Opportunities for advancement and skill development' },
-              { icon: '🏥', title: 'Benefits', desc: 'Health insurance and paid time off for full-time staff' },
-              { icon: '🎉', title: 'Great Culture', desc: 'Friendly team environment with regular team events' },
-              { icon: '🍛', title: 'Free Meals', desc: 'Complimentary meals during your shift' },
-              { icon: '⏰', title: 'Flexible Hours', desc: 'Work schedules that fit your lifestyle' },
-              { icon: '🎓', title: 'Training', desc: 'Comprehensive training programs for all positions' },
-              { icon: '🌟', title: 'Recognition', desc: 'Employee of the month awards and recognition' }
+              { title: 'Competitive Pay', desc: 'Fair compensation with performance bonuses' },
+              { title: 'Career Growth', desc: 'Opportunities for advancement and skill development' },
+              { title: 'Benefits', desc: 'Health insurance and paid time off for full-time staff' },
+              { title: 'Great Culture', desc: 'Friendly team environment with regular team events' },
+              { title: 'Free Meals', desc: 'Complimentary meals during your shift' },
+              { title: 'Flexible Hours', desc: 'Work schedules that fit your lifestyle' },
+              { title: 'Training', desc: 'Comprehensive training programs for all positions' },
+              { title: 'Recognition', desc: 'Employee of the month awards and recognition' }
             ].map((benefit, idx) => (
-              <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 text-center hover:shadow-xl transition-shadow">
-                <div className="text-5xl mb-3">{benefit.icon}</div>
+              <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-gray-200 dark:border-gray-700 text-center hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <span className="text-purple-700 dark:text-purple-400 font-black text-sm">{String(idx + 1).padStart(2, '0')}</span>
+                </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                   {benefit.title}
                 </h3>
@@ -184,7 +186,7 @@ export default function CareersPage() {
                           {job.type}
                         </span>
                         <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full text-sm font-semibold">
-                          📍 {job.location}
+                          {job.location}
                         </span>
                       </div>
                     </div>

@@ -111,13 +111,13 @@ export default function TrackOrderPage() {
 
   const getStatusIcon = (status: string) => {
     const icons: any = {
-      pending: '⏳',
-      preparing: '👨‍🍳',
-      out_for_delivery: '🚗',
-      delivered: '✅',
-      cancelled: '❌'
+      pending: '1',
+      preparing: '2',
+      out_for_delivery: '3',
+      delivered: '4',
+      cancelled: '—'
     }
-    return icons[status] || '⏳'
+    return icons[status] || '1'
   }
 
   const getStatusText = (status: string) => {
@@ -165,7 +165,7 @@ export default function TrackOrderPage() {
                 disabled={loading}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg py-4 rounded-xl transition-colors disabled:opacity-50"
               >
-                {loading ? 'Searching...' : '🔍 Track Orders'}
+                {loading ? 'Searching...' : 'Track Orders'}
               </button>
             </form>
           </div>
@@ -178,7 +178,6 @@ export default function TrackOrderPage() {
             </div>
           ) : searched && orders.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-sm border border-stone-200 p-8 text-center">
-              <div className="text-4xl mb-3">🔍</div>
               <p className="text-stone-600 text-lg mb-2">No orders found</p>
               <p className="text-stone-400">Please check your phone number and try again</p>
             </div>
@@ -244,7 +243,7 @@ export default function TrackOrderPage() {
                       {order.status === 'pending' && !timeRemaining && (
                         <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-5">
                           <p className="text-stone-500 text-sm text-center">
-                            ⏰ Cancellation window has expired. Please call us if you need assistance.
+                            Cancellation window has expired. Please call us if you need assistance.
                           </p>
                         </div>
                       )}
@@ -287,7 +286,7 @@ export default function TrackOrderPage() {
                       {/* Cancelled Status */}
                       {order.status === 'cancelled' && (
                         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-5 rounded-r-xl">
-                          <p className="text-red-700 font-bold">❌ This order has been cancelled</p>
+                          <p className="text-red-700 font-bold">This order has been cancelled</p>
                           <p className="text-red-600 text-sm mt-1">If you paid, a refund will be processed within 3-5 business days.</p>
                         </div>
                       )}
@@ -323,8 +322,42 @@ export default function TrackOrderPage() {
                       {/* Delivery Address */}
                       <div className="border-t border-stone-100 pt-4">
                         <p className="text-sm font-bold text-stone-500 mb-1">Delivery Address:</p>
-                        <p className="text-stone-700">📍 {order.delivery_address}</p>
+                        <p className="text-stone-700">{order.delivery_address}</p>
                       </div>
+
+                      {/* Delivery Map - Show for active orders */}
+                      {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                        <div className="mt-4 rounded-xl overflow-hidden border border-stone-200">
+                          <div className="bg-stone-100 px-4 py-2 border-b border-stone-200">
+                            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                              {order.status === 'out_for_delivery' ? 'Your order is on the way' : 'Restaurant Location'}
+                            </p>
+                          </div>
+                          <div className="aspect-video">
+                            <iframe
+                              src={`https://www.google.com/maps?q=${encodeURIComponent(order.delivery_address || 'The Curry House Yokosuka')}&output=embed`}
+                              width="100%"
+                              height="100%"
+                              style={{ border: 0 }}
+                              allowFullScreen
+                              loading="lazy"
+                              referrerPolicy="no-referrer-when-downgrade"
+                              className="w-full h-full"
+                            ></iframe>
+                          </div>
+                          <div className="bg-stone-50 px-4 py-2">
+                            <a
+                              href={`https://www.google.com/maps/dir/2-8-9+Honcho,+Yokosuka/${encodeURIComponent(order.delivery_address)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1"
+                            >
+                              View directions in Google Maps
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                            </a>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Customer Notes */}
                       {order.notes && (
@@ -347,7 +380,7 @@ export default function TrackOrderPage() {
               href="tel:046-876-8989"
               className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl transition-colors"
             >
-              📞 Call: 046-876-8989
+              Call: 046-876-8989
             </a>
           </div>
         </div>
@@ -359,7 +392,7 @@ export default function TrackOrderPage() {
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
             <div className="text-center mb-5">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">⚠️</span>
+                <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
               </div>
               <h3 className="text-xl font-black text-stone-800 mb-2">Cancel Order?</h3>
               <p className="text-stone-500">
