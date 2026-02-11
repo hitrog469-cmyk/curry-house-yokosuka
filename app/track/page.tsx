@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatPrice } from '@/lib/utils'
+import { RESTAURANT_LOCATION } from '@/lib/delivery-fee'
 import Link from 'next/link'
 
 type Order = {
@@ -17,6 +18,12 @@ type Order = {
   notes?: string
 }
 
+type DriverLocation = {
+  latitude: number
+  longitude: number
+  updated_at: string
+}
+
 // 5-minute cancellation window in milliseconds
 const CANCELLATION_WINDOW_MS = 5 * 60 * 1000
 
@@ -28,6 +35,9 @@ export default function TrackOrderPage() {
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState<string | null>(null)
   const [currentTime, setCurrentTime] = useState(Date.now())
+  // Driver locations keyed by order ID
+  const [driverLocations, setDriverLocations] = useState<Map<string, DriverLocation>>(new Map())
+  const channelRef = useRef<any>(null)
 
   // Update current time every second for countdown
   useEffect(() => {
@@ -36,6 +46,93 @@ export default function TrackOrderPage() {
     }, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  // Subscribe to delivery location updates when we have out_for_delivery orders
+  useEffect(() => {
+    if (!supabase) return
+
+    const activeOrderIds = orders
+      .filter(o => o.status === 'out_for_delivery')
+      .map(o => o.id)
+
+    if (activeOrderIds.length === 0) {
+      // No active deliveries, cleanup
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
+      return
+    }
+
+    // Fetch initial locations for all active orders
+    async function fetchInitialLocations() {
+      if (!supabase) return
+      const { data } = await supabase
+        .from('delivery_locations')
+        .select('order_id, latitude, longitude, updated_at')
+        .in('order_id', activeOrderIds)
+
+      if (data) {
+        setDriverLocations(prev => {
+          const next = new Map(prev)
+          data.forEach((loc: any) => {
+            next.set(loc.order_id, {
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              updated_at: loc.updated_at,
+            })
+          })
+          return next
+        })
+      }
+    }
+
+    fetchInitialLocations()
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('delivery_tracking')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'delivery_locations',
+        },
+        (payload: any) => {
+          if (payload.eventType === 'DELETE') {
+            setDriverLocations(prev => {
+              const next = new Map(prev)
+              next.delete(payload.old.order_id)
+              return next
+            })
+          } else {
+            const record = payload.new
+            if (activeOrderIds.includes(record.order_id)) {
+              setDriverLocations(prev => {
+                const next = new Map(prev)
+                next.set(record.order_id, {
+                  latitude: record.latitude,
+                  longitude: record.longitude,
+                  updated_at: record.updated_at,
+                })
+                return next
+              })
+            }
+          }
+        }
+      )
+      .subscribe()
+
+    channelRef.current = channel
+
+    return () => {
+      if (channelRef.current) {
+        supabase?.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
+    }
+  }, [orders])
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -326,38 +423,77 @@ export default function TrackOrderPage() {
                       </div>
 
                       {/* Delivery Map - Show for active orders */}
-                      {order.status !== 'cancelled' && order.status !== 'delivered' && (
-                        <div className="mt-4 rounded-xl overflow-hidden border border-stone-200">
-                          <div className="bg-stone-100 px-4 py-2 border-b border-stone-200">
-                            <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
-                              {order.status === 'out_for_delivery' ? 'Your order is on the way' : 'Restaurant Location'}
-                            </p>
+                      {order.status !== 'cancelled' && order.status !== 'delivered' && (() => {
+                        const driverLoc = driverLocations.get(order.id)
+                        const isOutForDelivery = order.status === 'out_for_delivery'
+                        const hasDriverLocation = isOutForDelivery && driverLoc
+
+                        return (
+                          <div className="mt-4 rounded-xl overflow-hidden border border-stone-200">
+                            <div className="bg-stone-100 px-4 py-2 border-b border-stone-200 flex items-center justify-between">
+                              <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
+                                {hasDriverLocation ? 'Live Driver Location' : isOutForDelivery ? 'Your order is on the way' : 'Restaurant Location'}
+                              </p>
+                              {hasDriverLocation && (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                  </span>
+                                  <span className="text-xs text-emerald-600 font-medium">Live</span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="aspect-video">
+                              {hasDriverLocation ? (
+                                // Show driver location on map with marker
+                                <iframe
+                                  key={`${driverLoc.latitude}-${driverLoc.longitude}`}
+                                  src={`https://www.google.com/maps?q=${driverLoc.latitude},${driverLoc.longitude}&z=15&output=embed`}
+                                  width="100%"
+                                  height="100%"
+                                  style={{ border: 0 }}
+                                  allowFullScreen
+                                  loading="lazy"
+                                  referrerPolicy="no-referrer-when-downgrade"
+                                  className="w-full h-full"
+                                ></iframe>
+                              ) : (
+                                // Show restaurant or delivery address
+                                <iframe
+                                  src={`https://www.google.com/maps?q=${encodeURIComponent(order.delivery_address || 'The Curry House Yokosuka')}&output=embed`}
+                                  width="100%"
+                                  height="100%"
+                                  style={{ border: 0 }}
+                                  allowFullScreen
+                                  loading="lazy"
+                                  referrerPolicy="no-referrer-when-downgrade"
+                                  className="w-full h-full"
+                                ></iframe>
+                              )}
+                            </div>
+                            <div className="bg-stone-50 px-4 py-2 flex items-center justify-between">
+                              <a
+                                href={hasDriverLocation
+                                  ? `https://www.google.com/maps?q=${driverLoc.latitude},${driverLoc.longitude}`
+                                  : `https://www.google.com/maps/dir/${RESTAURANT_LOCATION.lat},${RESTAURANT_LOCATION.lng}/${encodeURIComponent(order.delivery_address)}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1"
+                              >
+                                {hasDriverLocation ? 'Open driver location in Maps' : 'View directions in Google Maps'}
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                              </a>
+                              {hasDriverLocation && driverLoc.updated_at && (
+                                <span className="text-xs text-stone-400">
+                                  Updated {new Date(driverLoc.updated_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <div className="aspect-video">
-                            <iframe
-                              src={`https://www.google.com/maps?q=${encodeURIComponent(order.delivery_address || 'The Curry House Yokosuka')}&output=embed`}
-                              width="100%"
-                              height="100%"
-                              style={{ border: 0 }}
-                              allowFullScreen
-                              loading="lazy"
-                              referrerPolicy="no-referrer-when-downgrade"
-                              className="w-full h-full"
-                            ></iframe>
-                          </div>
-                          <div className="bg-stone-50 px-4 py-2">
-                            <a
-                              href={`https://www.google.com/maps/dir/2-8-9+Honcho,+Yokosuka/${encodeURIComponent(order.delivery_address)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-emerald-600 hover:text-emerald-700 font-semibold flex items-center gap-1"
-                            >
-                              View directions in Google Maps
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                            </a>
-                          </div>
-                        </div>
-                      )}
+                        )
+                      })()}
 
                       {/* Customer Notes */}
                       {order.notes && (
