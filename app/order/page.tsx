@@ -820,10 +820,17 @@ export default function OrderPage() {
             <div className="space-y-6">
               {/* Success Header */}
               <div className="card text-center py-8 bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-                <div className="text-6xl mb-4">🎉</div>
+                <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
                 <h2 className="text-3xl font-black text-green-700 mb-2">Order Confirmed!</h2>
                 <p className="text-gray-600 text-lg">
-                  Thank you, {confirmedOrder.customerName}! Your food is being prepared.
+                  Thank you for ordering, {confirmedOrder.customerName}!
+                </p>
+                <p className="text-green-600 font-semibold text-sm mt-1">
+                  We appreciate your order and your food is being prepared with love.
                 </p>
               </div>
 
@@ -888,19 +895,20 @@ export default function OrderPage() {
                 </div>
 
                 {/* Receipt Footer */}
-                <div className="mt-6 pt-4 border-t border-gray-200 text-center">
-                  <p className="text-xs text-gray-400">The Curry House Yokosuka</p>
-                  <p className="text-xs text-gray-400">Thank you for your order!</p>
+                <div className="mt-6 pt-4 border-t border-gray-200 text-center space-y-2">
+                  <p className="font-bold text-gray-700">The Curry House Yokosuka</p>
+                  <p className="text-sm text-gray-500">We appreciate your order! Your meal is being prepared with care.</p>
+                  <p className="text-xs text-gray-400">Payment at door - Cash, Card, or PayPay accepted</p>
                 </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link href="/my-orders" className="flex-1 btn-primary text-center py-4">
-                  📍 Track Your Order
+                  Track Your Order
                 </Link>
                 <Link href="/menu" className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-4 px-6 rounded-xl transition-colors text-center">
-                  🍛 Order More
+                  Order More
                 </Link>
               </div>
             </div>

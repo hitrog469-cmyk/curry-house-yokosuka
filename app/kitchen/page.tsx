@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
+import { playNewOrderSound, enableAudio } from '@/lib/notification-sound'
 
 interface OrderItem {
   item_id: string
@@ -25,14 +26,21 @@ export default function KitchenDisplayPage() {
   const [orders, setOrders] = useState<TableOrder[]>([])
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [audioEnabled, setAudioEnabled] = useState(false)
 
   const supabase = getSupabaseBrowserClient()
 
+  const handleEnableAudio = useCallback(async () => {
+    if (!audioEnabled) {
+      const ok = await enableAudio()
+      if (ok) setAudioEnabled(true)
+    }
+  }, [audioEnabled])
+
   // Play notification sound for new orders
   const playNotificationSound = () => {
-    if (audioRef.current) {
-      audioRef.current.play().catch(e => console.log('Audio play failed:', e))
+    if (audioEnabled) {
+      playNewOrderSound(0.9)
     }
   }
 
@@ -234,17 +242,20 @@ export default function KitchenDisplayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Hidden audio for notifications */}
-      <audio ref={audioRef} src="/notification.mp3" />
+    <div className="min-h-screen bg-gray-900 text-white" onClick={handleEnableAudio}>
 
       {/* Header */}
       <div className="bg-gray-800 border-b-4 border-orange-500 py-4">
         <div className="container-custom">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">🍛 Kitchen Display</h1>
-              <p className="text-gray-400">The Curry House Yokosuka</p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-3xl font-bold">Kitchen Display</h1>
+                <p className="text-gray-400">The Curry House Yokosuka</p>
+              </div>
+              <span className={`px-2 py-1 rounded text-xs font-bold ${audioEnabled ? 'bg-green-600' : 'bg-red-600 animate-pulse'}`}>
+                {audioEnabled ? 'SOUND ON' : 'CLICK FOR SOUND'}
+              </span>
             </div>
             <div className="text-right">
               <div className="text-5xl font-black text-orange-500">{orders.length}</div>

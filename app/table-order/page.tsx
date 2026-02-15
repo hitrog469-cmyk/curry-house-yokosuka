@@ -653,7 +653,10 @@ function TableOrderContent() {
         })
         .select()
 
-      if (tableError) throw tableError
+      if (tableError) {
+        console.error('Table order insert failed:', tableError.message, tableError.details, tableError.hint)
+        throw tableError
+      }
 
       const { error: orderError } = await supabase
         .from('orders')
@@ -662,17 +665,19 @@ function TableOrderContent() {
           status: 'pending',
           order_type: 'in-house',
           table_number: selectedTables[0],
-          customer_name: customerName,
+          customer_name: customerName || 'Table Guest',
+          customer_phone: '',
           party_size: parseInt(numberOfPeople),
           split_bill: splitBill,
           number_of_splits: numberOfSplits,
           items: orderItems,
+          payment_method: 'pending',
           payment_status: 'pending',
           delivery_address: `Tables: ${tableNumbers} - ${customerName} (${numberOfPeople} ${parseInt(numberOfPeople) === 1 ? 'person' : 'people'})`,
           notes: splitBill ? `Split bill (${splitType}): ${JSON.stringify(splitDetails)}` : ''
         })
 
-      if (orderError) console.error('Failed to sync to orders table:', orderError)
+      if (orderError) console.error('Failed to sync to orders table:', orderError.message, orderError.details, orderError.hint)
 
       setOrderSubmitted(true)
       setCart({})
@@ -893,22 +898,23 @@ function TableOrderContent() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
         <div className="text-center bg-white rounded-3xl p-8 max-w-md shadow-2xl animate-scaleIn">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-3xl font-black text-gray-900 mb-2">Order Sent!</h1>
-          <p className="text-gray-500 mb-5">Your food is being prepared with care. Sit back and relax!</p>
+          <h1 className="text-3xl font-black text-gray-900 mb-1">Order Sent!</h1>
+          <p className="text-gray-500 mb-1">Your food is being prepared with care.</p>
+          <p className="text-green-600 font-semibold text-sm mb-5">Thank you for choosing The Curry House, {customerName}!</p>
 
-          <div className="bg-gray-50 rounded-xl p-4 mb-5 space-y-1">
+          <div className="bg-gray-50 rounded-xl p-4 mb-4 space-y-1">
             <p className="text-2xl font-black text-green-600">Table {selectedTables.join(', ')}</p>
             <p className="text-gray-700 font-medium">{customerName}</p>
             <p className="text-gray-500 text-sm">{numberOfPeople} {parseInt(numberOfPeople) === 1 ? 'person' : 'people'}</p>
           </div>
 
           {splitBill && validSplitPersons.length > 0 && (
-            <div className="bg-blue-50 rounded-xl p-4 mb-5 border border-blue-100">
+            <div className="bg-blue-50 rounded-xl p-4 mb-4 border border-blue-100">
               <p className="text-sm font-bold text-blue-900 mb-2">Bill Split Summary</p>
               <div className="space-y-1.5">
                 {validSplitPersons.map((person, idx) => (
@@ -926,28 +932,65 @@ function TableOrderContent() {
             </div>
           )}
 
-          <p className="text-xs text-gray-400 mb-6">Thank you for dining with us! Your meal will be ready shortly.</p>
+          <p className="text-xs text-gray-400 mb-5">Sit back and relax. Your meal will be ready shortly!</p>
 
           {/* Action Buttons */}
           <div className="space-y-3">
             <button
               onClick={() => {
                 setOrderSubmitted(false)
-                // Keep table and customer info, just reset cart for add-ons
               }}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-md"
             >
               + Order More Items
             </button>
+
+            {/* Pay Now button */}
             <button
               onClick={() => {
-                // This would trigger bill request in a full implementation
-                alert('Bill requested! Staff will bring your check shortly.')
+                // Request bill via supabase
+                if (supabase) {
+                  supabase.from('table_orders')
+                    .update({ status: 'bill_requested' })
+                    .eq('table_number', selectedTables[0])
+                    .in('status', ['pending', 'preparing', 'completed'])
+                    .then(() => {
+                      // Also insert notification for reception
+                      supabase.from('notifications').insert({
+                        type: 'bill_request',
+                        title: 'Bill Requested - Table ' + selectedTables[0],
+                        message: customerName + ' is ready to pay',
+                        target_role: 'reception',
+                        sound_type: 'billRequest',
+                        metadata: { table_number: selectedTables[0], customer_name: customerName }
+                      }).then(() => {})
+                    })
+                }
+                alert('Bill requested! Our staff will come to your table shortly. You can pay by cash or card.')
               }}
               className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white font-bold py-4 rounded-xl transition-all shadow-md"
             >
-              💰 Request Bill
+              Request Bill & Pay
             </button>
+          </div>
+
+          {/* Payment methods info */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <p className="text-xs text-gray-400 mb-2">Accepted Payment Methods</p>
+            <div className="flex justify-center gap-4 text-gray-500 text-xs">
+              <span className="flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2" strokeWidth="2"/><line x1="1" y1="10" x2="23" y2="10" strokeWidth="2"/></svg>
+                Card
+              </span>
+              <span className="flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"/><path d="M12 6v6l4 2" strokeWidth="2" strokeLinecap="round"/></svg>
+                Cash
+              </span>
+              <span className="flex items-center gap-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" strokeWidth="2"/><circle cx="12" cy="18" r="1" strokeWidth="2"/></svg>
+                PayPay
+              </span>
+            </div>
           </div>
         </div>
       </div>

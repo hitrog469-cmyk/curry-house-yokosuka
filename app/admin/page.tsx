@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatPrice, ORDER_STATUS } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
+import { playOrderUpdateSound, playNewOrderSound, playDeliveryAlertSound, enableAudio } from '@/lib/notification-sound'
 
 type Order = {
   id: string
@@ -40,6 +41,14 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [adminSession, setAdminSession] = useState<any>(null)
+  const [audioEnabled, setAudioEnabled] = useState(false)
+
+  const handleEnableAudio = useCallback(async () => {
+    if (!audioEnabled) {
+      const ok = await enableAudio()
+      if (ok) setAudioEnabled(true)
+    }
+  }, [audioEnabled])
 
   // Auth guard - check both OAuth and admin session
   useEffect(() => {
@@ -68,6 +77,26 @@ export default function AdminDashboard() {
       fetchStaff()
     }
   }, [selectedStatus, user, adminSession])
+
+  // Real-time order notifications for admin
+  useEffect(() => {
+    if (!supabase) return
+    const channel = supabase
+      .channel('admin_order_notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, () => {
+        if (audioEnabled) playNewOrderSound(0.7)
+        fetchOrders()
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
+        const newOrder = payload.new as any
+        if (audioEnabled && newOrder.status === 'out_for_delivery') playDeliveryAlertSound(0.6)
+        else if (audioEnabled) playOrderUpdateSound(0.5)
+        fetchOrders()
+      })
+      .subscribe()
+
+    return () => { supabase?.removeChannel(channel) }
+  }, [audioEnabled])
 
   async function fetchOrders() {
     if (!supabase) return
@@ -163,7 +192,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" onClick={handleEnableAudio}>
       {/* Header */}
       <div className="bg-gradient-to-r from-curry-dark to-gray-800 text-white py-8 shadow-lg">
         <div className="container mx-auto px-4">
@@ -172,9 +201,14 @@ export default function AdminDashboard() {
               <h1 className="text-4xl font-bold mb-2">All Orders</h1>
               <p className="text-lg opacity-90">The Curry House Yokosuka - Admin Panel</p>
             </div>
-            <Link href="/" className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg transition-colors">
-              🏠 Home
-            </Link>
+            <div className="flex items-center gap-3">
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${audioEnabled ? 'bg-green-600' : 'bg-red-600 animate-pulse cursor-pointer'}`}>
+                {audioEnabled ? 'Alerts ON' : 'Click for Alerts'}
+              </span>
+              <Link href="/" className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg transition-colors">
+                Home
+              </Link>
+            </div>
           </div>
         </div>
       </div>

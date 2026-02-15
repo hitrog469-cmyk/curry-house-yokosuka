@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
+import { playNewOrderSound, playBillRequestSound, enableAudio } from '@/lib/notification-sound'
 
 // Constants
 const TOTAL_TABLES = 18
@@ -91,17 +92,23 @@ export default function StaffDashboardPage() {
   const [selectedTable, setSelectedTable] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
-  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [audioEnabled, setAudioEnabled] = useState(false)
 
   const supabase = getSupabaseBrowserClient()
 
+  const handleEnableAudio = useCallback(async () => {
+    if (!audioEnabled) {
+      const ok = await enableAudio()
+      if (ok) setAudioEnabled(true)
+    }
+  }, [audioEnabled])
+
   // Play notification sound
   const playNotificationSound = useCallback(() => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0
-      audioRef.current.play().catch(e => console.log('Audio play failed:', e))
+    if (audioEnabled) {
+      playNewOrderSound(0.8)
     }
-  }, [])
+  }, [audioEnabled])
 
   // Calculate table status from orders
   const calculateTableStatus = (orders: LegacyOrder[]): TableStatus => {
@@ -618,9 +625,7 @@ export default function StaffDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      {/* Hidden audio for notifications */}
-      <audio ref={audioRef} src="/notification.mp3" preload="auto" />
+    <div className="min-h-screen bg-gray-900 text-white" onClick={handleEnableAudio}>
 
       {/* Header */}
       <div className="bg-gray-800 border-b-4 border-orange-500 py-4">
@@ -631,6 +636,11 @@ export default function StaffDashboardPage() {
               <p className="text-gray-400 text-sm">The Curry House Yokosuka</p>
             </div>
             <div className="text-right">
+              <div className="flex items-center justify-end gap-2 mb-1">
+                <span className={`px-2 py-0.5 rounded text-xs font-bold ${audioEnabled ? 'bg-green-600' : 'bg-red-600 animate-pulse'}`}>
+                  {audioEnabled ? 'SOUND ON' : 'CLICK FOR SOUND'}
+                </span>
+              </div>
               <div className="text-xl text-gray-400">
                 {currentTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
               </div>
