@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { formatPrice, ORDER_STATUS } from '@/lib/utils'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
@@ -11,11 +11,13 @@ type Order = {
   id: string
   customer_name: string
   customer_phone: string
+  customer_email?: string
   delivery_address: string
   total_amount: number
   status: string
   items: any[]
   created_at: string
+  updated_at?: string
   assigned_staff_id?: string
   notes?: string
   order_type?: string
@@ -23,12 +25,26 @@ type Order = {
   party_size?: number
   split_bill?: boolean
   number_of_splits?: number
+  payment_method?: string
   payment_status?: string
 }
 
-type Staff = {
+type TableOrder = {
   id: string
-  name: string
+  table_number: number
+  items: any[]
+  total_amount: number
+  status: string
+  created_at: string
+  customer_name?: string
+  party_size?: number
+  split_bill?: boolean
+  number_of_splits?: number
+}
+
+type StaffMember = {
+  id: string
+  full_name: string
   phone: string
 }
 
@@ -36,18 +52,31 @@ export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
-  const [staff, setStaff] = useState<Staff[]>([])
+  const [tableOrders, setTableOrders] = useState<TableOrder[]>([])
+  const [staff, setStaff] = useState<StaffMember[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState('all')
+  const [activeTab, setActiveTab] = useState<'online' | 'dine-in' | 'all'>('all')
   const [adminSession, setAdminSession] = useState<any>(null)
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const prevOrderCountRef = useRef(0)
 
-  // Auth guard - check both OAuth and admin session
+  const supabase = getSupabaseBrowserClient()
+
+  // Play notification sound
+  const playNotificationSound = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0
+      audioRef.current.play().catch(e => console.log('Audio play failed:', e))
+    }
+  }, [])
+
+  // Auth guard
   useEffect(() => {
-    // Check for admin session from admin login
     const session = localStorage.getItem('admin_session')
     if (session) {
       const sessionData = JSON.parse(session)
-      // Check if session is less than 24 hours old
       if (Date.now() - sessionData.timestamp < 24 * 60 * 60 * 1000) {
         setAdminSession(sessionData)
         return
@@ -55,23 +84,19 @@ export default function AdminDashboard() {
         localStorage.removeItem('admin_session')
       }
     }
-
-    // Otherwise check OAuth user role
     if (!authLoading && (!user || user.role !== 'admin')) {
       router.push('/admin/login')
     }
   }, [user, authLoading, router])
 
-  useEffect(() => {
-    if (user?.role === 'admin' || adminSession?.role === 'admin') {
-      fetchOrders()
-      fetchStaff()
-    }
-  }, [selectedStatus, user, adminSession])
+  const isAuthed = user?.role === 'admin' || adminSession?.role === 'admin'
 
-  async function fetchOrders() {
-    if (!supabase) return
+  // Fetch all data
+  const fetchAll = useCallback(async () => {
+    if (!supabase || !isAuthed) return
     setLoading(true)
+
+    // Fetch delivery orders
     let query = supabase
       .from('orders')
       .select('*')
@@ -81,140 +106,407 @@ export default function AdminDashboard() {
       query = query.eq('status', selectedStatus)
     }
 
-    const { data, error } = await query
-
-    if (!error && data) {
-      setOrders(data)
+    const { data: orderData } = await query
+    if (orderData) {
+      // Check for new orders and play sound
+      if (prevOrderCountRef.current > 0 && orderData.length > prevOrderCountRef.current) {
+        playNotificationSound()
+      }
+      prevOrderCountRef.current = orderData.length
+      setOrders(orderData)
     }
-    setLoading(false)
-  }
 
-  async function fetchStaff() {
-    if (!supabase) return
-    const { data } = await supabase
-      .from('users')
-      .select('id, name, phone')
+    // Fetch table orders (dine-in)
+    let tQuery = supabase
+      .from('table_orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (selectedStatus !== 'all') {
+      tQuery = tQuery.eq('status', selectedStatus)
+    }
+
+    const { data: tableData } = await tQuery
+    if (tableData) setTableOrders(tableData)
+
+    // Fetch staff
+    const { data: staffData } = await supabase
+      .from('profiles')
+      .select('id, full_name, phone')
       .eq('role', 'staff')
       .eq('is_active', true)
 
-    if (data) {
-      setStaff(data)
-    }
-  }
+    if (staffData) setStaff(staffData.map(s => ({ id: s.id, full_name: s.full_name, phone: s.phone || '' })))
 
-  async function updateOrderStatus(orderId: string, newStatus: string) {
+    setLoading(false)
+  }, [supabase, isAuthed, selectedStatus, playNotificationSound])
+
+  useEffect(() => { fetchAll() }, [fetchAll])
+
+  // Real-time subscription for new orders
+  useEffect(() => {
+    if (!supabase || !isAuthed) return
+
+    const channel = supabase
+      .channel('admin_order_updates')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+        playNotificationSound()
+        fetchAll()
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'table_orders' }, () => {
+        playNotificationSound()
+        fetchAll()
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [supabase, isAuthed, fetchAll, playNotificationSound])
+
+  // Order actions
+  async function updateOrderStatus(orderId: string, newStatus: string, isTableOrder = false) {
     if (!supabase) return
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus })
-      .eq('id', orderId)
-
-    if (!error) {
-      fetchOrders()
-    }
+    const table = isTableOrder ? 'table_orders' : 'orders'
+    await supabase.from(table).update({ status: newStatus }).eq('id', orderId)
+    fetchAll()
   }
 
   async function assignStaff(orderId: string, staffId: string) {
     if (!supabase) return
-    const { error } = await supabase
-      .from('orders')
-      .update({ 
-        assigned_staff_id: staffId,
-        status: 'preparing' 
-      })
-      .eq('id', orderId)
+    await supabase.from('orders').update({ assigned_staff_id: staffId, status: 'preparing' }).eq('id', orderId)
+    fetchAll()
+  }
 
-    if (!error) {
-      fetchOrders()
+  // Print kitchen slip
+  const printKitchenSlip = (items: any[], tableNum: number | undefined, orderId: string, customerName: string, isDelivery: boolean) => {
+    const printWindow = window.open('', '', 'width=350,height=600')
+    if (!printWindow) return
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html><head><title>Kitchen Slip</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; padding: 10px; font-size: 14px; max-width: 80mm; }
+        .header { text-align: center; border-bottom: 3px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
+        .type-badge { background: ${isDelivery ? '#2563eb' : '#7c3aed'}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; display: inline-block; margin: 5px 0; }
+        .table-number { font-size: 48px; font-weight: bold; text-align: center; margin: 10px 0; border: 4px solid #000; padding: 10px; }
+        .timestamp { text-align: center; font-size: 12px; color: #666; margin-bottom: 10px; }
+        .items { border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 10px 0; margin: 10px 0; }
+        .item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccc; }
+        .item:last-child { border-bottom: none; }
+        .item-name { flex: 1; font-weight: bold; }
+        .item-details { font-size: 11px; color: #666; }
+        .item-qty { font-size: 24px; font-weight: bold; min-width: 50px; text-align: right; }
+        .customer { text-align: center; font-size: 12px; margin: 5px 0; font-weight: bold; }
+        .footer { text-align: center; font-size: 10px; color: #666; margin-top: 10px; }
+        @media print { body { margin: 0; } }
+      </style></head><body>
+        <div class="header">
+          <h1 style="font-size:16px;">🍛 KITCHEN ORDER</h1>
+          <span class="type-badge">${isDelivery ? '🚗 DELIVERY' : '🍽️ TABLE ORDER'}</span>
+        </div>
+        ${tableNum ? `<div class="table-number">T${tableNum}</div>` : ''}
+        ${isDelivery ? `<div class="table-number" style="font-size:24px;">🚗 DELIVERY</div>` : ''}
+        <div class="customer">${customerName || 'Guest'}</div>
+        <div class="timestamp">${new Date().toLocaleString('ja-JP')}</div>
+        <div class="items">
+          ${items.map(item => `
+            <div class="item">
+              <div>
+                <div class="item-name">${item.name}</div>
+                ${item.spiceLevel ? `<div class="item-details">🌶️ ${item.spiceLevel}</div>` : ''}
+                ${item.addOns?.length ? `<div class="item-details">+ ${item.addOns.map((a: any) => a.name).join(', ')}</div>` : ''}
+                ${item.variation ? `<div class="item-details">• ${item.variation.name}</div>` : ''}
+              </div>
+              <div class="item-qty">×${item.quantity}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="footer">ID: ${orderId.slice(0, 8)}</div>
+      </body></html>
+    `)
+    printWindow.document.close()
+    printWindow.onload = () => { printWindow.print(); printWindow.close() }
+  }
+
+  // Print customer bill / PDF receipt
+  const printBill = (order: Order | TableOrder, isTableOrder: boolean) => {
+    const items = order.items || []
+    const subtotal = order.total_amount
+    const tax = Math.floor(subtotal * 0.1)
+    const total = subtotal + tax
+    const customerName = isTableOrder ? (order as TableOrder).customer_name : (order as Order).customer_name
+    const tableNum = isTableOrder ? (order as TableOrder).table_number : (order as Order).table_number
+    const partySize = isTableOrder ? (order as TableOrder).party_size : (order as Order).party_size
+    const splitBill = isTableOrder ? (order as TableOrder).split_bill : (order as Order).split_bill
+    const numSplits = isTableOrder ? (order as TableOrder).number_of_splits : (order as Order).number_of_splits
+    const isDelivery = !isTableOrder && (order as Order).order_type !== 'in-house'
+
+    let splitInfo = ''
+    if (splitBill && numSplits && numSplits > 1) {
+      const perPerson = Math.ceil(total / numSplits)
+      splitInfo = `
+        <div class="split-section">
+          <div style="font-weight:bold;margin-bottom:5px;">📋 BILL SPLIT (${numSplits} people)</div>
+          <div style="font-size:18px;font-weight:bold;">Per Person: ${formatPrice(perPerson)}</div>
+        </div>
+      `
     }
+
+    const printWindow = window.open('', '', 'width=400,height=900')
+    if (!printWindow) return
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html><head><title>Bill - ${customerName || 'Guest'}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Courier New', monospace; padding: 15px; font-size: 12px; max-width: 80mm; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 15px; }
+        .header h1 { font-size: 18px; margin-bottom: 3px; }
+        .header p { font-size: 10px; color: #666; }
+        .divider { border-top: 2px dashed #000; margin: 10px 0; }
+        .info { text-align: center; margin: 10px 0; }
+        .info .table-num { font-size: 24px; font-weight: bold; }
+        .info .detail { font-size: 11px; color: #666; }
+        .items { margin: 10px 0; }
+        .item { display: flex; justify-content: space-between; padding: 4px 0; }
+        .item-name { flex: 1; }
+        .item-qty { width: 40px; text-align: center; }
+        .item-price { width: 80px; text-align: right; font-weight: bold; }
+        .addon { font-size: 10px; color: #666; padding-left: 10px; }
+        .totals { border-top: 1px solid #000; padding-top: 8px; margin-top: 8px; }
+        .total-row { display: flex; justify-content: space-between; padding: 3px 0; }
+        .grand-total { font-size: 20px; font-weight: bold; border-top: 3px solid #000; margin-top: 5px; padding-top: 8px; }
+        .split-section { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; text-align: center; }
+        .payment { text-align: center; margin: 10px 0; padding: 8px; background: #f9f9f9; border-radius: 4px; }
+        .footer { text-align: center; margin-top: 20px; }
+        .footer .thanks { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+        .footer p { font-size: 10px; color: #666; }
+        @media print { body { margin: 0; } }
+      </style></head><body>
+        <div class="header">
+          <h1>🍛 THE CURRY HOUSE</h1>
+          <p>YOKOSUKA ・ ザ・カリーハウス横須賀</p>
+          <p>Tel: 046-813-5869</p>
+        </div>
+        <div class="divider"></div>
+        <div class="info">
+          ${tableNum ? `<div class="table-num">TABLE ${tableNum}</div>` : ''}
+          ${isDelivery ? `<div class="table-num">🚗 DELIVERY</div>` : ''}
+          ${customerName ? `<div class="detail">Customer: ${customerName}</div>` : ''}
+          ${partySize ? `<div class="detail">Party: ${partySize} guests</div>` : ''}
+          <div class="detail">${new Date(order.created_at).toLocaleString('ja-JP')}</div>
+          <div class="detail">Order #${order.id.slice(0, 8).toUpperCase()}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="items">
+          <div class="item" style="font-weight:bold;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:4px;">
+            <span class="item-name">ITEM</span>
+            <span class="item-qty">QTY</span>
+            <span class="item-price">PRICE</span>
+          </div>
+          ${items.map((item: any) => `
+            <div class="item">
+              <span class="item-name">${item.name}</span>
+              <span class="item-qty">×${item.quantity}</span>
+              <span class="item-price">${formatPrice((item.price || 0) * (item.quantity || 1))}</span>
+            </div>
+            ${item.addOns?.map((a: any) => `
+              <div class="item addon">
+                <span class="item-name">+ ${a.name}</span>
+                <span class="item-qty"></span>
+                <span class="item-price">${formatPrice(a.price || 0)}</span>
+              </div>
+            `).join('') || ''}
+          `).join('')}
+        </div>
+        <div class="totals">
+          <div class="total-row">
+            <span>Subtotal / 小計</span>
+            <span>${formatPrice(subtotal)}</span>
+          </div>
+          <div class="total-row">
+            <span>Tax 10% / 消費税</span>
+            <span>${formatPrice(tax)}</span>
+          </div>
+          <div class="total-row grand-total">
+            <span>TOTAL / 合計</span>
+            <span>${formatPrice(total)}</span>
+          </div>
+        </div>
+        ${splitInfo}
+        ${!isTableOrder && (order as Order).payment_method ? `
+          <div class="payment">
+            💰 Payment: ${(order as Order).payment_method?.toUpperCase()}
+            ${(order as Order).payment_status ? ` (${(order as Order).payment_status})` : ''}
+          </div>
+        ` : ''}
+        <div class="footer">
+          <div class="thanks">Thank You! ありがとうございました!</div>
+          <p>Please visit us again!</p>
+          <p>またのお越しをお待ちしております</p>
+          <p style="margin-top:8px;">───────────────────</p>
+        </div>
+      </body></html>
+    `)
+    printWindow.document.close()
+    printWindow.onload = () => { printWindow.print(); printWindow.close() }
+  }
+
+  // Stats
+  const allOnlineOrders = orders
+  const allTableOrders = tableOrders
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+  const todayOnline = orders.filter(o => new Date(o.created_at) >= todayStart)
+  const todayTable = tableOrders.filter(o => new Date(o.created_at) >= todayStart)
+
+  const stats = {
+    totalOnline: todayOnline.length,
+    totalTable: todayTable.length,
+    pendingOnline: todayOnline.filter(o => o.status === 'pending').length,
+    pendingTable: todayTable.filter(o => o.status === 'pending').length,
+    preparingAll: todayOnline.filter(o => o.status === 'preparing').length + todayTable.filter(o => o.status === 'preparing').length,
+    deliveredToday: todayOnline.filter(o => o.status === 'delivered').length,
+    completedTable: todayTable.filter(o => o.status === 'completed').length,
+    revenueOnline: todayOnline.filter(o => o.status === 'delivered').reduce((s, o) => s + o.total_amount, 0),
+    revenueTable: todayTable.filter(o => o.status === 'completed').reduce((s, o) => s + o.total_amount, 0),
   }
 
   const getStatusColor = (status: string) => {
-    const colors: any = {
+    const c: any = {
       pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
       preparing: 'bg-blue-100 text-blue-800 border-blue-300',
       out_for_delivery: 'bg-purple-100 text-purple-800 border-purple-300',
       delivered: 'bg-green-100 text-green-800 border-green-300',
+      completed: 'bg-green-100 text-green-800 border-green-300',
       cancelled: 'bg-red-100 text-red-800 border-red-300',
     }
-    return colors[status] || colors.pending
+    return c[status] || c.pending
   }
 
-  const getStatusDisplay = (status: string) => {
-    const displays: any = {
-      pending: '⏳ Pending',
-      preparing: '👨‍🍳 Preparing',
-      out_for_delivery: '🚗 Out for Delivery',
-      delivered: '✅ Delivered',
-      cancelled: '❌ Cancelled',
-    }
-    return displays[status] || status
+  const getStatusIcon = (status: string) => {
+    const i: any = { pending: '⏳', preparing: '👨‍🍳', out_for_delivery: '🚗', delivered: '✅', completed: '✅', cancelled: '❌' }
+    return i[status] || '⏳'
   }
 
-  const statsData = {
-    total: orders.length,
-    pending: orders.filter(o => o.status === 'pending').length,
-    preparing: orders.filter(o => o.status === 'preparing').length,
-    out_for_delivery: orders.filter(o => o.status === 'out_for_delivery').length,
-    delivered: orders.filter(o => o.status === 'delivered').length,
-    totalRevenue: orders
-      .filter(o => o.status === 'delivered')
-      .reduce((sum, o) => sum + o.total_amount, 0)
+  const getTimeAgo = (date: string) => {
+    const mins = Math.floor((Date.now() - new Date(date).getTime()) / 60000)
+    if (mins < 1) return 'Just now'
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ${mins % 60}m ago`
+    return `${Math.floor(hrs / 24)}d ago`
   }
+
+  // Filter orders by tab
+  const getFilteredOrders = () => {
+    if (activeTab === 'online') return orders.map(o => ({ ...o, _type: 'online' as const }))
+    if (activeTab === 'dine-in') return tableOrders.map(o => ({ ...o, _type: 'table' as const }))
+    // Combine all, sorted by date
+    const combined = [
+      ...orders.map(o => ({ ...o, _type: 'online' as const })),
+      ...tableOrders.map(o => ({ ...o, _type: 'table' as const, customer_name: o.customer_name || 'Table Guest', customer_phone: '', delivery_address: '' })),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    return combined
+  }
+
+  const filteredOrders = getFilteredOrders()
+
+  if (!isAuthed && !authLoading) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Audio for notifications */}
+      <audio ref={audioRef} src="/notification.wav" preload="auto" />
+
       {/* Header */}
-      <div className="bg-gradient-to-r from-curry-dark to-gray-800 text-white py-8 shadow-lg">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-6 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h1 className="text-4xl font-bold mb-2">All Orders</h1>
-              <p className="text-lg opacity-90">The Curry House Yokosuka - Admin Panel</p>
+              <h1 className="text-3xl font-black">🍛 Admin Dashboard</h1>
+              <p className="text-gray-400 text-sm">The Curry House Yokosuka — Order Management</p>
             </div>
-            <Link href="/" className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg transition-colors">
-              🏠 Home
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/staff/dashboard" className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                🍽️ Staff Counter
+              </Link>
+              <Link href="/kitchen" className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                👨‍🍳 Kitchen
+              </Link>
+              <Link href="/" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm transition-colors">
+                🏠 Home
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        {/* Stats Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="card bg-gradient-to-br from-yellow-50 to-yellow-100 border-l-4 border-yellow-500">
-            <h3 className="text-sm font-semibold text-gray-600 mb-1">Pending Orders</h3>
-            <p className="text-4xl font-bold text-yellow-700">{statsData.pending}</p>
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Today's Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-500">
+            <p className="text-xs font-semibold text-gray-500 mb-1">🚗 Online Orders</p>
+            <p className="text-3xl font-black text-blue-700">{stats.totalOnline}</p>
+            <p className="text-xs text-gray-400">{stats.pendingOnline} pending</p>
           </div>
-          <div className="card bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
-            <h3 className="text-sm font-semibold text-gray-600 mb-1">Preparing</h3>
-            <p className="text-4xl font-bold text-blue-700">{statsData.preparing}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-purple-500">
+            <p className="text-xs font-semibold text-gray-500 mb-1">🍽️ Table Orders</p>
+            <p className="text-3xl font-black text-purple-700">{stats.totalTable}</p>
+            <p className="text-xs text-gray-400">{stats.pendingTable} pending</p>
           </div>
-          <div className="card bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500">
-            <h3 className="text-sm font-semibold text-gray-600 mb-1">Out for Delivery</h3>
-            <p className="text-4xl font-bold text-purple-700">{statsData.out_for_delivery}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-orange-500">
+            <p className="text-xs font-semibold text-gray-500 mb-1">👨‍🍳 Preparing</p>
+            <p className="text-3xl font-black text-orange-700">{stats.preparingAll}</p>
           </div>
-          <div className="card bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
-            <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Revenue</h3>
-            <p className="text-3xl font-bold text-green-700">{formatPrice(statsData.totalRevenue)}</p>
+          <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
+            <p className="text-xs font-semibold text-gray-500 mb-1">✅ Completed</p>
+            <p className="text-3xl font-black text-green-700">{stats.deliveredToday + stats.completedTable}</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-emerald-500">
+            <p className="text-xs font-semibold text-gray-500 mb-1">💰 Online Revenue</p>
+            <p className="text-2xl font-black text-emerald-700">{formatPrice(stats.revenueOnline)}</p>
+          </div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-teal-500">
+            <p className="text-xs font-semibold text-gray-500 mb-1">💰 Table Revenue</p>
+            <p className="text-2xl font-black text-teal-700">{formatPrice(stats.revenueTable)}</p>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="card mb-6">
-          <h2 className="text-xl font-bold mb-4">Filter Orders</h2>
-          <div className="flex gap-2 flex-wrap">
-            {['all', 'pending', 'preparing', 'out_for_delivery', 'delivered'].map((status) => (
+        {/* Tabs: Online / Dine-In / All */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="bg-white rounded-xl shadow-sm p-1 flex gap-1">
+            {(['all', 'online', 'dine-in'] as const).map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                  activeTab === tab
+                    ? 'bg-gray-900 text-white shadow'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {tab === 'all' && '📋 All Orders'}
+                {tab === 'online' && '🚗 Online / Delivery'}
+                {tab === 'dine-in' && '🍽️ Dine-In / Table'}
+              </button>
+            ))}
+          </div>
+
+          {/* Status filter */}
+          <div className="bg-white rounded-xl shadow-sm p-1 flex gap-1 ml-auto">
+            {['all', 'pending', 'preparing', 'delivered', 'completed'].map(status => (
               <button
                 key={status}
                 onClick={() => setSelectedStatus(status)}
-                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
                   selectedStatus === status
-                    ? 'bg-curry-primary text-white scale-105'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-green-600 text-white'
+                    : 'text-gray-500 hover:bg-gray-100'
                 }`}
               >
-                {status === 'all' ? '📋 All Orders' : getStatusDisplay(status)}
+                {status === 'all' ? 'All' : `${getStatusIcon(status)} ${status.charAt(0).toUpperCase() + status.slice(1)}`}
               </button>
             ))}
           </div>
@@ -223,123 +515,215 @@ export default function AdminDashboard() {
         {/* Orders List */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-curry-primary border-t-transparent"></div>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-green-600 border-t-transparent" />
             <p className="mt-4 text-gray-600">Loading orders...</p>
           </div>
-        ) : orders.length === 0 ? (
-          <div className="card text-center py-12">
-            <p className="text-gray-600 text-lg">No orders found</p>
+        ) : filteredOrders.length === 0 ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm">
+            <div className="text-6xl mb-4">📭</div>
+            <p className="text-gray-500 text-lg">No orders found</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {orders.map((order) => (
-              <div key={order.id} className="card hover:shadow-xl transition-shadow">
-                <div className="grid md:grid-cols-4 gap-4">
-                  {/* Order Info */}
-                  <div className="md:col-span-2">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-lg">{order.customer_name}</h3>
-                          {order.order_type === 'in-house' && (
-                            <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs font-bold">
-                              🍽️ Table {order.table_number}
-                            </span>
+          <div className="space-y-3">
+            {filteredOrders.map((order: any) => {
+              const isTable = order._type === 'table'
+              const isExpanded = expandedOrder === order.id
+              const isPending = order.status === 'pending'
+
+              return (
+                <div
+                  key={order.id}
+                  className={`bg-white rounded-xl shadow-sm overflow-hidden transition-all border-l-4 ${
+                    isPending ? 'border-yellow-500 ring-1 ring-yellow-200' :
+                    order.status === 'preparing' ? 'border-blue-500' :
+                    order.status === 'delivered' || order.status === 'completed' ? 'border-green-500' :
+                    'border-gray-200'
+                  }`}
+                >
+                  {/* Order Header - Always visible */}
+                  <button
+                    onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                    className="w-full text-left p-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {/* Type badge */}
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-black ${
+                          isTable ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {isTable ? `🍽️ T${order.table_number}` : '🚗 Delivery'}
+                        </span>
+
+                        {/* Status badge */}
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
+                          {getStatusIcon(order.status)} {order.status.replace(/_/g, ' ').toUpperCase()}
+                        </span>
+
+                        {/* Customer */}
+                        <span className="font-bold text-gray-900">
+                          {order.customer_name || 'Guest'}
+                        </span>
+
+                        {/* Time */}
+                        <span className="text-xs text-gray-400">
+                          {getTimeAgo(order.created_at)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        {/* Items count */}
+                        <span className="text-xs text-gray-500">
+                          {order.items?.length || 0} items
+                        </span>
+
+                        {/* Total */}
+                        <span className="text-lg font-black text-green-700">
+                          {formatPrice(order.total_amount)}
+                        </span>
+
+                        {/* Expand icon */}
+                        <span className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                          ▼
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-100 p-4">
+                      <div className="grid md:grid-cols-3 gap-4">
+                        {/* Items */}
+                        <div>
+                          <h4 className="text-xs font-bold text-gray-500 mb-2">ORDER ITEMS</h4>
+                          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                            {order.items?.map((item: any, idx: number) => (
+                              <div key={idx} className="flex justify-between text-sm">
+                                <div>
+                                  <span className="font-medium">{item.name}</span>
+                                  {item.spiceLevel && <span className="text-orange-500 ml-1 text-xs">🌶️{item.spiceLevel}</span>}
+                                  {item.addOns?.map((a: any, i: number) => (
+                                    <div key={i} className="text-xs text-gray-500 ml-2">+ {a.name} ({formatPrice(a.price || 0)})</div>
+                                  ))}
+                                </div>
+                                <span className="font-bold whitespace-nowrap">×{item.quantity} {formatPrice((item.price || 0) * (item.quantity || 1))}</span>
+                              </div>
+                            ))}
+                            <div className="border-t pt-2 mt-2 flex justify-between font-bold">
+                              <span>Subtotal</span>
+                              <span>{formatPrice(order.total_amount)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-gray-500">
+                              <span>Tax (10%)</span>
+                              <span>{formatPrice(Math.floor(order.total_amount * 0.1))}</span>
+                            </div>
+                            <div className="flex justify-between font-black text-lg text-green-700 border-t pt-2">
+                              <span>TOTAL</span>
+                              <span>{formatPrice(order.total_amount + Math.floor(order.total_amount * 0.1))}</span>
+                            </div>
+                          </div>
+                          {order.notes && (
+                            <p className="text-sm text-gray-600 mt-2 italic">💬 {order.notes}</p>
+                          )}
+                          {order.split_bill && order.number_of_splits && (
+                            <div className="mt-2 p-2 bg-blue-50 rounded-lg text-xs">
+                              <span className="font-bold">📋 Split Bill:</span> {order.number_of_splits} ways • {formatPrice(Math.ceil((order.total_amount + Math.floor(order.total_amount * 0.1)) / order.number_of_splits))} each
+                            </div>
                           )}
                         </div>
-                        <p className="text-gray-600 text-sm">📞 {order.customer_phone}</p>
-                        <p className="text-gray-600 text-sm mt-1">📍 {order.delivery_address}</p>
-                        {order.order_type === 'in-house' && order.party_size && (
-                          <p className="text-gray-600 text-sm mt-1">👥 Party of {order.party_size}</p>
-                        )}
-                        {order.split_bill && order.number_of_splits && (
-                          <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
-                            <p className="text-xs font-bold text-blue-900">💳 Split Bill</p>
-                            <p className="text-xs text-blue-800">
-                              {order.number_of_splits} bills • {formatPrice(order.total_amount / order.number_of_splits)} each
-                            </p>
+
+                        {/* Customer Info */}
+                        <div>
+                          <h4 className="text-xs font-bold text-gray-500 mb-2">CUSTOMER INFO</h4>
+                          <div className="space-y-2 text-sm">
+                            {order.customer_phone && (
+                              <div className="flex items-center gap-2">
+                                <span>📞</span>
+                                <a href={`tel:${order.customer_phone}`} className="text-blue-600 hover:underline">{order.customer_phone}</a>
+                              </div>
+                            )}
+                            {order.delivery_address && (
+                              <div className="flex items-start gap-2">
+                                <span>📍</span>
+                                <span>{order.delivery_address}</span>
+                              </div>
+                            )}
+                            {order.party_size && (
+                              <div className="flex items-center gap-2">
+                                <span>👥</span>
+                                <span>{order.party_size} guests</span>
+                              </div>
+                            )}
+                            {order.payment_method && (
+                              <div className="flex items-center gap-2">
+                                <span>💳</span>
+                                <span>{order.payment_method}</span>
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 text-gray-400">
+                              <span>🕐</span>
+                              <span>{new Date(order.created_at).toLocaleString('ja-JP')}</span>
+                            </div>
+                            <div className="text-xs text-gray-400 mt-1">
+                              ID: {order.id.slice(0, 8).toUpperCase()}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                      <div className="flex flex-col gap-2 items-end">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
-                          {getStatusDisplay(order.status)}
-                        </span>
-                        {order.order_type && (
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            order.order_type === 'in-house'
-                              ? 'bg-purple-100 text-purple-700'
-                              : 'bg-green-100 text-green-700'
-                          }`}>
-                            {order.order_type === 'in-house' ? '🍽️ Dine-In' : '🚗 Delivery'}
-                          </span>
-                        )}
+                        </div>
+
+                        {/* Actions */}
+                        <div>
+                          <h4 className="text-xs font-bold text-gray-500 mb-2">ACTIONS</h4>
+                          <div className="space-y-2">
+                            {/* Status change */}
+                            <select
+                              value={order.status}
+                              onChange={(e) => updateOrderStatus(order.id, e.target.value, isTable)}
+                              className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold"
+                            >
+                              <option value="pending">⏳ Pending</option>
+                              <option value="preparing">👨‍🍳 Preparing</option>
+                              {!isTable && <option value="out_for_delivery">🚗 Out for Delivery</option>}
+                              {!isTable && <option value="delivered">✅ Delivered</option>}
+                              {isTable && <option value="completed">✅ Completed</option>}
+                              <option value="cancelled">❌ Cancelled</option>
+                            </select>
+
+                            {/* Staff assignment (delivery only) */}
+                            {!isTable && (
+                              <select
+                                value={order.assigned_staff_id || ''}
+                                onChange={(e) => assignStaff(order.id, e.target.value)}
+                                className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm"
+                              >
+                                <option value="">🧑‍💼 Assign Staff</option>
+                                {staff.map(s => (
+                                  <option key={s.id} value={s.id}>{s.full_name} {s.phone ? `(${s.phone})` : ''}</option>
+                                ))}
+                              </select>
+                            )}
+
+                            {/* Print buttons */}
+                            <button
+                              onClick={() => printKitchenSlip(order.items, order.table_number, order.id, order.customer_name || 'Guest', !isTable)}
+                              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
+                            >
+                              🖨️ Print Kitchen Slip
+                            </button>
+
+                            <button
+                              onClick={() => printBill(order, isTable)}
+                              className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
+                            >
+                              🧾 Print Bill / Receipt
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                    
-                    {/* Items */}
-                    <div className="bg-gray-50 rounded-lg p-3 mb-3">
-                      <p className="text-xs font-semibold text-gray-500 mb-2">ORDER ITEMS:</p>
-                      {order.items.map((item: any, idx: number) => (
-                        <p key={idx} className="text-sm">
-                          • {item.name} x{item.quantity} - {formatPrice(item.price * item.quantity)}
-                        </p>
-                      ))}
-                    </div>
-
-                    {order.notes && (
-                      <p className="text-sm text-gray-600 italic">💬 Note: {order.notes}</p>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div>
-                    <p className="text-sm font-semibold text-gray-500 mb-2">UPDATE STATUS:</p>
-                    <select
-                      value={order.status}
-                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3"
-                    >
-                      <option value="pending">⏳ Pending</option>
-                      <option value="preparing">👨‍🍳 Preparing</option>
-                      <option value="out_for_delivery">🚗 Out for Delivery</option>
-                      <option value="delivered">✅ Delivered</option>
-                      <option value="cancelled">❌ Cancelled</option>
-                    </select>
-
-                    <p className="text-sm font-semibold text-gray-500 mb-2">ASSIGN STAFF:</p>
-                    <select
-                      value={order.assigned_staff_id || ''}
-                      onChange={(e) => assignStaff(order.id, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                    >
-                      <option value="">Not Assigned</option>
-                      {staff.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name} - {s.phone}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Total & Time */}
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500 mb-1">TOTAL AMOUNT</p>
-                    <p className="text-3xl font-bold text-curry-accent mb-4">
-                      {formatPrice(order.total_amount)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(order.created_at).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

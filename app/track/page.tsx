@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+
+const supabase = getSupabaseBrowserClient()
 import { formatPrice } from '@/lib/utils'
 import { RESTAURANT_LOCATION } from '@/lib/delivery-fee'
 import Link from 'next/link'

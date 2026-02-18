@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/auth-context'
 
 type Order = {
   id: string
@@ -23,9 +24,9 @@ const LOCATION_UPDATE_INTERVAL_MS = 60 * 1000
 
 export default function StaffPortal() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
   // Track which orders have active GPS tracking
   const [trackingOrders, setTrackingOrders] = useState<Set<string>>(new Set())
   const [locationError, setLocationError] = useState<string | null>(null)
@@ -34,22 +35,21 @@ export default function StaffPortal() {
   const intervalIdsRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
   const latestPositionRef = useRef<Map<string, { lat: number; lng: number }>>(new Map())
 
+  const supabase = getSupabaseBrowserClient()
+
+  // Auth guard - allow staff and admin
   useEffect(() => {
-    const userData = localStorage.getItem('user')
-    if (!userData) {
-      router.push('/login')
-      return
+    if (!authLoading && (!user || (user.role !== 'staff' && user.role !== 'admin'))) {
+      router.push('/auth/login')
     }
+  }, [user, authLoading, router])
 
-    const parsedUser = JSON.parse(userData)
-    if (parsedUser.role !== 'staff') {
-      router.push('/login')
-      return
+  // Fetch orders assigned to this staff member
+  useEffect(() => {
+    if (user && (user.role === 'staff' || user.role === 'admin')) {
+      fetchMyOrders(user.id)
     }
-
-    setUser(parsedUser)
-    fetchMyOrders(parsedUser.id)
-  }, [])
+  }, [user])
 
   // Cleanup all GPS watchers on unmount
   useEffect(() => {
@@ -104,7 +104,7 @@ export default function StaffPortal() {
     if (error) {
       console.error('Failed to update location:', error)
     }
-  }, [])
+  }, [supabase])
 
   // Start GPS tracking for a specific order
   function startLocationTracking(orderId: string, staffId: string) {
@@ -115,7 +115,6 @@ export default function StaffPortal() {
 
     setLocationError(null)
 
-    // Watch position continuously to keep latest coords fresh
     const watchId = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude } = position.coords
@@ -156,7 +155,6 @@ export default function StaffPortal() {
     }, LOCATION_UPDATE_INTERVAL_MS)
 
     intervalIdsRef.current.set(orderId, intervalId)
-
     setTrackingOrders((prev) => new Set(prev).add(orderId))
   }
 
@@ -183,14 +181,12 @@ export default function StaffPortal() {
   }
 
   async function updateOrderStatus(orderId: string, newStatus: string) {
-    if (!supabase) return
+    if (!supabase || !user) return
 
-    // If marking as out_for_delivery, start GPS tracking automatically
-    if (newStatus === 'out_for_delivery' && user) {
+    if (newStatus === 'out_for_delivery') {
       startLocationTracking(orderId, user.id)
     }
 
-    // If marking as delivered, stop GPS tracking
     if (newStatus === 'delivered') {
       stopLocationTracking(orderId)
     }
@@ -200,24 +196,20 @@ export default function StaffPortal() {
       .update({ status: newStatus })
       .eq('id', orderId)
 
-    if (!error && user) {
+    if (!error) {
       fetchMyOrders(user.id)
     }
   }
 
-  function handleLogout() {
-    // Stop all tracking before logout
-    watchIdsRef.current.forEach((watchId) => {
-      navigator.geolocation.clearWatch(watchId)
-    })
-    intervalIdsRef.current.forEach((intervalId) => {
-      clearInterval(intervalId)
-    })
-    localStorage.removeItem('user')
-    router.push('/login')
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent"></div>
+      </div>
+    )
   }
 
-  if (!user) return null
+  if (!user || (user.role !== 'staff' && user.role !== 'admin')) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -226,15 +218,17 @@ export default function StaffPortal() {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Delivery Portal</h1>
-              <p className="text-lg opacity-90">Welcome, {user.name}</p>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">🚗 Delivery Portal</h1>
+              <p className="text-lg opacity-90">Welcome, {user.full_name || user.name || 'Staff'}</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg transition-colors"
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-3">
+              <Link href="/staff/dashboard" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-colors text-sm font-semibold">
+                🍽️ Counter
+              </Link>
+              <Link href="/" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-colors text-sm">
+                🏠 Home
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -263,13 +257,13 @@ export default function StaffPortal() {
 
         {/* Stats */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="card bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
+          <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-blue-500">
             <h3 className="text-sm font-semibold text-gray-600 mb-1">Preparing</h3>
             <p className="text-4xl font-bold text-blue-700">
               {orders.filter(o => o.status === 'preparing').length}
             </p>
           </div>
-          <div className="card bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500">
+          <div className="bg-white rounded-xl p-6 shadow-sm border-l-4 border-purple-500">
             <h3 className="text-sm font-semibold text-gray-600 mb-1">Out for Delivery</h3>
             <p className="text-4xl font-bold text-purple-700">
               {orders.filter(o => o.status === 'out_for_delivery').length}
@@ -286,14 +280,15 @@ export default function StaffPortal() {
             <p className="mt-4 text-gray-600">Loading deliveries...</p>
           </div>
         ) : orders.length === 0 ? (
-          <div className="card text-center py-12">
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm">
+            <div className="text-6xl mb-4">📭</div>
             <p className="text-gray-600 text-lg mb-2">No deliveries assigned</p>
-            <p className="text-gray-500">Check back later for new orders</p>
+            <p className="text-gray-500 text-sm">Admin will assign orders to you from the dashboard</p>
           </div>
         ) : (
           <div className="space-y-4">
             {orders.map((order) => (
-              <div key={order.id} className="card hover:shadow-xl transition-shadow">
+              <div key={order.id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
                 <div className="grid md:grid-cols-3 gap-6">
                   {/* Customer Info */}
                   <div className="md:col-span-2">
@@ -301,12 +296,20 @@ export default function StaffPortal() {
                       <div>
                         <h3 className="font-bold text-xl mb-2">{order.customer_name}</h3>
                         <p className="text-gray-600 mb-1">
+                          📞{' '}
                           <a href={`tel:${order.customer_phone}`} className="text-blue-600 hover:underline">
                             {order.customer_phone}
                           </a>
                         </p>
-                        <p className="text-gray-700 font-medium">{order.delivery_address}</p>
+                        <p className="text-gray-700 font-medium">📍 {order.delivery_address}</p>
                       </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                        order.status === 'preparing'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-purple-100 text-purple-700'
+                      }`}>
+                        {order.status === 'preparing' ? '👨‍🍳 Preparing' : '🚗 On the way'}
+                      </span>
                     </div>
 
                     {/* Items */}
@@ -314,13 +317,14 @@ export default function StaffPortal() {
                       <p className="text-xs font-semibold text-gray-500 mb-2">ORDER ITEMS:</p>
                       {order.items.map((item: any, idx: number) => (
                         <p key={idx} className="text-sm mb-1">
-                          {item.name} x{item.quantity}
+                          • {item.name} ×{item.quantity}
+                          {item.spiceLevel && <span className="text-orange-500 ml-1">🌶️{item.spiceLevel}</span>}
                         </p>
                       ))}
                     </div>
 
                     {order.notes && (
-                      <p className="text-sm text-gray-600 bg-yellow-50 p-3 rounded border-l-4 border-yellow-400">
+                      <p className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">
                         <strong>Customer Note:</strong> {order.notes}
                       </p>
                     )}
@@ -338,15 +342,14 @@ export default function StaffPortal() {
                     {order.status === 'preparing' && (
                       <button
                         onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
-                        className="btn-primary text-lg py-4"
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg py-4 rounded-xl transition-colors"
                       >
-                        Start Delivery
+                        🚗 Start Delivery
                       </button>
                     )}
 
                     {order.status === 'out_for_delivery' && (
                       <>
-                        {/* Tracking indicator */}
                         {trackingOrders.has(order.id) && (
                           <div className="flex items-center gap-2 justify-center text-emerald-600 text-sm font-medium bg-emerald-50 py-2 rounded-lg">
                             <span className="relative flex h-2 w-2">
@@ -358,15 +361,15 @@ export default function StaffPortal() {
                         )}
                         <button
                           onClick={() => updateOrderStatus(order.id, 'delivered')}
-                          className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg text-lg"
+                          className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg transition-colors"
                         >
-                          Mark Delivered
+                          ✅ Mark Delivered
                         </button>
                       </>
                     )}
 
                     <p className="text-xs text-gray-500 text-center">
-                      Ordered: {new Date(order.created_at).toLocaleString()}
+                      Ordered: {new Date(order.created_at).toLocaleString('ja-JP')}
                     </p>
                   </div>
                 </div>

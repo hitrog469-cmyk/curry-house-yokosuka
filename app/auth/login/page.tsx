@@ -10,15 +10,12 @@ function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [loginMode, setLoginMode] = useState<'password' | 'magic'>('password');
-
-  const { signInWithEmail, signInWithMagicLink, signInWithGoogle, user, loading: authLoading, supabaseConfigured } = useAuth();
+  const { signInWithEmail, signInWithGoogle, user, loading: authLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirectTo') || '/menu';
+  const redirectTo = searchParams.get('redirectTo') || '/profile';
   const authError = searchParams.get('error');
 
   // If user is already logged in, redirect them
@@ -39,7 +36,6 @@ function LoginContent() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
     setLoading(true);
 
     if (!email || !email.includes('@')) {
@@ -48,19 +44,6 @@ function LoginContent() {
       return;
     }
 
-    if (loginMode === 'magic') {
-      // Magic link login (no password needed)
-      const { error } = await signInWithMagicLink(email);
-      if (error) {
-        setError(error.message || 'Failed to send login link');
-      } else {
-        setSuccess('Check your email! We sent you a login link.');
-      }
-      setLoading(false);
-      return;
-    }
-
-    // Password login
     if (!password) {
       setError('Please enter your password');
       setLoading(false);
@@ -70,15 +53,7 @@ function LoginContent() {
     const { error } = await signInWithEmail(email, password);
 
     if (error) {
-      // Provide helpful error messages
-      const msg = error.message || '';
-      if (msg.includes('Invalid login credentials')) {
-        setError('Wrong email or password. Try magic link login instead?');
-      } else if (msg.includes('Email not confirmed')) {
-        setError('Please confirm your email first. Check your inbox for a confirmation link.');
-      } else {
-        setError(msg || 'Login failed. Please try again.');
-      }
+      setError(error.message || 'Login failed. Please try again.');
       setLoading(false);
     } else {
       router.push(redirectTo);
@@ -103,18 +78,6 @@ function LoginContent() {
 
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
-          {/* Supabase Config Warning */}
-          {!supabaseConfigured && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-xl">
-              <p className="text-sm font-semibold text-amber-800 mb-1">Authentication Setup Required</p>
-              <p className="text-xs text-amber-700">
-                Supabase credentials are missing or invalid. Please check your environment variables
-                (NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY) in Vercel or .env.local.
-                The anon key should be a long JWT token starting with &quot;eyJ&quot;.
-              </p>
-            </div>
-          )}
-
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -122,30 +85,6 @@ function LoginContent() {
             </div>
           )}
 
-          {/* Success Message */}
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p className="text-sm text-green-700">{success}</p>
-            </div>
-          )}
-
-          {/* Login Mode Toggle */}
-          <div className="flex rounded-xl bg-gray-100 p-1 mb-6">
-            <button
-              type="button"
-              onClick={() => { setLoginMode('password'); setError(''); setSuccess(''); }}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${loginMode === 'password' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
-            >
-              Password
-            </button>
-            <button
-              type="button"
-              onClick={() => { setLoginMode('magic'); setError(''); setSuccess(''); }}
-              className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition-all ${loginMode === 'magic' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
-            >
-              Email Link
-            </button>
-          </div>
 
           {/* Email/Password Form */}
           <form onSubmit={handleEmailLogin} className="space-y-5">
@@ -163,8 +102,6 @@ function LoginContent() {
               />
             </div>
 
-            {loginMode === 'password' && (
-              <>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Password
@@ -206,15 +143,6 @@ function LoginContent() {
                     Forgot password?
                   </Link>
                 </div>
-              </>
-            )}
-
-            {loginMode === 'magic' && (
-              <p className="text-sm text-gray-500">
-                We&apos;ll send a login link to your email. No password needed!
-              </p>
-            )}
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -227,10 +155,10 @@ function LoginContent() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  {loginMode === 'magic' ? 'Sending link...' : 'Signing in...'}
+                  Signing in...
                 </span>
               ) : (
-                loginMode === 'magic' ? 'Send Login Link' : 'Sign In'
+                'Sign In'
               )}
             </button>
           </form>

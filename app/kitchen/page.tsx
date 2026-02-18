@@ -236,7 +236,7 @@ export default function KitchenDisplayPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Hidden audio for notifications */}
-      <audio ref={audioRef} src="/notification.mp3" />
+      <audio ref={audioRef} src="/notification.wav" />
 
       {/* Header */}
       <div className="bg-gray-800 border-b-4 border-orange-500 py-4">

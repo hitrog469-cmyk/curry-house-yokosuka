@@ -98,9 +98,8 @@ export default function RegisterPage() {
       setError(error.message || 'Failed to create account');
       setLoading(false);
     } else {
-      // Show success message
-      alert('Account created! Please check your email to verify your account.');
-      router.push('/auth/login');
+      // Auto signed-in after registration, redirect to profile
+      router.push('/profile');
     }
   };
 

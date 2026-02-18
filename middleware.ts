@@ -1,103 +1,60 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { auth } from '@/auth'
+import { NextResponse } from 'next/server'
 
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+export default auth((req) => {
+  const { nextUrl } = req
+  const currentPath = nextUrl.pathname
+  const isLoggedIn = !!req.auth
+  const userRole = (req.auth?.user as any)?.role || 'customer'
 
-  // Skip auth checks if Supabase is not configured
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseKey || !supabaseKey.startsWith('eyJ') || supabaseKey.length < 100) {
-    return response;
+  // Skip middleware for admin login page and API routes
+  if (currentPath === '/admin/login' || currentPath.startsWith('/api/')) {
+    return NextResponse.next()
   }
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabaseKey,
-    {
-      cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
-          response = NextResponse.next({ request: { headers: request.headers } });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: '', ...options });
-          response = NextResponse.next({ request: { headers: request.headers } });
-          response.cookies.set({ name, value: '', ...options });
-        },
-      },
-    }
-  );
-
-  const { data: { session } } = await supabase.auth.getSession();
-
+  // Protected routes and their allowed roles
   const protectedRoutes: { [key: string]: string[] } = {
     '/admin': ['admin'],
     '/staff': ['staff', 'admin'],
     '/profile': ['customer', 'staff', 'admin'],
     '/my-orders': ['customer', 'staff', 'admin'],
-  };
-
-  const currentPath = request.nextUrl.pathname;
+  }
 
   for (const [route, allowedRoles] of Object.entries(protectedRoutes)) {
     if (currentPath.startsWith(route)) {
-      if (!session) {
-        const redirectUrl = new URL('/auth/login', request.url);
-        redirectUrl.searchParams.set('redirectTo', currentPath);
-        return NextResponse.redirect(redirectUrl);
+      if (!isLoggedIn) {
+        const redirectUrl = new URL('/auth/login', nextUrl.origin)
+        redirectUrl.searchParams.set('redirectTo', currentPath)
+        return NextResponse.redirect(redirectUrl)
       }
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      const userRole = profile?.role || 'customer';
 
       if (!allowedRoles.includes(userRole)) {
         const roleRedirects: { [key: string]: string } = {
-          admin: '/admin/dashboard',
-          staff: '/staff/orders',
-          customer: '/menu',
-        };
-        return NextResponse.redirect(new URL(roleRedirects[userRole] || '/', request.url));
+          admin: '/admin',
+          staff: '/staff',
+          customer: '/profile',
+        }
+        return NextResponse.redirect(new URL(roleRedirects[userRole] || '/', nextUrl.origin))
       }
     }
   }
 
-  const authPages = ['/auth/login', '/auth/register'];
-  if (session && authPages.some((page) => currentPath.startsWith(page))) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
-
-    const userRole = profile?.role || 'customer';
+  // Redirect logged-in users away from auth pages
+  const authPages = ['/auth/login', '/auth/register']
+  if (isLoggedIn && authPages.some((page) => currentPath.startsWith(page))) {
     const roleRedirects: { [key: string]: string } = {
-      admin: '/admin/dashboard',
-      staff: '/staff/orders',
-      customer: '/menu',
-    };
-
-    return NextResponse.redirect(new URL(roleRedirects[userRole], request.url));
+      admin: '/admin',
+      staff: '/staff',
+      customer: '/profile',
+    }
+    return NextResponse.redirect(new URL(roleRedirects[userRole], nextUrl.origin))
   }
 
-  return response;
-}
+  return NextResponse.next()
+})
 
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
+}

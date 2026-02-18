@@ -1,12 +1,12 @@
-import { createBrowserClient } from '@supabase/ssr'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 let _client: SupabaseClient | null = null
 let _checked = false
 
 /**
- * Get the Supabase browser client, or null if not configured.
- * Caches the client so createBrowserClient is only called once.
+ * Get the Supabase browser client for DATABASE operations only.
+ * Auth is handled by NextAuth — this client is only for querying tables.
+ * Caches the client so createClient is only called once.
  */
 export function getSupabaseBrowserClient(): SupabaseClient | null {
   if (_checked) return _client
@@ -15,11 +15,11 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  if (!url || !key || !key.startsWith('eyJ') || key.length < 100) {
+  if (!url || !key || key.length < 50) {
     _client = null
     return null
   }
 
-  _client = createBrowserClient(url, key)
+  _client = createClient(url, key)
   return _client
 }

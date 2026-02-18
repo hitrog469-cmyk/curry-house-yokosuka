@@ -228,12 +228,12 @@ export default function OrderPage() {
 
   const handleSubmitOrder = async () => {
     if (!supabase) { alert('Order system not configured'); return }
-    // Check if restaurant is open
-    const orderCheck = canPlaceOrder()
-    if (!orderCheck.allowed) {
-      alert(`❌ ${orderCheck.message}\n\nPlease check our opening hours and try again later.`)
-      return
-    }
+    // Restaurant hours check disabled for now
+    // const orderCheck = canPlaceOrder()
+    // if (!orderCheck.allowed) {
+    //   alert(`❌ ${orderCheck.message}\n\nPlease check our opening hours and try again later.`)
+    //   return
+    // }
 
     if (!formData.name || !formData.phone || !formData.address) {
       alert('Please fill in all required fields')
@@ -882,8 +882,25 @@ export default function OrderPage() {
                     <span className="font-bold">FREE ✓</span>
                   </div>
                   <div className="flex justify-between text-2xl font-black">
-                    <span>Total Paid</span>
+                    <span>Total Due</span>
                     <span className="text-green-700">{formatPrice(confirmedOrder.total)}</span>
+                  </div>
+                </div>
+
+                {/* Payment Info - COD with Card Swipe */}
+                <div className="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">💳</span>
+                    <span className="font-bold text-blue-800">Pay at Door</span>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-2">
+                    Our delivery staff carries a card reader. You can pay with:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold">💵 Cash</span>
+                    <span className="text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold">💳 Card Swipe (Visa/Master)</span>
+                    <span className="text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold">📱 PayPay</span>
+                    <span className="text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold">📱 LINE Pay</span>
                   </div>
                 </div>
 

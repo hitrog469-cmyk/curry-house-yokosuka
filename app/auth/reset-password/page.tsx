@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,6 +15,8 @@ export default function ResetPasswordPage() {
   
   const { updatePassword } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
 
   const calculatePasswordStrength = (password: string) => {
     let strength = 0;
@@ -82,7 +84,13 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
 
-    const { error } = await updatePassword(password);
+    if (!token) {
+      setError('Invalid reset link. Please request a new password reset.');
+      setLoading(false);
+      return;
+    }
+
+    const { error } = await updatePassword(token, password);
 
     if (error) {
       setError(error.message || 'Failed to reset password');
@@ -214,5 +222,17 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

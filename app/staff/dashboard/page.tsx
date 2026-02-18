@@ -620,7 +620,7 @@ export default function StaffDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Hidden audio for notifications */}
-      <audio ref={audioRef} src="/notification.mp3" preload="auto" />
+      <audio ref={audioRef} src="/notification.wav" preload="auto" />
 
       {/* Header */}
       <div className="bg-gray-800 border-b-4 border-orange-500 py-4">

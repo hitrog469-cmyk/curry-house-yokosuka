@@ -37,9 +37,9 @@ export function ProtectedRoute({
       if (!hasPermission) {
         // Redirect based on actual role
         const roleRedirects = {
-          admin: '/admin/dashboard',
-          staff: '/staff/orders',
-          customer: '/menu',
+          admin: '/admin',
+          staff: '/staff',
+          customer: '/profile',
         };
         router.push(roleRedirects[(user.role || 'customer') as UserRole]);
       }

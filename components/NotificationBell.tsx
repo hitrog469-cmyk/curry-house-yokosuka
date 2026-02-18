@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
+
+const supabase = getSupabaseBrowserClient();
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 

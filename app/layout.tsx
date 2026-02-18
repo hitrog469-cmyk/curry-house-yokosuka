@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { AuthProvider } from '@/contexts/auth-context';
+import { SessionWrapper } from '@/components/session-wrapper';
 import { CartProvider } from '@/contexts/cart-context';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -18,12 +18,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>
+      <body className={inter.className} suppressHydrationWarning>
+        <SessionWrapper>
           <CartProvider>
             {children}
           </CartProvider>
-        </AuthProvider>
+        </SessionWrapper>
       </body>
     </html>
   );
