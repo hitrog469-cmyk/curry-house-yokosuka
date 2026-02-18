@@ -6,6 +6,10 @@ import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
+import { ClipboardList, BarChart3 } from 'lucide-react'
+import ToggleTabs from '@/components/ui/ToggleTabs'
+import Breadcrumb from '@/components/ui/Breadcrumb'
+import AdminAnalyticsView from '@/components/admin/AdminAnalyticsView'
 
 type Order = {
   id: string
@@ -61,6 +65,7 @@ export default function AdminDashboard() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const prevOrderCountRef = useRef(0)
+  const [activeView, setActiveView] = useState<'orders' | 'analytics'>('orders')
 
   const supabase = getSupabaseBrowserClient()
 
@@ -423,31 +428,46 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-6 shadow-lg">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
             <div>
-              <h1 className="text-3xl font-black">🍛 Admin Dashboard</h1>
-              <p className="text-gray-400 text-sm">The Curry House Yokosuka — Order Management</p>
+              <Breadcrumb items={[{ label: 'Admin Dashboard' }]} />
+              <h1 className="text-3xl font-bold mt-2">Admin Dashboard</h1>
+              <p className="text-sm opacity-80">The Curry House Yokosuka</p>
             </div>
             <div className="flex items-center gap-3">
               <Link href="/staff/dashboard" className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                🍽️ Staff Counter
+                Staff Counter
               </Link>
               <Link href="/kitchen" className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                👨‍🍳 Kitchen
+                Kitchen
               </Link>
               <Link href="/" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm transition-colors">
-                🏠 Home
+                Home
               </Link>
             </div>
           </div>
+          <ToggleTabs
+            tabs={[
+              { id: 'orders', label: 'Orders', icon: ClipboardList, badge: stats.pendingOnline + stats.pendingTable },
+              { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+            ]}
+            activeTab={activeView}
+            onChange={(id) => setActiveView(id as 'orders' | 'analytics')}
+            size="sm"
+          />
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Analytics View */}
+        {activeView === 'analytics' ? (
+          <AdminAnalyticsView />
+        ) : (
+        <>
         {/* Today's Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-500">
-            <p className="text-xs font-semibold text-gray-500 mb-1">🚗 Online Orders</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Online Orders</p>
             <p className="text-3xl font-black text-blue-700">{stats.totalOnline}</p>
             <p className="text-xs text-gray-400">{stats.pendingOnline} pending</p>
           </div>
@@ -725,6 +745,8 @@ export default function AdminDashboard() {
               )
             })}
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

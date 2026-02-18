@@ -212,28 +212,28 @@ export default function StaffPortal() {
   if (!user || (user.role !== 'staff' && user.role !== 'admin')) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-8 shadow-lg">
+    <div className="bg-gray-50 min-h-[calc(100vh-56px)]">
+      {/* Page Title Banner */}
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-5">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">🚗 Delivery Portal</h1>
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">Delivery Portal</h1>
               <p className="text-lg opacity-90">Welcome, {user.full_name || user.name || 'Staff'}</p>
             </div>
             <div className="flex items-center gap-3">
               <Link href="/staff/dashboard" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-colors text-sm font-semibold">
-                🍽️ Counter
+                Counter
               </Link>
               <Link href="/" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-colors text-sm">
-                🏠 Home
+                Home
               </Link>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
         {/* Location Error Banner */}
         {locationError && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-3">
