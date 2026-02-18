@@ -6,6 +6,10 @@ import { formatPrice, ORDER_STATUS } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
+import { ClipboardList, BarChart3 } from 'lucide-react'
+import ToggleTabs from '@/components/ui/ToggleTabs'
+import Breadcrumb from '@/components/ui/Breadcrumb'
+import AdminAnalyticsView from '@/components/admin/AdminAnalyticsView'
 
 type Order = {
   id: string
@@ -40,6 +44,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [adminSession, setAdminSession] = useState<any>(null)
+  const [activeView, setActiveView] = useState<'orders' | 'analytics'>('orders')
 
   // Auth guard - check both OAuth and admin session
   useEffect(() => {
@@ -165,21 +170,36 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-curry-dark to-gray-800 text-white py-8 shadow-lg">
+      <div className="bg-gradient-to-r from-curry-dark to-gray-800 text-white py-6 shadow-lg">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-start mb-4">
             <div>
-              <h1 className="text-4xl font-bold mb-2">All Orders</h1>
-              <p className="text-lg opacity-90">The Curry House Yokosuka - Admin Panel</p>
+              <Breadcrumb items={[{ label: 'Admin Dashboard' }]} />
+              <h1 className="text-3xl font-bold mt-2">Admin Dashboard</h1>
+              <p className="text-sm opacity-80">The Curry House Yokosuka</p>
             </div>
-            <Link href="/" className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg transition-colors">
-              🏠 Home
+            <Link href="/" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg transition-colors text-sm">
+              Home
             </Link>
           </div>
+          <ToggleTabs
+            tabs={[
+              { id: 'orders', label: 'Orders', icon: ClipboardList, badge: statsData.pending },
+              { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+            ]}
+            activeTab={activeView}
+            onChange={(id) => setActiveView(id as 'orders' | 'analytics')}
+            size="sm"
+          />
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
+        {/* Analytics View */}
+        {activeView === 'analytics' ? (
+          <AdminAnalyticsView />
+        ) : (
+        <>
         {/* Stats Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="card bg-gradient-to-br from-yellow-50 to-yellow-100 border-l-4 border-yellow-500">
@@ -341,6 +361,8 @@ export default function AdminDashboard() {
               </div>
             ))}
           </div>
+        )}
+        </>
         )}
       </div>
     </div>

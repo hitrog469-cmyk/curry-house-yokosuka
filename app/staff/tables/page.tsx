@@ -131,19 +131,12 @@ export default function StaffTablesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-100">
-      {/* Header */}
-      <div className="bg-stone-900 text-white">
-        <div className="container-custom py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold">Table Management</h1>
-              <p className="text-stone-400 text-sm">Staff Control Panel</p>
-            </div>
-            <Link href="/staff" className="bg-stone-800 hover:bg-stone-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-              ← Back
-            </Link>
-          </div>
+    <div className="bg-stone-100 min-h-[calc(100vh-56px)]">
+      {/* Page Title */}
+      <div className="bg-stone-900 text-white py-4">
+        <div className="container-custom">
+          <h1 className="text-xl font-bold">Table Management</h1>
+          <p className="text-stone-400 text-sm">Session Control Panel</p>
         </div>
       </div>
 

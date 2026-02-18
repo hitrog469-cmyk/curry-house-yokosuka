@@ -205,41 +205,21 @@ export default function StaffPortal() {
     }
   }
 
-  function handleLogout() {
-    // Stop all tracking before logout
-    watchIdsRef.current.forEach((watchId) => {
-      navigator.geolocation.clearWatch(watchId)
-    })
-    intervalIdsRef.current.forEach((intervalId) => {
-      clearInterval(intervalId)
-    })
-    localStorage.removeItem('user')
-    router.push('/login')
-  }
+  // GPS cleanup is handled in unmount effect above
 
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-8 shadow-lg">
+    <div className="bg-gray-50 min-h-[calc(100vh-56px)]">
+      {/* Page Title Banner */}
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white py-5">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Delivery Portal</h1>
-              <p className="text-lg opacity-90">Welcome, {user.name}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="bg-white/10 hover:bg-white/20 px-6 py-2 rounded-lg transition-colors"
-            >
-              Logout
-            </button>
-          </div>
+          <h1 className="text-2xl font-bold">Delivery Portal</h1>
+          <p className="text-sm opacity-80">Welcome, {user.name}</p>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
         {/* Location Error Banner */}
         {locationError && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-3">
