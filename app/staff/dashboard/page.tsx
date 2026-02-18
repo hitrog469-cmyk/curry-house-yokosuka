@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
+import { Bell, ChefHat, CheckCircle, DollarSign, Printer, RefreshCw, Volume2, VolumeX, LayoutGrid, Columns3 } from 'lucide-react'
+import ToggleTabs from '@/components/ui/ToggleTabs'
 
 // Constants
 const TOTAL_TABLES = 18
@@ -91,17 +93,32 @@ export default function StaffDashboardPage() {
   const [selectedTable, setSelectedTable] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [viewMode, setViewMode] = useState<'grid' | 'pipeline'>('grid')
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const supabase = getSupabaseBrowserClient()
 
+  // Load sound preference
+  useEffect(() => {
+    const saved = localStorage.getItem('staff_sound')
+    if (saved === 'false') setSoundEnabled(false)
+  }, [])
+
+  const toggleSound = () => {
+    const newState = !soundEnabled
+    setSoundEnabled(newState)
+    localStorage.setItem('staff_sound', String(newState))
+  }
+
   // Play notification sound
   const playNotificationSound = useCallback(() => {
+    if (!soundEnabled) return
     if (audioRef.current) {
       audioRef.current.currentTime = 0
       audioRef.current.play().catch(e => console.log('Audio play failed:', e))
     }
-  }, [])
+  }, [soundEnabled])
 
   // Calculate table status from orders
   const calculateTableStatus = (orders: LegacyOrder[]): TableStatus => {
@@ -618,62 +635,167 @@ export default function StaffDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="bg-gray-900 text-white min-h-[calc(100vh-56px)]">
       {/* Hidden audio for notifications */}
       <audio ref={audioRef} src="/notification.mp3" preload="auto" />
 
-      {/* Header */}
-      <div className="bg-gray-800 border-b-4 border-orange-500 py-4">
+      {/* Compact Header with Clock + Status Badges + Legend */}
+      <div className="bg-gray-800 border-b border-gray-700 py-3">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">🍛 Staff Counter</h1>
-              <p className="text-gray-400 text-sm">The Curry House Yokosuka</p>
-            </div>
-            <div className="text-right">
-              <div className="text-xl text-gray-400">
-                {currentTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
-              </div>
-              <div className="flex gap-2 mt-1">
-                <span className="bg-red-600 text-white text-xs px-2 py-1 rounded">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-lg font-bold">Kitchen Counter</h1>
+              <div className="flex gap-2">
+                <span className="bg-red-600 text-white text-xs px-2 py-1 rounded font-bold">
                   {tables.filter(t => t.status === 'new_order').length} NEW
                 </span>
-                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded font-bold">
                   {tables.filter(t => t.status === 'preparing').length} COOKING
                 </span>
               </div>
             </div>
+            <div className="text-lg font-mono text-gray-400">
+              {currentTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3 text-xs">
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-gray-700"></span> Empty</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-red-600 animate-pulse"></span> New</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-orange-500"></span> Add-on</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-blue-600"></span> Preparing</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-yellow-500"></span> Bill</span>
+            <span className="flex items-center gap-1"><span className="w-3 h-3 rounded bg-purple-600 animate-pulse"></span> Delayed</span>
           </div>
         </div>
       </div>
 
-      {/* Status Legend */}
-      <div className="bg-gray-800/50 py-2 border-b border-gray-700">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-wrap gap-3 justify-center text-xs">
-            <span className="flex items-center gap-1">
-              <span className="w-4 h-4 rounded bg-gray-700"></span> Empty
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-4 h-4 rounded bg-red-600 animate-pulse"></span> New Order
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-4 h-4 rounded bg-orange-500"></span> Add-on
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-4 h-4 rounded bg-blue-600"></span> Preparing
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-4 h-4 rounded bg-yellow-500"></span> Bill
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-4 h-4 rounded bg-purple-600 animate-pulse"></span> Delayed!
-            </span>
+      <div className="container mx-auto px-4 py-4">
+        {/* Stats Summary Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-gray-800 rounded-xl p-3 border-l-4 border-red-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-xs font-medium">New Orders</p>
+                <p className="text-2xl font-black text-red-400">{tables.filter(t => t.status === 'new_order').length}</p>
+              </div>
+              <Bell className="w-5 h-5 text-red-400" />
+            </div>
+          </div>
+          <div className="bg-gray-800 rounded-xl p-3 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-xs font-medium">Preparing</p>
+                <p className="text-2xl font-black text-blue-400">{tables.filter(t => t.status === 'preparing' || t.status === 'delayed').length}</p>
+              </div>
+              <ChefHat className="w-5 h-5 text-blue-400" />
+            </div>
+          </div>
+          <div className="bg-gray-800 rounded-xl p-3 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-xs font-medium">Served</p>
+                <p className="text-2xl font-black text-green-400">{tables.filter(t => t.status === 'served').length}</p>
+              </div>
+              <CheckCircle className="w-5 h-5 text-green-400" />
+            </div>
+          </div>
+          <div className="bg-gray-800 rounded-xl p-3 border-l-4 border-emerald-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-400 text-xs font-medium">Revenue</p>
+                <p className="text-2xl font-black text-emerald-400">{formatPrice(tables.reduce((sum, t) => sum + t.totalAmount, 0))}</p>
+              </div>
+              <DollarSign className="w-5 h-5 text-emerald-400" />
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="container mx-auto px-4 py-6">
+        {/* Quick Actions + View Toggle */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <button
+            onClick={() => {
+              tables.forEach(t => {
+                if (t.unprintedCount > 0) printKitchenSlip(t)
+              })
+            }}
+            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium transition-all text-sm"
+          >
+            <Printer className="w-4 h-4" /> Print All Pending
+          </button>
+          <button
+            onClick={() => fetchTableData()}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium transition-all text-sm"
+          >
+            <RefreshCw className="w-4 h-4" /> Refresh
+          </button>
+          <button
+            onClick={toggleSound}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all text-sm ${
+              soundEnabled ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-700/50 hover:bg-gray-600 text-gray-400'
+            }`}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            {soundEnabled ? 'Sound On' : 'Sound Off'}
+          </button>
+
+          <div className="ml-auto">
+            <ToggleTabs
+              tabs={[
+                { id: 'grid', label: 'Grid', icon: LayoutGrid },
+                { id: 'pipeline', label: 'Pipeline', icon: Columns3 },
+              ]}
+              activeTab={viewMode}
+              onChange={(id) => setViewMode(id as 'grid' | 'pipeline')}
+              size="sm"
+            />
+          </div>
+        </div>
+
+        {/* Pipeline View */}
+        {viewMode === 'pipeline' ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { status: 'new_order' as const, label: 'New Orders', color: 'border-red-500 bg-red-500/10', textColor: 'text-red-400' },
+              { status: 'preparing' as const, label: 'Preparing', color: 'border-blue-500 bg-blue-500/10', textColor: 'text-blue-400' },
+              { status: 'served' as const, label: 'Served', color: 'border-green-500 bg-green-500/10', textColor: 'text-green-400' },
+              { status: 'bill_requested' as const, label: 'Bill Requested', color: 'border-yellow-500 bg-yellow-500/10', textColor: 'text-yellow-400' },
+            ].map(col => {
+              const colTables = tables.filter(t => t.status === col.status || (col.status === 'preparing' && t.status === 'delayed'))
+              return (
+                <div key={col.status} className={`rounded-xl border-t-4 ${col.color} p-3`}>
+                  <h3 className={`text-sm font-bold ${col.textColor} mb-3 flex items-center justify-between`}>
+                    {col.label}
+                    <span className="bg-gray-800 px-2 py-0.5 rounded-full text-xs">{colTables.length}</span>
+                  </h3>
+                  <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                    {colTables.length === 0 ? (
+                      <p className="text-gray-600 text-xs text-center py-4">None</p>
+                    ) : (
+                      colTables.map(t => (
+                        <button
+                          key={t.tableNumber}
+                          onClick={() => { setSelectedTable(t.tableNumber); setViewMode('grid') }}
+                          className={`w-full text-left bg-gray-800 hover:bg-gray-700 rounded-lg p-3 transition-all ${
+                            t.isDelayed ? 'ring-2 ring-purple-500 animate-pulse' : ''
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-lg font-black">T{t.tableNumber}</span>
+                            {t.unprintedCount > 0 && (
+                              <span className="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">{t.unprintedCount}</span>
+                            )}
+                          </div>
+                          {t.customerName && <p className="text-xs text-gray-400 truncate">{t.customerName}</p>}
+                          <p className="text-sm font-bold text-emerald-400">{formatPrice(t.totalAmount)}</p>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Table Grid - 2/3 width */}
           <div className="lg:col-span-2">
@@ -841,6 +963,7 @@ export default function StaffDashboardPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     </div>
   )

@@ -1043,3 +1043,42 @@ img[loading="lazy"].loaded {
 .animate-marquee:hover {
   animation-play-state: paused;
 }
+
+/* ========================================
+   VIEW TRANSITION & DARK CARD UTILITIES
+   ======================================== */
+
+/* Smooth view enter animation */
+.view-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Dark theme card with hover */
+.card-dark {
+  background-color: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  transition: all 0.2s ease;
+}
+
+.card-dark:hover {
+  border-color: #4b5563;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Bottom sheet modal for mobile */
+@keyframes slideUpSheet {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUpSheet {
+  animation: slideUpSheet 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
