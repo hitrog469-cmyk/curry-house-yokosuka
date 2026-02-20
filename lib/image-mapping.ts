@@ -89,13 +89,13 @@ export const menuItemImages: { [key: string]: string } = {
   'naan-11': '/images/Naan Roll.png',
 
   // MEXICAN
-  'mex-1': '/images/QUESADILLA.png', // Burrito - uses quesadilla image
-  'mex-4': '/images/QUESADILLA.png', // Tacos - Cheese
-  'mex-5': '/images/QUESADILLA.png', // Tacos - Chicken
-  'mex-6': '/images/QUESADILLA.png', // Tacos - Beef
-  'mex-7': '/images/QUESADILLA.png', // Enchilada - Cheese
-  'mex-8': '/images/QUESADILLA.png', // Enchilada - Chicken
-  'mex-9': '/images/QUESADILLA.png', // Enchilada - Beef
+  'mex-1': '/images/QUESADILLA.png', // Burrito
+  'mex-4': '/images/Tacos Chicken.png', // Tacos - Cheese (using chicken image)
+  'mex-5': '/images/Tacos Chicken.png', // Tacos - Chicken
+  'mex-6': '/images/Tacos Beef.png',    // Tacos - Beef
+  'mex-7': '/images/Enchilada - Cheese (Red Sauce).png', // Enchilada - Cheese
+  'mex-8': '/images/Enchilada - Chicken(Red Sauce).png', // Enchilada - Chicken
+  'mex-9': '/images/Enchilada - Beef (Red Sauce).png',   // Enchilada - Beef
 
   // FRIED ITEMS
   'fried-1': '/images/Samosa 2 Pcs.png',
@@ -130,25 +130,65 @@ export const menuItemImages: { [key: string]: string } = {
   'snack-7': '/images/Edamame.png',
   'snack-8': '/images/Chicken Sekuwa.png',
 
-  // DRINKS
-  'drink-1': '/images/5.png', // Lassi - no specific image yet
-  'drink-2': '/images/5.png', // Mango Lassi
-  'drink-3': '/images/5.png', // Strawberry Lassi
-  'drink-4': '/images/5.png', // Blueberry Lassi
+  // DRINKS (Lassis)
+  'drink-1': '/images/Lassi.png',
+  'drink-2': '/images/Mango Lassi.png',
+  'drink-3': '/images/Strawberry Lassi (Indian Strawberry Yogurt Drink).png',
+  'drink-4': '/images/Blueberry Lassi.png',
+  'drink-5': '/images/Coke Zero.png',
+  'drink-6': '/images/Coke.png',
+  'drink-7': '/images/Ginger Ale.png',
+  'drink-8': '/images/Oolong Tea.png',
+  'drink-9': '/images/Orange Juice.png',
+  'drink-10': '/images/Pineapple Juice.png',
+  'drink-11': '/images/Apple Juice.png',
+  'drink-12': '/images/Grapefruit Juice.png',
+  'drink-13': '/images/Ice Coffee.png',
+  'drink-14': '/images/Ice Tea.png',
 
-  // COCKTAILS & MARGARITAS
-  'marg-1': '/images/Margarita.png',
-  'marg-2': '/images/Margarita.png',
-  'marg-3': '/images/Margarita.png',
-  'marg-4': '/images/Margarita.png',
-  'marg-5': '/images/Margarita.png',
-  'marg-6': '/images/Margarita.png',
-  'marg-7': '/images/Margarita.png',
-  'marg-8': '/images/Margarita.png',
-  'marg-9': '/images/Margarita.png',
-  'marg-10': '/images/Margarita.png',
-  'marg-11': '/images/Margarita.png',
-  'marg-12': '/images/Margarita.png',
+  // MOCKTAILS
+  'mock-1': '/images/Coke Orange.png',
+  'mock-2': '/images/Grapefruit & Coke.png',
+  'mock-3': '/images/Orange Ginger.png',
+  'mock-4': '/images/Grapefruit Ginger.png',
+  'mock-5': '/images/Ginger Ale.png',
+
+  // BEERS
+  'beer-1': '/images/Corona.png',
+  'beer-2': '/images/Nepal Ice.png',
+  'beer-3': '/images/King Fisher.png',
+  'beer-4': '/images/Asahi Draft.png',
+  'beer-5': '/images/Asahi Bottle.png',
+
+  // COCKTAILS
+  'cock-1': '/images/Gin Rock.png',
+  'cock-2': '/images/Gin Tonic.png',
+  'cock-3': '/images/Gin Buck.png',
+  'cock-4': '/images/Gin Rickey.png',
+  'cock-5': '/images/Tom Collins.png',
+  'cock-6': '/images/Gin Rock.png',    // Vodka Rock - similar look
+  'cock-7': '/images/Vodka Tonic.png',
+  'cock-8': '/images/Moscow Mule.png',
+  'cock-9': '/images/Screwdriver.png',
+  'cock-10': '/images/Rum Coke.png',
+  'cock-11': '/images/Tequila Shot.png',
+  'cock-12': '/images/Whisky Coke.png',
+  'cock-13': '/images/Tequila Sunrise.png',
+  'cock-14': '/images/Corona Sunrise.png',
+
+  // MARGARITAS
+  'marg-1': '/images/Regular Margarita (Glass).png',
+  'marg-2': '/images/Regular Margarita (Pitcher).png',
+  'marg-3': '/images/Fruit Margarita (Glass).png',
+  'marg-4': '/images/Fruit Margarita (Pitcher).png',
+  'marg-5': '/images/Gold Margarita (Glass).png',
+  'marg-6': '/images/Gold Margarita (Pitcher).png',
+  'marg-7': '/images/Gold Fruit Margarita (Glass).png',
+  'marg-8': '/images/Gold Fruit Margarita (Glass).png',  // Pitcher - use glass image
+  'marg-9': '/images/Gold Margarita (Glass).png',        // Cadillac Glass
+  'marg-10': '/images/Gold Margarita (Pitcher).png',     // Cadillac Pitcher
+  'marg-11': '/images/Gold Fruit Margarita (Glass).png', // Cadillac Fruit Glass
+  'marg-12': '/images/Gold Fruit Margarita (Glass).png', // Cadillac Fruit Pitcher
 };
 
 // Helper function to get image for menu item
