@@ -184,11 +184,11 @@ export const menuItemImages: { [key: string]: string } = {
   'marg-5': '/images/Gold Margarita (Glass).png',
   'marg-6': '/images/Gold Margarita (Pitcher).png',
   'marg-7': '/images/Gold Fruit Margarita (Glass).png',
-  'marg-8': '/images/Gold Fruit Margarita (Glass).png',  // Pitcher - use glass image
-  'marg-9': '/images/Gold Margarita (Glass).png',        // Cadillac Glass
-  'marg-10': '/images/Gold Margarita (Pitcher).png',     // Cadillac Pitcher
-  'marg-11': '/images/Gold Fruit Margarita (Glass).png', // Cadillac Fruit Glass
-  'marg-12': '/images/Gold Fruit Margarita (Glass).png', // Cadillac Fruit Pitcher
+  'marg-8': '/images/Gold Fruit Margarita (Pitcher).png',
+  'marg-9': '/images/Cadillac Margarita (Glass).png',
+  'marg-10': '/images/Cadillac Margarita (Pitcher).png',
+  'marg-11': '/images/Cadillac Fruit Margarita (Glass).png',
+  'marg-12': '/images/Cadillac Fruit Margarita (Pitcher).png',
 };
 
 // Helper function to get image for menu item
