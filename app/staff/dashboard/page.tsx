@@ -149,14 +149,26 @@ export default function StaffDashboardPage() {
   const fetchTableData = useCallback(async () => {
     if (!supabase) return
     try {
-      // Fetch from legacy table_orders (current system)
-      const { data: legacyOrders, error } = await supabase
-        .from('table_orders')
-        .select('*')
-        .in('status', ['pending', 'preparing', 'completed'])
-        .order('created_at', { ascending: false })
+      // Fetch orders and active sessions in parallel
+      const [{ data: legacyOrders, error }, { data: activeSessions }] = await Promise.all([
+        supabase
+          .from('table_orders')
+          .select('*')
+          .in('status', ['pending', 'preparing', 'completed'])
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('table_sessions')
+          .select('*')
+          .in('status', ['active', 'bill_requested'])
+      ])
 
       if (error) throw error
+
+      // Map sessions by table_number for quick lookup
+      const sessionsByTable: { [key: number]: TableSession } = {}
+      ;(activeSessions || []).forEach(s => {
+        sessionsByTable[s.table_number] = s
+      })
 
       // Group orders by table
       const ordersByTable: { [key: number]: LegacyOrder[] } = {}
@@ -164,9 +176,8 @@ export default function StaffDashboardPage() {
         ordersByTable[i] = []
       }
 
-      (legacyOrders || []).forEach(order => {
+      ;(legacyOrders || []).forEach(order => {
         if (order.table_number >= 1 && order.table_number <= TOTAL_TABLES) {
-          // Only include non-cancelled orders from last 4 hours
           const orderTime = new Date(order.created_at)
           const hoursSinceOrder = (Date.now() - orderTime.getTime()) / (1000 * 60 * 60)
           if (hoursSinceOrder < 4 && order.status !== 'cancelled') {
@@ -179,10 +190,10 @@ export default function StaffDashboardPage() {
       const tableTiles: TableTile[] = []
       for (let i = 1; i <= TOTAL_TABLES; i++) {
         const tableOrders = ordersByTable[i]
+        const activeSession = sessionsByTable[i] || null
         const unprintedOrders = tableOrders.filter(o => o.status === 'pending')
         const oldestOrder = tableOrders[tableOrders.length - 1]
 
-        // Check for delay
         const isDelayed = tableOrders.some(o => {
           if (o.status !== 'preparing') return false
           const orderTime = new Date(o.created_at)
@@ -190,15 +201,19 @@ export default function StaffDashboardPage() {
           return diffMinutes > KITCHEN_DELAY_MINUTES
         })
 
+        // Determine status: session bill_requested takes priority
+        let status = calculateTableStatus(tableOrders)
+        if (activeSession?.status === 'bill_requested') status = 'bill_requested'
+
         tableTiles.push({
           tableNumber: i,
-          status: calculateTableStatus(tableOrders),
-          session: null, // Will be populated when sessions are implemented
+          status,
+          session: activeSession,
           legacyOrders: tableOrders,
           unprintedCount: unprintedOrders.length,
           totalAmount: tableOrders.reduce((sum, o) => sum + o.total_amount, 0),
-          customerName: tableOrders[0]?.customer_name || null,
-          partySize: tableOrders[0]?.party_size || 0,
+          customerName: activeSession?.customer_name || tableOrders[0]?.customer_name || null,
+          partySize: activeSession?.party_size || tableOrders[0]?.party_size || 0,
           isDelayed,
           oldestOrderTime: oldestOrder?.created_at || null,
         })
@@ -566,18 +581,27 @@ export default function StaffDashboardPage() {
     }
   }
 
-  // Close/reset table session
+  // Close/reset table session — marks all orders done AND closes session so QR resets
   const closeTable = async (tableNumber: number) => {
     if (!supabase) return
     try {
-      // Mark all orders for this table as completed
-      const { error } = await supabase
+      // Mark all table_orders for this table as completed
+      const { error: ordersError } = await supabase
         .from('table_orders')
-        .update({ status: 'completed' })
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
         .eq('table_number', tableNumber)
         .in('status', ['pending', 'preparing'])
 
-      if (error) throw error
+      if (ordersError) throw ordersError
+
+      // Close the active session so QR code resets for the next customer
+      const { error: sessionError } = await supabase
+        .from('table_sessions')
+        .update({ status: 'closed', closed_at: new Date().toISOString() })
+        .eq('table_number', tableNumber)
+        .in('status', ['active', 'bill_requested'])
+
+      if (sessionError) console.error('Session close error:', sessionError)
 
       setSelectedTable(null)
       fetchTableData()
@@ -596,18 +620,18 @@ export default function StaffDashboardPage() {
       .channel('staff_dashboard_changes')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'table_orders'
-        },
+        { event: '*', schema: 'public', table: 'table_orders' },
         (payload) => {
-          console.log('Order change:', payload)
           if (payload.eventType === 'INSERT') {
             playNotificationSound()
           }
           fetchTableData()
         }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'table_sessions' },
+        () => { fetchTableData() }
       )
       .subscribe()
 

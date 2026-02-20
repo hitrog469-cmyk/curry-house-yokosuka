@@ -14,6 +14,12 @@ function TableOrderContent() {
   const searchParams = useSearchParams()
   const urlTableNumber = searchParams.get('table')
 
+  // Session state - track active session for this table
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [sessionChecked, setSessionChecked] = useState(false)
+  const [tableOccupied, setTableOccupied] = useState(false)
+  const [isAddOnMode, setIsAddOnMode] = useState(false)
+
   // Order setup state
   const [setupComplete, setSetupComplete] = useState(false)
   const [selectedTables, setSelectedTables] = useState<number[]>(urlTableNumber ? [parseInt(urlTableNumber)] : [])
@@ -61,6 +67,40 @@ function TableOrderContent() {
   const categoryScrollRef = useRef<HTMLDivElement>(null)
 
   const supabase = getSupabaseBrowserClient()
+
+  // ========================
+  // SESSION CHECK ON LOAD
+  // Check if QR table already has an active session
+  // ========================
+  useEffect(() => {
+    if (!urlTableNumber || !supabase) {
+      setSessionChecked(true)
+      return
+    }
+    const tableNum = parseInt(urlTableNumber)
+    const checkSession = async () => {
+      const { data: activeSession } = await supabase
+        .from('table_sessions')
+        .select('id, customer_name, party_size, status')
+        .eq('table_number', tableNum)
+        .in('status', ['active', 'bill_requested'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (activeSession) {
+        // Table is occupied - switch to add-on mode
+        setSessionId(activeSession.id)
+        setTableOccupied(true)
+        setIsAddOnMode(true)
+        setCustomerName(activeSession.customer_name || '')
+        setSelectedTables([tableNum])
+        setSetupComplete(true) // Skip setup, go straight to menu
+      }
+      setSessionChecked(true)
+    }
+    checkSession()
+  }, [urlTableNumber, supabase])
 
   const categories = menuCategories.filter(c =>
     c.id === 'all' || menuItems.some(item => item.category === c.id)
@@ -509,7 +549,7 @@ function TableOrderContent() {
     return details.join(' | ')
   }
 
-  const handleSetupComplete = () => {
+  const handleSetupComplete = async () => {
     if (selectedTables.length === 0 || !customerName || !numberOfPeople) {
       alert('Please fill in all required fields')
       return
@@ -521,6 +561,26 @@ function TableOrderContent() {
         return
       }
     }
+
+    // Create a new table session in Supabase
+    if (supabase) {
+      const { data: newSession } = await supabase
+        .from('table_sessions')
+        .insert({
+          table_number: selectedTables[0],
+          session_token: `tbl${selectedTables[0]}_${Date.now()}`,
+          customer_name: customerName,
+          party_size: parseInt(numberOfPeople),
+          split_bill: splitBill,
+          number_of_splits: splitBill ? splitPersons.filter(p => p.name.trim() !== '').length : 1,
+          status: 'active',
+        })
+        .select('id')
+        .single()
+
+      if (newSession) setSessionId(newSession.id)
+    }
+
     setSetupComplete(true)
   }
 
@@ -636,6 +696,7 @@ function TableOrderContent() {
 
       const tableNumbers = selectedTables.join(', ')
 
+      // Insert into table_orders (kitchen display) only - NOT into orders (delivery)
       const { error: tableError } = await supabase
         .from('table_orders')
         .insert({
@@ -649,45 +710,33 @@ function TableOrderContent() {
           amount_per_split: splitType === 'equal' ? Math.ceil(totalAmount / numberOfSplits) : 0,
           status: 'pending',
           order_type: 'in-house',
-          notes: `Tables: ${tableNumbers}${splitBill ? ` | Split (${splitType}): ${validSplitPersons.map(p => p.name).join(', ')}` : ''}`
+          session_id: sessionId,
+          is_addon: isAddOnMode,
+          notes: `Tables: ${tableNumbers}${isAddOnMode ? ' [ADD-ON]' : ''}${splitBill ? ` | Split (${splitType}): ${validSplitPersons.map(p => p.name).join(', ')}` : ''}`
         })
         .select()
 
       if (tableError) throw tableError
 
-      const { error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          total_amount: totalAmount,
-          status: 'pending',
-          order_type: 'in-house',
-          table_number: selectedTables[0],
-          customer_name: customerName,
-          party_size: parseInt(numberOfPeople),
-          split_bill: splitBill,
-          number_of_splits: numberOfSplits,
-          items: orderItems,
-          payment_status: 'pending',
-          delivery_address: `Tables: ${tableNumbers} - ${customerName} (${numberOfPeople} ${parseInt(numberOfPeople) === 1 ? 'person' : 'people'})`,
-          notes: splitBill ? `Split bill (${splitType}): ${JSON.stringify(splitDetails)}` : ''
-        })
-
-      if (orderError) console.error('Failed to sync to orders table:', orderError)
+      // Update session total amount
+      if (sessionId) {
+        await supabase
+          .from('table_sessions')
+          .update({ total_amount: totalAmount, updated_at: new Date().toISOString() })
+          .eq('id', sessionId)
+      }
 
       setOrderSubmitted(true)
       setCart({})
       setSelectedSpiceLevels({})
       setSelectedAddOns({})
       setSelectedVariations({})
+      setIsAddOnMode(true) // All subsequent orders from this session are add-ons
 
       setTimeout(() => {
         setOrderSubmitted(false)
-        setSetupComplete(false)
-        setSelectedTables([])
-        setCustomerName('')
-        setNumberOfPeople('1')
-        setSplitBill(false)
-        setSplitPersons([{name: '', items: []}, {name: '', items: []}])
+        // Keep setupComplete=true, keep customerName, keep table, keep sessionId
+        // Just reset cart - customer stays in ordering mode for add-ons
       }, 5000)
     } catch (error) {
       console.error('Error submitting order:', error)
@@ -695,6 +744,20 @@ function TableOrderContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // ==========================================
+  // SESSION LOADING SCREEN
+  // ==========================================
+  if (!sessionChecked) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-lg font-semibold">Loading table...</p>
+        </div>
+      </div>
+    )
   }
 
   // ==========================================
@@ -933,16 +996,21 @@ function TableOrderContent() {
             <button
               onClick={() => {
                 setOrderSubmitted(false)
-                // Keep table and customer info, just reset cart for add-ons
+                // Stay in add-on mode — table, name, session all preserved
               }}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-md"
             >
               + Order More Items
             </button>
             <button
-              onClick={() => {
-                // This would trigger bill request in a full implementation
-                alert('Bill requested! Staff will bring your check shortly.')
+              onClick={async () => {
+                if (supabase && sessionId) {
+                  await supabase
+                    .from('table_sessions')
+                    .update({ status: 'bill_requested' })
+                    .eq('id', sessionId)
+                }
+                alert('Bill requested! Our staff will be with you shortly. 🙏')
               }}
               className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white font-bold py-4 rounded-xl transition-all shadow-md"
             >
