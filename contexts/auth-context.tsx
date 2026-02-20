@@ -119,11 +119,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const handleSignOut = async () => {
     try {
-      await nextAuthSignOut({ redirect: false });
-      router.push('/');
-      router.refresh();
+      await nextAuthSignOut({ callbackUrl: '/' });
     } catch (error) {
       console.error('Error signing out:', error);
+      router.push('/');
     }
   };
 
