@@ -232,7 +232,7 @@ export default function StaffDashboardPage() {
     const unprintedOrders = table.legacyOrders.filter(o => o.status === 'pending')
     if (unprintedOrders.length === 0) return
 
-    const printWindow = window.open('', '', 'width=302,height=600')
+    const printWindow = window.open('', '', 'width=220,height=600')
     if (!printWindow) return
 
     // Combine all items from unprinted orders
@@ -244,25 +244,25 @@ export default function StaffDashboardPage() {
       <html>
       <head>
         <title>Kitchen Slip - Table ${table.tableNumber}</title>
-        <meta name="viewport" content="width=302">
+        <meta name="viewport" content="width=220">
         <style>
-          @page { size: 80mm auto; margin: 0; }
+          @page { size: 58mm auto; margin: 0; }
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           html, body { width: 100%; background: white; }
-          body { font-family: 'Courier New', monospace; padding: 3mm 2mm; font-size: 9pt; }
-          .header { text-align: center; border-bottom: 3px dashed #000; padding-bottom: 6px; margin-bottom: 6px; }
-          .header h1 { font-size: 11pt; margin-bottom: 3px; }
-          .add-on-badge { background: #f97316; color: white; padding: 2px 6px; font-size: 8pt; display: inline-block; margin-bottom: 3px; }
-          .table-number { font-size: 30pt; font-weight: bold; text-align: center; margin: 8px 0; border: 3px solid #000; padding: 6px; }
-          .timestamp { text-align: center; font-size: 8pt; color: #666; margin-bottom: 6px; }
-          .items { border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 6px 0; margin: 6px 0; }
-          .item { display: flex; justify-content: space-between; align-items: flex-start; padding: 3px 0; border-bottom: 1px dotted #ccc; }
+          body { font-family: 'Courier New', monospace; padding: 2mm 1.5mm; font-size: 8pt; }
+          .header { text-align: center; border-bottom: 3px dashed #000; padding-bottom: 5px; margin-bottom: 5px; }
+          .header h1 { font-size: 10pt; margin-bottom: 2px; }
+          .add-on-badge { background: #f97316; color: white; padding: 2px 5px; font-size: 7pt; display: inline-block; margin-bottom: 2px; }
+          .table-number { font-size: 26pt; font-weight: bold; text-align: center; margin: 6px 0; border: 3px solid #000; padding: 4px; }
+          .timestamp { text-align: center; font-size: 7pt; color: #666; margin-bottom: 5px; }
+          .items { border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 5px 0; margin: 5px 0; }
+          .item { display: flex; justify-content: space-between; align-items: flex-start; padding: 2px 0; border-bottom: 1px dotted #ccc; }
           .item:last-child { border-bottom: none; }
-          .item-name { flex: 1; font-weight: bold; word-break: break-word; }
-          .item-details { font-size: 8pt; color: #666; margin-left: 6px; }
-          .item-qty { font-size: 14pt; font-weight: bold; min-width: 36px; text-align: right; }
-          .footer { text-align: center; font-size: 8pt; color: #666; margin-top: 6px; }
-          @media print { @page { size: 80mm auto; margin: 0; } html, body { width: 100% !important; } }
+          .item-name { flex: 1; font-weight: bold; word-break: break-word; font-size: 8pt; }
+          .item-details { font-size: 7pt; color: #666; margin-left: 4px; }
+          .item-qty { font-size: 12pt; font-weight: bold; min-width: 28px; text-align: right; }
+          .footer { text-align: center; font-size: 7pt; color: #666; margin-top: 5px; }
+          @media print { @page { size: 58mm auto; margin: 0; } html, body { width: 100% !important; } }
         </style>
       </head>
       <body>
@@ -314,7 +314,7 @@ export default function StaffDashboardPage() {
 
   // Print final receipt for bill
   const printFinalReceipt = (table: TableTile) => {
-    const printWindow = window.open('', '', 'width=302,height=600')
+    const printWindow = window.open('', '', 'width=220,height=600')
     if (!printWindow) return
 
     const allItems = table.legacyOrders.flatMap(o => o.items)
@@ -329,9 +329,9 @@ export default function StaffDashboardPage() {
       const remainder = total - (perPerson * (splits - 1))
       splitInfo = `
         <div class="split-info">
-          <div style="font-weight:bold;margin-bottom:5px;">📋 BILL SPLIT (${splits} people)</div>
+          <div style="font-weight:bold;margin-bottom:4px;">📋 BILL SPLIT (${splits} people)</div>
           <div>Per Person: ${formatPrice(perPerson)}</div>
-          ${remainder !== perPerson ? `<div style="font-size:11px;color:#666;">*First person pays ${formatPrice(remainder)}</div>` : ''}
+          ${remainder !== perPerson ? `<div style="font-size:10px;color:#666;">*First person pays ${formatPrice(remainder)}</div>` : ''}
         </div>
       `
     }
@@ -341,31 +341,31 @@ export default function StaffDashboardPage() {
       <html>
       <head>
         <title>Receipt - Table ${table.tableNumber}</title>
-        <meta name="viewport" content="width=302">
+        <meta name="viewport" content="width=220">
         <style>
-          @page { size: 80mm auto; margin: 0; }
+          @page { size: 58mm auto; margin: 0; }
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
           html, body { width: 100%; background: white; }
-          body { font-family: 'Courier New', monospace; font-size: 9pt; padding: 3mm 2mm; }
-          .header { text-align: center; margin-bottom: 6px; }
-          .header h1 { font-size: 11pt; margin-bottom: 3px; }
-          .header p { font-size: 8pt; color: #666; }
-          .divider { border-top: 2px dashed #000; margin: 5px 0; }
-          .table-info { text-align: center; margin: 5px 0; }
-          .table-number { font-size: 14pt; font-weight: bold; }
-          .customer-info { font-size: 8pt; color: #666; }
-          .items { margin: 6px 0; }
+          body { font-family: 'Courier New', monospace; font-size: 8pt; padding: 2mm 1.5mm; }
+          .header { text-align: center; margin-bottom: 5px; }
+          .header h1 { font-size: 10pt; margin-bottom: 2px; }
+          .header p { font-size: 7pt; color: #666; }
+          .divider { border-top: 2px dashed #000; margin: 4px 0; }
+          .table-info { text-align: center; margin: 4px 0; }
+          .table-number { font-size: 12pt; font-weight: bold; }
+          .customer-info { font-size: 7pt; color: #666; }
+          .items { margin: 5px 0; }
           .item { display: flex; justify-content: space-between; padding: 2px 0; }
-          .item-name { flex: 1; word-break: break-word; padding-right: 3px; }
-          .item-qty { width: 24px; text-align: center; flex-shrink: 0; }
-          .item-price { width: 52px; text-align: right; flex-shrink: 0; }
-          .totals { border-top: 1px solid #000; padding-top: 4px; margin-top: 4px; }
-          .total-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 9pt; }
-          .grand-total { font-size: 13pt; font-weight: bold; border-top: 2px solid #000; margin-top: 3px; padding-top: 4px; }
-          .split-info { border: 1px dashed #000; padding: 5px; margin: 6px 0; font-size: 9pt; }
-          .footer { text-align: center; margin-top: 8px; font-size: 8pt; color: #666; }
-          .footer .thank-you { font-size: 10pt; font-weight: bold; color: #000; margin-bottom: 3px; }
-          @media print { @page { size: 80mm auto; margin: 0; } html, body { width: 100% !important; } }
+          .item-name { flex: 1; word-break: break-word; padding-right: 2px; font-size: 8pt; }
+          .item-qty { width: 20px; text-align: center; flex-shrink: 0; font-size: 8pt; }
+          .item-price { width: 46px; text-align: right; flex-shrink: 0; font-size: 8pt; }
+          .totals { border-top: 1px solid #000; padding-top: 3px; margin-top: 3px; }
+          .total-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 8pt; }
+          .grand-total { font-size: 11pt; font-weight: bold; border-top: 2px solid #000; margin-top: 3px; padding-top: 3px; }
+          .split-info { border: 1px dashed #000; padding: 4px; margin: 5px 0; font-size: 8pt; }
+          .footer { text-align: center; margin-top: 6px; font-size: 7pt; color: #666; }
+          .footer .thank-you { font-size: 9pt; font-weight: bold; color: #000; margin-bottom: 3px; }
+          @media print { @page { size: 58mm auto; margin: 0; } html, body { width: 100% !important; } }
         </style>
       </head>
       <body>
