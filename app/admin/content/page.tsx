@@ -17,22 +17,16 @@ import Link from 'next/link'
 import toast, { Toaster } from 'react-hot-toast'
 
 export default function AdminContentPage() {
-  const { user, loading: authLoading, refreshUser } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
-  // Auth — refresh session on mount so role changes (e.g. customer→admin) take effect
-  const [refreshing, setRefreshing] = useState(true)
+  // Simple auth guard — role is set at login time; just log out and back in after role change
   useEffect(() => {
-    refreshUser().finally(() => setRefreshing(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Redirect only after BOTH auth and refresh are done
-  useEffect(() => {
-    if (!authLoading && !refreshing && (!user || user.role !== 'admin')) {
+    if (!authLoading && (!user || user.role !== 'admin')) {
       router.push('/admin/login')
     }
-  }, [user, authLoading, refreshing, router])
+  }, [user, authLoading, router])
 
   const isAuthed = user?.role === 'admin'
 

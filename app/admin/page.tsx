@@ -53,7 +53,7 @@ type StaffMember = {
 }
 
 export default function AdminDashboard() {
-  const { user, loading: authLoading, refreshUser } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [tableOrders, setTableOrders] = useState<TableOrder[]>([])
@@ -65,7 +65,6 @@ export default function AdminDashboard() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const prevOrderCountRef = useRef(0)
   const [activeView, setActiveView] = useState<'orders' | 'analytics'>('orders')
-  const [refreshing, setRefreshing] = useState(true)
 
   const supabase = getSupabaseBrowserClient()
 
@@ -77,16 +76,12 @@ export default function AdminDashboard() {
     }
   }, [])
 
-  // Auth guard — refresh session on mount so role changes take effect immediately
+  // Simple auth guard — role is set at login time; just log out and back in after role change
   useEffect(() => {
-    refreshUser().finally(() => setRefreshing(false))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!authLoading && !refreshing && (!user || user.role !== 'admin')) {
+    if (!authLoading && (!user || user.role !== 'admin')) {
       router.push('/admin/login')
     }
-  }, [user, authLoading, refreshing, router])
+  }, [user, authLoading, router])
 
   const isAuthed = user?.role === 'admin'
 
