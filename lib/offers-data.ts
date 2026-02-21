@@ -49,7 +49,7 @@ export const offerRules: OfferRule[] = [
     titleJp: 'ハッピーアワー生ビール',
     description: 'Buy one draft beer and get another one absolutely free during our punch hours!',
     descriptionJp: 'パンチアワーに生ビールを1杯ご注文で、もう1杯無料！',
-    applicableItems: ['drink-beer-draft'],  // TODO: Update with actual beer item IDs from menu
+    applicableItems: ['beer-1', 'beer-2', 'beer-3', 'beer-4', 'beer-5'],
     discountValue: 0,  // BOGO = second item free
     timeWindows: [{
       start: '14:00',
@@ -72,7 +72,7 @@ export const offerRules: OfferRule[] = [
     titleJp: '平日マルゲリータコンボ',
     description: 'Get our delicious margarita paired with your choice of chips & dip for just ¥1000!',
     descriptionJp: 'マルゲリータとチップス＆ディップのセットでたったの¥1000！',
-    applicableItems: ['mar-1', 'start-2'],  // TODO: Update with actual margarita + chips item IDs
+    applicableItems: ['marg-1', 'marg-3', 'start-1', 'start-2'],
     discountValue: 1000,  // Fixed bundle price
     timeWindows: [{
       start: '11:00',
