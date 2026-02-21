@@ -4,7 +4,7 @@ import React, { createContext, useContext } from 'react';
 import { useSession, signIn, signOut as nextAuthSignOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-type UserRole = 'customer' | 'staff' | 'admin';
+type UserRole = 'customer' | 'staff' | 'admin' | 'reception';
 
 interface AuthUser {
   id: string;
