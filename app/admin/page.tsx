@@ -177,28 +177,32 @@ export default function AdminDashboard() {
 
   // Print kitchen slip
   const printKitchenSlip = (items: any[], tableNum: number | undefined, orderId: string, customerName: string, isDelivery: boolean) => {
-    const printWindow = window.open('', '', 'width=350,height=600')
+    // 80mm thermal paper = 302px at 96dpi — opening at this width forces Safari/iPad to render at receipt width
+    const printWindow = window.open('', '', 'width=302,height=600')
     if (!printWindow) return
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html><head><title>Kitchen Slip</title>
+      <meta name="viewport" content="width=302">
       <style>
-        @page { size: 80mm auto; margin: 0mm 4mm; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Courier New', monospace; padding: 8px 4px; font-size: 14px; width: 72mm; }
-        .header { text-align: center; border-bottom: 3px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
-        .type-badge { background: ${isDelivery ? '#2563eb' : '#7c3aed'}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; display: inline-block; margin: 5px 0; }
-        .table-number { font-size: 48px; font-weight: bold; text-align: center; margin: 10px 0; border: 4px solid #000; padding: 10px; }
-        .timestamp { text-align: center; font-size: 12px; color: #666; margin-bottom: 10px; }
-        .items { border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 10px 0; margin: 10px 0; }
-        .item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ccc; }
+        @page { size: 80mm auto; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        html, body { width: 100%; background: white; }
+        body { font-family: 'Courier New', monospace; padding: 3mm 2mm; font-size: 9pt; }
+        .header { text-align: center; border-bottom: 3px dashed #000; padding-bottom: 6px; margin-bottom: 6px; }
+        .type-badge { background: ${isDelivery ? '#2563eb' : '#7c3aed'}; color: white; padding: 3px 8px; font-size: 9pt; font-weight: bold; display: inline-block; margin: 3px 0; }
+        .table-number { font-size: 36pt; font-weight: bold; text-align: center; margin: 6px 0; border: 3px solid #000; padding: 6px; }
+        .timestamp { text-align: center; font-size: 8pt; color: #666; margin-bottom: 6px; }
+        .items { border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 6px 0; margin: 6px 0; }
+        .item { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted #ccc; }
         .item:last-child { border-bottom: none; }
-        .item-name { flex: 1; font-weight: bold; }
-        .item-details { font-size: 11px; color: #666; }
-        .item-qty { font-size: 24px; font-weight: bold; min-width: 50px; text-align: right; }
-        .customer { text-align: center; font-size: 12px; margin: 5px 0; font-weight: bold; }
-        .footer { text-align: center; font-size: 10px; color: #666; margin-top: 10px; }
+        .item-name { flex: 1; font-weight: bold; word-break: break-word; }
+        .item-details { font-size: 8pt; color: #666; }
+        .item-qty { font-size: 14pt; font-weight: bold; min-width: 36px; text-align: right; }
+        .customer { text-align: center; font-size: 9pt; margin: 4px 0; font-weight: bold; }
+        .footer { text-align: center; font-size: 8pt; color: #666; margin-top: 8px; }
+        @media print { @page { size: 80mm auto; margin: 0; } html, body { width: 100% !important; } }
       </style></head><body>
         <div class="header">
           <h1 style="font-size:16px;">🍛 KITCHEN ORDER</h1>
@@ -251,48 +255,41 @@ export default function AdminDashboard() {
       `
     }
 
-    const printWindow = window.open('', '', 'width=400,height=900')
+    // 80mm thermal paper = 302px at 96dpi — opening at this width forces Safari/iPad to render at receipt width
+    const printWindow = window.open('', '', 'width=302,height=600')
     if (!printWindow) return
 
     printWindow.document.write(`
       <!DOCTYPE html>
       <html><head><title>Bill - ${customerName || 'Guest'}</title>
+      <meta name="viewport" content="width=302">
       <style>
         @page { size: 80mm auto; margin: 0; }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        html { background: white; }
-        body {
-          font-family: 'Courier New', monospace;
-          font-size: 12px;
-          width: 80mm;
-          margin: 0 auto;
-          padding: 4mm 3mm;
-        }
-        .header { text-align: center; margin-bottom: 10px; }
-        .header h1 { font-size: 16px; margin-bottom: 3px; }
-        .header p { font-size: 10px; color: #666; }
-        .divider { border-top: 2px dashed #000; margin: 8px 0; }
-        .info { text-align: center; margin: 8px 0; }
-        .info .table-num { font-size: 20px; font-weight: bold; }
-        .info .detail { font-size: 10px; color: #666; }
-        .items { margin: 8px 0; }
-        .item { display: flex; justify-content: space-between; padding: 3px 0; }
-        .item-name { flex: 1; word-break: break-word; padding-right: 4px; }
-        .item-qty { width: 30px; text-align: center; flex-shrink: 0; }
-        .item-price { width: 60px; text-align: right; font-weight: bold; flex-shrink: 0; }
-        .addon { font-size: 10px; color: #666; padding-left: 8px; }
-        .totals { border-top: 1px solid #000; padding-top: 6px; margin-top: 6px; }
-        .total-row { display: flex; justify-content: space-between; padding: 2px 0; }
-        .grand-total { font-size: 16px; font-weight: bold; border-top: 2px solid #000; margin-top: 4px; padding-top: 6px; }
-        .split-section { border: 1px dashed #000; padding: 6px; margin: 8px 0; text-align: center; }
-        .payment { text-align: center; margin: 8px 0; padding: 6px; border: 1px solid #ccc; }
-        .footer { text-align: center; margin-top: 12px; }
-        .footer .thanks { font-size: 13px; font-weight: bold; margin-bottom: 4px; }
-        .footer p { font-size: 9px; color: #666; }
-        @media print {
-          html, body { width: 80mm !important; margin: 0 auto !important; }
-          @page { size: 80mm auto; margin: 0; }
-        }
+        html, body { width: 100%; background: white; }
+        body { font-family: 'Courier New', monospace; font-size: 9pt; padding: 3mm 2mm; }
+        .header { text-align: center; margin-bottom: 6px; }
+        .header h1 { font-size: 11pt; margin-bottom: 2px; }
+        .header p { font-size: 8pt; color: #666; }
+        .divider { border-top: 2px dashed #000; margin: 5px 0; }
+        .info { text-align: center; margin: 5px 0; }
+        .info .table-num { font-size: 14pt; font-weight: bold; }
+        .info .detail { font-size: 8pt; color: #666; }
+        .items { margin: 5px 0; }
+        .item { display: flex; justify-content: space-between; padding: 2px 0; }
+        .item-name { flex: 1; word-break: break-word; padding-right: 3px; font-size: 9pt; }
+        .item-qty { width: 24px; text-align: center; flex-shrink: 0; font-size: 9pt; }
+        .item-price { width: 52px; text-align: right; font-weight: bold; flex-shrink: 0; font-size: 9pt; }
+        .addon { font-size: 8pt; color: #666; padding-left: 6px; }
+        .totals { border-top: 1px solid #000; padding-top: 4px; margin-top: 4px; }
+        .total-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 9pt; }
+        .grand-total { font-size: 13pt; font-weight: bold; border-top: 2px solid #000; margin-top: 3px; padding-top: 4px; }
+        .split-section { border: 1px dashed #000; padding: 4px; margin: 5px 0; text-align: center; font-size: 9pt; }
+        .payment { text-align: center; margin: 5px 0; padding: 4px; border: 1px solid #ccc; font-size: 9pt; }
+        .footer { text-align: center; margin-top: 8px; }
+        .footer .thanks { font-size: 10pt; font-weight: bold; margin-bottom: 3px; }
+        .footer p { font-size: 8pt; color: #666; }
+        @media print { @page { size: 80mm auto; margin: 0; } html, body { width: 100% !important; } }
       </style></head><body>
         <div class="header">
           <h1>🍛 THE CURRY HOUSE</h1>
