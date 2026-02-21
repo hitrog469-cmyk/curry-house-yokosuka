@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { ProtectedRoute } from '@/components/protected-route';
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
@@ -25,6 +26,7 @@ type Order = {
 
 export default function MyOrdersPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -96,6 +98,29 @@ export default function MyOrdersPage() {
       alert('Failed to cancel order. Please try again.');
     }
   }
+
+  const handleReorder = (order: Order) => {
+    // Rebuild cart from order items
+    const cart: Record<string, number> = {};
+    const selectedAddOns: Record<string, any[]> = {};
+    const selectedVariations: Record<string, string> = {};
+    const selectedSpiceLevels: Record<string, string> = {};
+
+    for (const item of order.items) {
+      if (!item.id) continue;
+      cart[item.id] = (cart[item.id] || 0) + (item.quantity || 1);
+      if (item.addOns?.length) selectedAddOns[item.id] = item.addOns;
+      if (item.variation) selectedVariations[item.id] = item.variation;
+      if (item.spiceLevel) selectedSpiceLevels[item.id] = item.spiceLevel;
+    }
+
+    localStorage.setItem('cart', JSON.stringify(cart));
+    localStorage.setItem('selectedAddOns', JSON.stringify(selectedAddOns));
+    localStorage.setItem('selectedVariations', JSON.stringify(selectedVariations));
+    localStorage.setItem('selectedSpiceLevels', JSON.stringify(selectedSpiceLevels));
+
+    router.push('/order');
+  };
 
   const getStatusColor = (status: string) => {
     const colors: any = {
@@ -330,6 +355,17 @@ export default function MyOrdersPage() {
                         </p>
                       </div>
                     )}
+
+                    {/* Reorder Button */}
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
+                      <button
+                        onClick={() => handleReorder(order)}
+                        className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        Reorder
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

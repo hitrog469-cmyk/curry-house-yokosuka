@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import Script from 'next/script'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 import { canPlaceOrder } from '@/lib/restaurant-hours'
 import { menuItems } from '@/lib/menu-data'
 import { getMenuItemImage } from '@/lib/image-mapping'
+import { calculateDistance, calculateDeliveryFee, RESTAURANT_LOCATION } from '@/lib/delivery-fee'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -58,7 +60,19 @@ export default function OrderPage() {
   const [promoCode, setPromoCode] = useState('')
   const [promoDiscount, setPromoDiscount] = useState(0)
   const [promoError, setPromoError] = useState('')
-  const [deliveryFee, setDeliveryFee] = useState(0) // Free delivery within 3km
+  const [deliveryFee, setDeliveryFee] = useState(0)
+  const [deliveryFeeInfo, setDeliveryFeeInfo] = useState<string>('')
+
+  // Phone confirmation & address map state
+  const [phoneConfirm, setPhoneConfirm] = useState('')
+  const [mapsReady, setMapsReady] = useState(false)
+  const [placeSelected, setPlaceSelected] = useState(false)
+  const [selectedLat, setSelectedLat] = useState<number | null>(null)
+  const [selectedLng, setSelectedLng] = useState<number | null>(null)
+
+  // Refs for Google Maps autocomplete
+  const addressInputRef = useRef<HTMLInputElement>(null)
+  const autocompleteRef = useRef<any>(null)
 
   // Load cart from localStorage
   const [cart, setCart] = useState<{[key: string]: number}>({})
@@ -240,6 +254,16 @@ export default function OrderPage() {
       return
     }
 
+    if (formData.phone !== phoneConfirm) {
+      alert('Phone numbers do not match. Please re-enter your phone number to confirm.')
+      return
+    }
+
+    if (!placeSelected) {
+      alert('Please select your delivery address from the Google Maps suggestions to ensure accurate delivery.')
+      return
+    }
+
     setLoading(true)
 
     const orderData: any = {
@@ -322,6 +346,55 @@ export default function OrderPage() {
       setStep('confirmation')
     }
   }
+
+  // Initialize Google Places Autocomplete on the address input
+  const initAutocomplete = useCallback(() => {
+    if (!addressInputRef.current || !(window as any).google?.maps?.places) return
+    if (autocompleteRef.current) return // already initialized
+
+    const autocomplete = new (window as any).google.maps.places.Autocomplete(addressInputRef.current, {
+      componentRestrictions: { country: 'jp' },
+      fields: ['formatted_address', 'geometry'],
+      types: ['address'],
+    })
+
+    // Bias results toward Yokosuka delivery area (~50km radius)
+    autocomplete.setBounds(new (window as any).google.maps.LatLngBounds(
+      new (window as any).google.maps.LatLng(34.8, 139.0),
+      new (window as any).google.maps.LatLng(35.8, 140.4)
+    ))
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace()
+      if (place?.geometry?.location) {
+        const lat = place.geometry.location.lat()
+        const lng = place.geometry.location.lng()
+        const address = place.formatted_address || addressInputRef.current?.value || ''
+
+        setFormData(prev => ({ ...prev, address }))
+        setSelectedLat(lat)
+        setSelectedLng(lng)
+        setPlaceSelected(true)
+
+        // Calculate real delivery fee from selected coordinates
+        const distance = calculateDistance(RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng, lat, lng)
+        const feeResult = calculateDeliveryFee(distance)
+        setDeliveryFee(feeResult.isWithinRange ? feeResult.fee : 0)
+        setDeliveryFeeInfo(feeResult.message)
+      }
+    })
+
+    autocompleteRef.current = autocomplete
+  }, [])
+
+  // Re-init autocomplete when Maps script is ready or step switches to details
+  useEffect(() => {
+    if (mapsReady && step === 'details') {
+      // Small delay to ensure the input DOM element is mounted
+      const timer = setTimeout(initAutocomplete, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [mapsReady, step, initAutocomplete])
 
   const cartItems = Object.keys(cart)
 
@@ -663,9 +736,9 @@ export default function OrderPage() {
                           <span className="font-bold">-{formatPrice(getDiscount())}</span>
                         </div>
                       )}
-                      <div className="flex justify-between text-green-600">
+                      <div className="flex justify-between text-gray-600">
                         <span className="font-semibold">Delivery Fee:</span>
-                        <span className="font-bold">FREE ✓</span>
+                        <span className="font-bold text-gray-500 text-sm">Calculated at next step</span>
                       </div>
                       <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t-2">
                         <span>Total:</span>
@@ -705,27 +778,115 @@ export default function OrderPage() {
                     />
                   </div>
 
+                  {/* Phone Number */}
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number *</label>
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => {
+                        setFormData({...formData, phone: e.target.value})
+                        if (phoneConfirm) setPhoneConfirm('') // reset confirm if base changes
+                      }}
                       className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm"
                       placeholder="090-1234-5678"
                     />
+                    <p className="text-xs text-gray-500 mt-1.5">Our delivery partner will call this number to reach you.</p>
                   </div>
 
+                  {/* Confirm Phone Number */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Confirm Phone Number *</label>
+                    <input
+                      type="tel"
+                      value={phoneConfirm}
+                      onChange={(e) => setPhoneConfirm(e.target.value)}
+                      className={`w-full px-4 py-3.5 border-2 rounded-xl focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm ${
+                        phoneConfirm && formData.phone && phoneConfirm !== formData.phone
+                          ? 'border-red-400 focus:border-red-500'
+                          : phoneConfirm && formData.phone && phoneConfirm === formData.phone
+                          ? 'border-green-400 focus:border-green-500'
+                          : 'border-gray-200 focus:border-green-500'
+                      }`}
+                      placeholder="Re-enter your phone number"
+                    />
+                    {phoneConfirm && formData.phone && phoneConfirm !== formData.phone && (
+                      <p className="text-red-500 text-xs mt-1.5 font-medium">Phone numbers don't match</p>
+                    )}
+                    {phoneConfirm && formData.phone && phoneConfirm === formData.phone && (
+                      <p className="text-green-600 text-xs mt-1.5 font-medium">✓ Phone numbers match — you can track your order with this number</p>
+                    )}
+                  </div>
+
+                  {/* Delivery Address with Google Maps Autocomplete */}
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Delivery Address *</label>
-                    <textarea
-                      value={formData.address}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
-                      className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm resize-none"
-                      rows={3}
-                      placeholder="Full address including building name, room number etc."
-                      required
-                    />
+                    <div className="relative">
+                      <input
+                        ref={addressInputRef}
+                        type="text"
+                        value={formData.address}
+                        onChange={(e) => {
+                          setFormData({...formData, address: e.target.value})
+                          // If user edits manually after selecting, invalidate the selection
+                          if (placeSelected) {
+                            setPlaceSelected(false)
+                            setSelectedLat(null)
+                            setSelectedLng(null)
+                            setDeliveryFee(0)
+                            setDeliveryFeeInfo('')
+                          }
+                        }}
+                        className={`w-full px-4 py-3.5 border-2 rounded-xl focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm pr-10 ${
+                          placeSelected
+                            ? 'border-green-400 focus:border-green-500'
+                            : 'border-gray-200 focus:border-green-500'
+                        }`}
+                        placeholder="Start typing your address..."
+                        autoComplete="off"
+                      />
+                      {placeSelected && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg">✓</span>
+                      )}
+                    </div>
+
+                    {/* Guidance text */}
+                    {!placeSelected && (
+                      <div className="mt-2 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                        <span className="text-blue-500 text-sm shrink-0">📍</span>
+                        <p className="text-blue-700 text-xs font-medium">
+                          Type your address and <strong>select it from the dropdown</strong> that appears. This ensures your exact location is confirmed on the map.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Map preview after place is selected */}
+                    {placeSelected && selectedLat && selectedLng && (
+                      <div className="mt-3 rounded-xl overflow-hidden border-2 border-green-200 shadow-sm">
+                        <div className="bg-green-50 px-3 py-2 flex items-center gap-2">
+                          <span className="text-green-600 text-sm">📍</span>
+                          <p className="text-green-700 text-xs font-bold">Location confirmed on map</p>
+                        </div>
+                        <iframe
+                          src={`https://www.google.com/maps?q=${selectedLat},${selectedLng}&z=16&output=embed`}
+                          width="100%"
+                          height="200"
+                          style={{ border: 0, display: 'block' }}
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                          title="Delivery location"
+                        />
+                        {deliveryFeeInfo && (
+                          <div className={`px-3 py-2 text-xs font-semibold ${
+                            deliveryFee === 0 && deliveryFeeInfo.includes('only deliver')
+                              ? 'bg-red-50 text-red-700'
+                              : 'bg-gray-50 text-gray-600'
+                          }`}>
+                            {deliveryFeeInfo}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -877,9 +1038,9 @@ export default function OrderPage() {
 
                 {/* Total */}
                 <div className="border-t-2 border-dashed border-gray-300 pt-4">
-                  <div className="flex justify-between text-green-600 mb-2">
+                  <div className="flex justify-between text-gray-700 mb-2">
                     <span className="font-semibold">Delivery Fee</span>
-                    <span className="font-bold">FREE ✓</span>
+                    <span className="font-bold">{confirmedOrder.total > 0 && deliveryFee > 0 ? formatPrice(deliveryFee) : 'FREE ✓'}</span>
                   </div>
                   <div className="flex justify-between text-2xl font-black">
                     <span>Total Due</span>
@@ -1047,6 +1208,13 @@ export default function OrderPage() {
           </div>
         </div>
       )}
+
+      {/* Google Maps Places API - loaded once, used for address autocomplete */}
+      <Script
+        src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
+        strategy="afterInteractive"
+        onLoad={() => setMapsReady(true)}
+      />
     </div>
   )
 }

@@ -238,8 +238,7 @@ export default function AdminDashboard() {
   const printBill = (order: Order | TableOrder, isTableOrder: boolean) => {
     const items = order.items || []
     const subtotal = order.total_amount
-    const tax = Math.floor(subtotal * 0.1)
-    const total = subtotal + tax
+    const total = subtotal
     const customerName = isTableOrder ? (order as TableOrder).customer_name : (order as Order).customer_name
     const tableNum = isTableOrder ? (order as TableOrder).table_number : (order as Order).table_number
     const partySize = isTableOrder ? (order as TableOrder).party_size : (order as Order).party_size
@@ -331,9 +330,9 @@ export default function AdminDashboard() {
             <span>Subtotal / 小計</span>
             <span>${formatPrice(subtotal)}</span>
           </div>
-          <div class="total-row">
-            <span>Tax 10% / 消費税</span>
-            <span>${formatPrice(tax)}</span>
+          <div class="total-row" style="font-size:10px;color:#666;">
+            <span>Tax Included / 消費税込</span>
+            <span></span>
           </div>
           <div class="total-row grand-total">
             <span>TOTAL / 合計</span>
@@ -435,6 +434,9 @@ export default function AdminDashboard() {
               <p className="text-sm opacity-80">The Curry House Yokosuka</p>
             </div>
             <div className="flex items-center gap-3">
+              <Link href="/admin/content" className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                Content
+              </Link>
               <Link href="/staff/dashboard" className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
                 Staff Counter
               </Link>

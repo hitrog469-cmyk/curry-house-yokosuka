@@ -379,8 +379,7 @@ export default function StaffDashboardPage() {
 
     const allItems = table.legacyOrders.flatMap(o => o.items)
     const subtotal = table.totalAmount
-    const tax = Math.floor(subtotal * 0.1) // 10% tax
-    const total = subtotal + tax
+    const total = subtotal
 
     // Bill split calculation
     let splitInfo = ''
@@ -536,9 +535,9 @@ export default function StaffDashboardPage() {
             <span>Subtotal / 小計</span>
             <span>${formatPrice(subtotal)}</span>
           </div>
-          <div class="total-row">
-            <span>Tax (10%) / 消費税</span>
-            <span>${formatPrice(tax)}</span>
+          <div class="total-row" style="font-size:10px;color:#666;">
+            <span>Tax Included / 消費税込</span>
+            <span></span>
           </div>
           <div class="total-row grand-total">
             <span>TOTAL / 合計</span>
