@@ -243,13 +243,13 @@ export default function StaffDashboardPage() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Kitchen Slip - Table ${table.tableNumber}</title>
+        <title></title>
         <meta name="viewport" content="width=220">
         <style>
-          @page { size: 58mm auto; margin: 0; }
+          @page { size: 58mm auto; margin: 0mm; }
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          html, body { width: 100%; background: white; }
-          body { font-family: 'Courier New', monospace; padding: 2mm 1.5mm; font-size: 8pt; }
+          html { width: 58mm; margin: 0mm; padding: 0; background: white; }
+          body { width: 58mm; margin: 0mm; padding: 2mm 1.5mm; font-family: 'Courier New', monospace; font-size: 8pt; background: white; }
           .header { text-align: center; border-bottom: 3px dashed #000; padding-bottom: 5px; margin-bottom: 5px; }
           .header h1 { font-size: 10pt; margin-bottom: 2px; }
           .add-on-badge { background: #f97316; color: white; padding: 2px 5px; font-size: 7pt; display: inline-block; margin-bottom: 2px; }
@@ -262,7 +262,7 @@ export default function StaffDashboardPage() {
           .item-details { font-size: 7pt; color: #666; margin-left: 4px; }
           .item-qty { font-size: 12pt; font-weight: bold; min-width: 28px; text-align: right; }
           .footer { text-align: center; font-size: 7pt; color: #666; margin-top: 5px; }
-          @media print { @page { size: 58mm auto; margin: 0; } html, body { width: 100% !important; } }
+          @media print { @page { size: 58mm auto; margin: 0mm; } html, body { width: 58mm !important; margin: 0mm !important; } }
         </style>
       </head>
       <body>
@@ -303,6 +303,7 @@ export default function StaffDashboardPage() {
     printWindow.document.write(printContent)
     printWindow.document.close()
     printWindow.onload = () => {
+      printWindow.document.title = '' // Clear title — removes Safari URL/title stamp
       printWindow.focus()
       printWindow.print()
       printWindow.onafterprint = () => printWindow.close()
@@ -340,13 +341,13 @@ export default function StaffDashboardPage() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Receipt - Table ${table.tableNumber}</title>
+        <title></title>
         <meta name="viewport" content="width=220">
         <style>
-          @page { size: 58mm auto; margin: 0; }
+          @page { size: 58mm auto; margin: 0mm; }
           * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          html, body { width: 100%; background: white; }
-          body { font-family: 'Courier New', monospace; font-size: 8pt; padding: 2mm 1.5mm; }
+          html { width: 58mm; margin: 0mm; padding: 0; background: white; }
+          body { width: 58mm; margin: 0mm; padding: 2mm 1.5mm; font-family: 'Courier New', monospace; font-size: 8pt; background: white; }
           .header { text-align: center; margin-bottom: 5px; }
           .header h1 { font-size: 10pt; margin-bottom: 2px; }
           .header p { font-size: 7pt; color: #666; }
@@ -365,7 +366,7 @@ export default function StaffDashboardPage() {
           .split-info { border: 1px dashed #000; padding: 4px; margin: 5px 0; font-size: 8pt; }
           .footer { text-align: center; margin-top: 6px; font-size: 7pt; color: #666; }
           .footer .thank-you { font-size: 9pt; font-weight: bold; color: #000; margin-bottom: 3px; }
-          @media print { @page { size: 58mm auto; margin: 0; } html, body { width: 100% !important; } }
+          @media print { @page { size: 58mm auto; margin: 0mm; } html, body { width: 58mm !important; margin: 0mm !important; } }
         </style>
       </head>
       <body>
@@ -431,6 +432,7 @@ export default function StaffDashboardPage() {
     printWindow.document.write(printContent)
     printWindow.document.close()
     printWindow.onload = () => {
+      printWindow.document.title = '' // Clear title — removes Safari URL/title stamp
       printWindow.focus()
       printWindow.print()
       printWindow.onafterprint = () => printWindow.close()
