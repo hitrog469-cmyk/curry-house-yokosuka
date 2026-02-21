@@ -53,7 +53,7 @@ type StaffMember = {
 }
 
 export default function AdminDashboard() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, refreshUser } = useAuth()
   const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [tableOrders, setTableOrders] = useState<TableOrder[]>([])
@@ -61,11 +61,11 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [activeTab, setActiveTab] = useState<'online' | 'dine-in' | 'all'>('all')
-  const [adminSession, setAdminSession] = useState<any>(null)
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const prevOrderCountRef = useRef(0)
   const [activeView, setActiveView] = useState<'orders' | 'analytics'>('orders')
+  const [refreshing, setRefreshing] = useState(true)
 
   const supabase = getSupabaseBrowserClient()
 
@@ -77,24 +77,18 @@ export default function AdminDashboard() {
     }
   }, [])
 
-  // Auth guard
+  // Auth guard — refresh session on mount so role changes take effect immediately
   useEffect(() => {
-    const session = localStorage.getItem('admin_session')
-    if (session) {
-      const sessionData = JSON.parse(session)
-      if (Date.now() - sessionData.timestamp < 24 * 60 * 60 * 1000) {
-        setAdminSession(sessionData)
-        return
-      } else {
-        localStorage.removeItem('admin_session')
-      }
-    }
-    if (!authLoading && (!user || user.role !== 'admin')) {
+    refreshUser().finally(() => setRefreshing(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!authLoading && !refreshing && (!user || user.role !== 'admin')) {
       router.push('/admin/login')
     }
-  }, [user, authLoading, router])
+  }, [user, authLoading, refreshing, router])
 
-  const isAuthed = user?.role === 'admin' || adminSession?.role === 'admin'
+  const isAuthed = user?.role === 'admin'
 
   // Fetch all data
   const fetchAll = useCallback(async () => {
@@ -190,8 +184,9 @@ export default function AdminDashboard() {
       <!DOCTYPE html>
       <html><head><title>Kitchen Slip</title>
       <style>
+        @page { size: 80mm auto; margin: 0mm 4mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Courier New', monospace; padding: 10px; font-size: 14px; max-width: 80mm; }
+        body { font-family: 'Courier New', monospace; padding: 8px 4px; font-size: 14px; width: 72mm; }
         .header { text-align: center; border-bottom: 3px dashed #000; padding-bottom: 10px; margin-bottom: 10px; }
         .type-badge { background: ${isDelivery ? '#2563eb' : '#7c3aed'}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; display: inline-block; margin: 5px 0; }
         .table-number { font-size: 48px; font-weight: bold; text-align: center; margin: 10px 0; border: 4px solid #000; padding: 10px; }
@@ -204,7 +199,6 @@ export default function AdminDashboard() {
         .item-qty { font-size: 24px; font-weight: bold; min-width: 50px; text-align: right; }
         .customer { text-align: center; font-size: 12px; margin: 5px 0; font-weight: bold; }
         .footer { text-align: center; font-size: 10px; color: #666; margin-top: 10px; }
-        @media print { body { margin: 0; } }
       </style></head><body>
         <div class="header">
           <h1 style="font-size:16px;">🍛 KITCHEN ORDER</h1>
@@ -231,7 +225,7 @@ export default function AdminDashboard() {
       </body></html>
     `)
     printWindow.document.close()
-    printWindow.onload = () => { printWindow.print(); printWindow.close() }
+    printWindow.onload = () => { printWindow.focus(); printWindow.print(); printWindow.onafterprint = () => printWindow.close() }
   }
 
   // Print customer bill / PDF receipt
@@ -264,8 +258,9 @@ export default function AdminDashboard() {
       <!DOCTYPE html>
       <html><head><title>Bill - ${customerName || 'Guest'}</title>
       <style>
+        @page { size: 80mm auto; margin: 0mm 4mm; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Courier New', monospace; padding: 15px; font-size: 12px; max-width: 80mm; margin: 0 auto; }
+        body { font-family: 'Courier New', monospace; padding: 8px 4px; font-size: 12px; width: 72mm; }
         .header { text-align: center; margin-bottom: 15px; }
         .header h1 { font-size: 18px; margin-bottom: 3px; }
         .header p { font-size: 10px; color: #666; }
@@ -355,7 +350,7 @@ export default function AdminDashboard() {
       </body></html>
     `)
     printWindow.document.close()
-    printWindow.onload = () => { printWindow.print(); printWindow.close() }
+    printWindow.onload = () => { printWindow.focus(); printWindow.print(); printWindow.onafterprint = () => printWindow.close() }
   }
 
   // Stats
@@ -417,7 +412,17 @@ export default function AdminDashboard() {
 
   const filteredOrders = getFilteredOrders()
 
-  if (!isAuthed && !authLoading) return null
+  if (authLoading || refreshing) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent mb-4"></div>
+          <p className="text-gray-400 font-semibold">Verifying access...</p>
+        </div>
+      </div>
+    )
+  }
+  if (!isAuthed) return null
 
   return (
     <div className="min-h-screen bg-gray-50">

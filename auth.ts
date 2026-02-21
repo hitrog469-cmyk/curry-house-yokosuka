@@ -121,11 +121,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.profile_id = user.id
       }
 
-      // On session update (e.g., after profile edit), refresh from DB
-      if (trigger === 'update' && session) {
-        token.full_name = session.full_name ?? token.full_name
-        token.phone = session.phone ?? token.phone
-        token.role = session.role ?? token.role
+      // On session update — if data is passed, use it; otherwise re-fetch from DB
+      // This ensures role changes (e.g. customer → admin) take effect on next refreshUser()
+      if (trigger === 'update') {
+        if (session && Object.keys(session).length > 0) {
+          token.full_name = session.full_name ?? token.full_name
+          token.phone = session.phone ?? token.phone
+          token.role = session.role ?? token.role
+        } else if (token.profile_id) {
+          // Called with no args (refreshUser()) — force re-fetch role from DB
+          const supabase = getSupabaseAdmin()
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, full_name, phone')
+            .eq('id', token.profile_id as string)
+            .single()
+          if (profile) {
+            token.role = profile.role
+            token.full_name = profile.full_name || token.full_name
+            token.phone = profile.phone || token.phone
+          }
+        }
       }
 
       return token

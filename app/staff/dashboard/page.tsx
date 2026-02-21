@@ -364,8 +364,9 @@ export default function StaffDashboardPage() {
     printWindow.document.write(printContent)
     printWindow.document.close()
     printWindow.onload = () => {
+      printWindow.focus()
       printWindow.print()
-      printWindow.close()
+      printWindow.onafterprint = () => printWindow.close()
     }
 
     // Mark orders as preparing after print
@@ -402,12 +403,13 @@ export default function StaffDashboardPage() {
       <head>
         <title>Receipt - Table ${table.tableNumber}</title>
         <style>
+          @page { size: 80mm auto; margin: 0mm 4mm; }
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
             font-family: 'Courier New', monospace;
-            padding: 15px;
+            padding: 8px 4px;
             font-size: 12px;
-            max-width: 80mm;
+            width: 72mm;
           }
           .header {
             text-align: center;
@@ -559,8 +561,9 @@ export default function StaffDashboardPage() {
     printWindow.document.write(printContent)
     printWindow.document.close()
     printWindow.onload = () => {
+      printWindow.focus()
       printWindow.print()
-      printWindow.close()
+      printWindow.onafterprint = () => printWindow.close()
     }
   }
 

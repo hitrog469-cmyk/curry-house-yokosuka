@@ -17,27 +17,24 @@ import Link from 'next/link'
 import toast, { Toaster } from 'react-hot-toast'
 
 export default function AdminContentPage() {
-  const { user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading, refreshUser } = useAuth()
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
 
-  // Auth
-  const [adminSession, setAdminSession] = useState<any>(null)
+  // Auth — refresh session on mount so role changes (e.g. customer→admin) take effect
+  const [refreshing, setRefreshing] = useState(true)
   useEffect(() => {
-    const session = localStorage.getItem('admin_session')
-    if (session) {
-      const s = JSON.parse(session)
-      if (Date.now() - s.timestamp < 24 * 60 * 60 * 1000) {
-        setAdminSession(s)
-        return
-      }
-      localStorage.removeItem('admin_session')
-    }
-    if (!authLoading && (!user || user.role !== 'admin')) {
+    refreshUser().finally(() => setRefreshing(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Redirect only after BOTH auth and refresh are done
+  useEffect(() => {
+    if (!authLoading && !refreshing && (!user || user.role !== 'admin')) {
       router.push('/admin/login')
     }
-  }, [user, authLoading, router])
-  const isAuthed = user?.role === 'admin' || adminSession?.role === 'admin'
+  }, [user, authLoading, refreshing, router])
+
+  const isAuthed = user?.role === 'admin'
 
   // ── Daily Special ──────────────────────────────────────
   const [specials, setSpecials] = useState<DailySpecial[]>([])
@@ -178,6 +175,17 @@ export default function AdminContentPage() {
     loadRestaurantStatus()
   }, [isAuthed, loadSpecials, loadBannerMessages, loadRestaurantStatus])
 
+  // Show loading screen while auth or session refresh is in progress
+  if (authLoading || refreshing) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400 font-semibold">Verifying access...</p>
+        </div>
+      </div>
+    )
+  }
   if (!isAuthed) return null
 
   const japanDate = new Date().toLocaleDateString('ja-JP', { timeZone: 'Asia/Tokyo', year: 'numeric', month: 'long', day: 'numeric' })
