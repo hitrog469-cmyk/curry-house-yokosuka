@@ -424,7 +424,7 @@ export default function AdminDashboard() {
 
   const filteredOrders = getFilteredOrders()
 
-  if (authLoading || refreshing) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -453,6 +453,9 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-3">
               <Link href="/admin/content" className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
                 Content
+              </Link>
+              <Link href="/reception" className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                Reception
               </Link>
               <Link href="/staff/dashboard" className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
                 Staff Counter

@@ -10,7 +10,7 @@ export default function AdminLoginPage() {
   const { signInWithEmail, user, loading: authLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [loginType, setLoginType] = useState<'admin' | 'staff'>('admin')
+  const [loginType, setLoginType] = useState<'admin' | 'reception' | 'staff'>('admin')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -19,8 +19,10 @@ export default function AdminLoginPage() {
     if (!authLoading && user?.role) {
       if (user.role === 'admin') {
         router.push('/admin')
+      } else if (user.role === 'reception') {
+        router.push('/reception')
       } else if (user.role === 'staff') {
-        router.push('/staff')
+        router.push('/staff/dashboard')
       }
     }
   }, [user, authLoading, router])
@@ -55,8 +57,8 @@ export default function AdminLoginPage() {
 
   // Show role mismatch error if logged in but wrong role
   useEffect(() => {
-    if (!authLoading && user && user.role !== 'admin' && user.role !== 'staff') {
-      setError(`Access denied. Your account has the "${user.role}" role. Only admin and staff accounts can log in here.`)
+    if (!authLoading && user && !['admin', 'reception', 'staff'].includes(user.role || '')) {
+      setError(`Access denied. Your account has the "${user.role}" role. Only admin, reception, and staff accounts can log in here.`)
       setLoading(false)
     }
   }, [user, authLoading])
@@ -83,7 +85,7 @@ export default function AdminLoginPage() {
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => { setLoginType('admin'); setError(''); }}
-            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+            className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-all text-sm ${
               loginType === 'admin'
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -92,8 +94,18 @@ export default function AdminLoginPage() {
             Admin
           </button>
           <button
+            onClick={() => { setLoginType('reception'); setError(''); }}
+            className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-all text-sm ${
+              loginType === 'reception'
+                ? 'bg-orange-500 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Reception
+          </button>
+          <button
             onClick={() => { setLoginType('staff'); setError(''); }}
-            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition-all ${
+            className={`flex-1 py-2 px-3 rounded-lg font-semibold transition-all text-sm ${
               loginType === 'staff'
                 ? 'bg-green-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -144,12 +156,12 @@ export default function AdminLoginPage() {
             type="submit"
             disabled={loading}
             className={`w-full py-3 rounded-xl font-bold text-white transition-all shadow-lg ${
-              loginType === 'admin'
-                ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-green-600 hover:bg-green-700'
+              loginType === 'admin' ? 'bg-blue-600 hover:bg-blue-700'
+              : loginType === 'reception' ? 'bg-orange-500 hover:bg-orange-600'
+              : 'bg-green-600 hover:bg-green-700'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
-            {loading ? 'Logging in...' : `Login as ${loginType === 'admin' ? 'Admin' : 'Staff'}`}
+            {loading ? 'Logging in...' : `Login as ${loginType === 'admin' ? 'Admin' : loginType === 'reception' ? 'Reception' : 'Staff'}`}
           </button>
         </form>
 
