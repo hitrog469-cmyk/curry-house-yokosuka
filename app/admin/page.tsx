@@ -258,31 +258,41 @@ export default function AdminDashboard() {
       <!DOCTYPE html>
       <html><head><title>Bill - ${customerName || 'Guest'}</title>
       <style>
-        @page { size: 80mm auto; margin: 0mm 4mm; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Courier New', monospace; padding: 8px 4px; font-size: 12px; width: 72mm; }
-        .header { text-align: center; margin-bottom: 15px; }
-        .header h1 { font-size: 18px; margin-bottom: 3px; }
+        @page { size: 80mm auto; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        html { background: white; }
+        body {
+          font-family: 'Courier New', monospace;
+          font-size: 12px;
+          width: 80mm;
+          margin: 0 auto;
+          padding: 4mm 3mm;
+        }
+        .header { text-align: center; margin-bottom: 10px; }
+        .header h1 { font-size: 16px; margin-bottom: 3px; }
         .header p { font-size: 10px; color: #666; }
-        .divider { border-top: 2px dashed #000; margin: 10px 0; }
-        .info { text-align: center; margin: 10px 0; }
-        .info .table-num { font-size: 24px; font-weight: bold; }
-        .info .detail { font-size: 11px; color: #666; }
-        .items { margin: 10px 0; }
-        .item { display: flex; justify-content: space-between; padding: 4px 0; }
-        .item-name { flex: 1; }
-        .item-qty { width: 40px; text-align: center; }
-        .item-price { width: 80px; text-align: right; font-weight: bold; }
-        .addon { font-size: 10px; color: #666; padding-left: 10px; }
-        .totals { border-top: 1px solid #000; padding-top: 8px; margin-top: 8px; }
-        .total-row { display: flex; justify-content: space-between; padding: 3px 0; }
-        .grand-total { font-size: 20px; font-weight: bold; border-top: 3px solid #000; margin-top: 5px; padding-top: 8px; }
-        .split-section { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; text-align: center; }
-        .payment { text-align: center; margin: 10px 0; padding: 8px; background: #f9f9f9; border-radius: 4px; }
-        .footer { text-align: center; margin-top: 20px; }
-        .footer .thanks { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
-        .footer p { font-size: 10px; color: #666; }
-        @media print { body { margin: 0; } }
+        .divider { border-top: 2px dashed #000; margin: 8px 0; }
+        .info { text-align: center; margin: 8px 0; }
+        .info .table-num { font-size: 20px; font-weight: bold; }
+        .info .detail { font-size: 10px; color: #666; }
+        .items { margin: 8px 0; }
+        .item { display: flex; justify-content: space-between; padding: 3px 0; }
+        .item-name { flex: 1; word-break: break-word; padding-right: 4px; }
+        .item-qty { width: 30px; text-align: center; flex-shrink: 0; }
+        .item-price { width: 60px; text-align: right; font-weight: bold; flex-shrink: 0; }
+        .addon { font-size: 10px; color: #666; padding-left: 8px; }
+        .totals { border-top: 1px solid #000; padding-top: 6px; margin-top: 6px; }
+        .total-row { display: flex; justify-content: space-between; padding: 2px 0; }
+        .grand-total { font-size: 16px; font-weight: bold; border-top: 2px solid #000; margin-top: 4px; padding-top: 6px; }
+        .split-section { border: 1px dashed #000; padding: 6px; margin: 8px 0; text-align: center; }
+        .payment { text-align: center; margin: 8px 0; padding: 6px; border: 1px solid #ccc; }
+        .footer { text-align: center; margin-top: 12px; }
+        .footer .thanks { font-size: 13px; font-weight: bold; margin-bottom: 4px; }
+        .footer p { font-size: 9px; color: #666; }
+        @media print {
+          html, body { width: 80mm !important; margin: 0 auto !important; }
+          @page { size: 80mm auto; margin: 0; }
+        }
       </style></head><body>
         <div class="header">
           <h1>🍛 THE CURRY HOUSE</h1>

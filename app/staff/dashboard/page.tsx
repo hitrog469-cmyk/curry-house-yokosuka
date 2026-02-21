@@ -403,13 +403,19 @@ export default function StaffDashboardPage() {
       <head>
         <title>Receipt - Table ${table.tableNumber}</title>
         <style>
-          @page { size: 80mm auto; margin: 0mm 4mm; }
-          * { margin: 0; padding: 0; box-sizing: border-box; }
+          @page { size: 80mm auto; margin: 0; }
+          * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          html { background: white; }
           body {
             font-family: 'Courier New', monospace;
-            padding: 8px 4px;
             font-size: 12px;
-            width: 72mm;
+            width: 80mm;
+            margin: 0 auto;
+            padding: 4mm 3mm;
+          }
+          @media print {
+            html, body { width: 80mm !important; margin: 0 auto !important; }
+            @page { size: 80mm auto; margin: 0; }
           }
           .header {
             text-align: center;
