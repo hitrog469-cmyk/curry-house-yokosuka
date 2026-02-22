@@ -450,20 +450,20 @@ export default function AdminDashboard() {
               <h1 className="text-3xl font-bold mt-2">Admin Dashboard</h1>
               <p className="text-sm opacity-80">The Curry House Yokosuka</p>
             </div>
-            <div className="flex items-center gap-3">
-              <Link href="/admin/content" className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link href="/admin/content" className="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors">
                 Content
               </Link>
-              <Link href="/reception" className="bg-orange-500 hover:bg-orange-600 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+              <Link href="/reception" className="bg-orange-500 hover:bg-orange-600 px-3 py-2 rounded-lg text-sm font-semibold transition-colors">
                 Reception
               </Link>
-              <Link href="/staff/dashboard" className="bg-purple-600 hover:bg-purple-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                Staff Counter
+              <Link href="/staff/dashboard" className="bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors">
+                Staff
               </Link>
-              <Link href="/kitchen" className="bg-orange-600 hover:bg-orange-700 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+              <Link href="/kitchen" className="bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors">
                 Kitchen
               </Link>
-              <Link href="/" className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg text-sm transition-colors">
+              <Link href="/" className="bg-white/10 hover:bg-white/20 px-3 py-2 rounded-lg text-sm transition-colors">
                 Home
               </Link>
             </div>
