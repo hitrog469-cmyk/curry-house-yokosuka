@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/auth'
-import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { auth } from '@/auth'
+import { getSupabaseServiceClient } from '@/lib/supabase-server'
 
 // GET /api/reviews — public, returns visible reviews
 export async function GET(req: NextRequest) {
   try {
-    const supabase = getSupabaseAdmin()
+    const supabase = getSupabaseServiceClient()
+    if (!supabase) return NextResponse.json({ reviews: [] })
+
     const { searchParams } = new URL(req.url)
     const featured = searchParams.get('featured') === 'true'
     const limit = parseInt(searchParams.get('limit') || '20')
@@ -49,13 +50,15 @@ export async function POST(req: NextRequest) {
     // Get profile_id from session (optional — reviews can be anonymous too)
     let profileId: string | null = null
     try {
-      const session = await getServerSession(authOptions)
-      profileId = (session?.user as any)?.profile_id || null
+      const session = await auth()
+      profileId = (session?.user as any)?.id || null
     } catch {
       // continue without profile_id
     }
 
-    const supabase = getSupabaseAdmin()
+    const supabase = getSupabaseServiceClient()
+    if (!supabase) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 })
+
     const { data, error } = await supabase
       .from('reviews')
       .insert({
@@ -84,7 +87,7 @@ export async function POST(req: NextRequest) {
 // PATCH /api/reviews — admin: toggle featured/hidden
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     if (!session || (session.user as any)?.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -92,8 +95,10 @@ export async function PATCH(req: NextRequest) {
     const { id, is_featured, is_hidden } = await req.json()
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 })
 
-    const supabase = getSupabaseAdmin()
-    const updates: any = {}
+    const supabase = getSupabaseServiceClient()
+    if (!supabase) return NextResponse.json({ error: 'DB unavailable' }, { status: 503 })
+
+    const updates: Record<string, boolean> = {}
     if (typeof is_featured === 'boolean') updates.is_featured = is_featured
     if (typeof is_hidden === 'boolean') updates.is_hidden = is_hidden
 
