@@ -9,6 +9,7 @@ import { formatPrice } from '@/lib/utils';
 import { canCancelOrder, formatTimeRemaining, getCancellationBadgeColor } from '@/lib/order-cancellation';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
+import ReviewModal from '@/components/ReviewModal';
 
 type Order = {
   id: string;
@@ -30,6 +31,14 @@ export default function MyOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [reviewingOrder, setReviewingOrder] = useState<Order | null>(null);
+  const [reviewedOrderIds, setReviewedOrderIds] = useState<string[]>([]);
+
+  // Load already-reviewed order IDs from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('reviewed_orders')
+    if (stored) setReviewedOrderIds(JSON.parse(stored))
+  }, [])
 
   const supabase = getSupabaseBrowserClient();
 
@@ -356,15 +365,31 @@ export default function MyOrdersPage() {
                       </div>
                     )}
 
-                    {/* Reorder Button */}
-                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
+                    {/* Action Buttons */}
+                    <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600 flex flex-wrap gap-3">
                       <button
                         onClick={() => handleReorder(order)}
-                        className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                        className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                         Reorder
                       </button>
+                      {/* Leave a Review — only on delivered orders not yet reviewed */}
+                      {order.status === 'delivered' && !reviewedOrderIds.includes(order.id) && (
+                        <button
+                          onClick={() => setReviewingOrder(order)}
+                          className="px-6 py-3 bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
+                          Leave a Review
+                        </button>
+                      )}
+                      {order.status === 'delivered' && reviewedOrderIds.includes(order.id) && (
+                        <span className="px-4 py-3 text-sm text-green-600 font-semibold flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clipRule="evenodd" /></svg>
+                          Reviewed ✓
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -373,6 +398,22 @@ export default function MyOrdersPage() {
           )}
         </div>
       </div>
+
+      {/* Review Modal */}
+      {reviewingOrder && (
+        <ReviewModal
+          orderId={reviewingOrder.id}
+          orderType="online"
+          customerName={reviewingOrder.customer_name || user?.name || 'Guest'}
+          onClose={() => setReviewingOrder(null)}
+          onSubmitted={() => {
+            const updated = [...reviewedOrderIds, reviewingOrder.id]
+            setReviewedOrderIds(updated)
+            localStorage.setItem('reviewed_orders', JSON.stringify(updated))
+            setReviewingOrder(null)
+          }}
+        />
+      )}
     </ProtectedRoute>
   );
 }

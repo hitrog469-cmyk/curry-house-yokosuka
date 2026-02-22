@@ -5,6 +5,7 @@ import Footer from '@/components/footer'
 import OffersSection from '@/components/OffersSection'
 import TodaysSpecialPopup from '@/components/TodaysSpecialPopup'
 import TopBanner from '@/components/TopBanner'
+import TestimonialsSection from '@/components/TestimonialsSection'
 import { getMenuItemImage } from '@/lib/image-mapping'
 
 export default function HomePage() {
@@ -364,39 +365,9 @@ export default function HomePage() {
       </section>
 
       {/* ============================================
-          Testimonials
+          Testimonials — real reviews from DB
           ============================================ */}
-      <section className="py-16 md:py-20 bg-gradient-to-br from-green-50 to-emerald-50 relative overflow-hidden">
-        <div className="absolute top-10 left-10 w-72 h-72 bg-green-200/20 rounded-full blur-2xl"></div>
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-200/20 rounded-full blur-2xl"></div>
-
-        <div className="container-custom relative z-10">
-          <div className="text-center mb-12">
-            <span className="text-green-600 font-semibold text-sm uppercase tracking-widest">Testimonials</span>
-            <h2 className="text-3xl md:text-4xl font-black text-gray-900 mt-2">What Our Customers Say</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {testimonials.map((t, i) => (
-              <div key={i} className="bg-white rounded-2xl p-6 border border-green-100 shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="flex items-center gap-1 mb-4 text-yellow-400 text-lg">
-                  {[...Array(t.rating)].map((_, j) => <span key={j}>★</span>)}
-                </div>
-                <p className="text-gray-700 leading-relaxed mb-5">&ldquo;{t.text}&rdquo;</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md">
-                    {t.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900 text-sm">{t.name}</div>
-                    <div className="text-xs text-gray-500">{t.date}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSection />
 
       {/* ============================================
           Recognition & Awards
