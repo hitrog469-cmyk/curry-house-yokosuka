@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 
-type UserRole = 'customer' | 'staff' | 'admin';
+type UserRole = 'customer' | 'staff' | 'admin' | 'reception';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -38,7 +38,8 @@ export function ProtectedRoute({
         // Redirect based on actual role
         const roleRedirects = {
           admin: '/admin',
-          staff: '/staff',
+          reception: '/reception',
+          staff: '/staff/dashboard',
           customer: '/profile',
         };
         router.push(roleRedirects[(user.role || 'customer') as UserRole]);
