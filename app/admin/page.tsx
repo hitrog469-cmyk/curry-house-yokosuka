@@ -6,10 +6,11 @@ import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
-import { ClipboardList, BarChart3 } from 'lucide-react'
+import { ClipboardList, BarChart3, Star } from 'lucide-react'
 import ToggleTabs from '@/components/ui/ToggleTabs'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import AdminAnalyticsView from '@/components/admin/AdminAnalyticsView'
+import StarRating from '@/components/StarRating'
 
 type Order = {
   id: string
@@ -52,6 +53,186 @@ type StaffMember = {
   phone: string
 }
 
+type Review = {
+  id: string
+  reviewer_name: string
+  rating: number
+  comment: string | null
+  created_at: string
+  is_verified: boolean
+  is_featured: boolean
+  is_hidden: boolean
+  order_type: string | null
+}
+
+// ─── Admin Reviews sub-view ────────────────────────────────────────────────
+function AdminReviewsView({
+  reviews,
+  loading,
+  onToggle,
+  onRefresh,
+}: {
+  reviews: Review[]
+  loading: boolean
+  onToggle: (id: string, field: 'is_featured' | 'is_hidden', current: boolean) => void
+  onRefresh: () => void
+}) {
+  const visible = reviews.filter(r => !r.is_hidden)
+  const avgRating = visible.length
+    ? Math.round((visible.reduce((s, r) => s + r.rating, 0) / visible.length) * 10) / 10
+    : 0
+  const dist = [5, 4, 3, 2, 1].map(star => ({
+    star,
+    count: reviews.filter(r => r.rating === star).length,
+  }))
+
+  return (
+    <div>
+      {/* Stats row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-yellow-400">
+          <p className="text-xs font-semibold text-gray-500 mb-1">Total Reviews</p>
+          <p className="text-3xl font-black text-yellow-600">{reviews.length}</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-orange-400">
+          <p className="text-xs font-semibold text-gray-500 mb-1">Avg Rating</p>
+          <div className="flex items-center gap-2">
+            <p className="text-3xl font-black text-orange-600">{avgRating.toFixed(1)}</p>
+            <StarRating rating={Math.round(avgRating)} readOnly size="sm" />
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
+          <p className="text-xs font-semibold text-gray-500 mb-1">⭐ Featured</p>
+          <p className="text-3xl font-black text-green-700">{reviews.filter(r => r.is_featured).length}</p>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-red-400">
+          <p className="text-xs font-semibold text-gray-500 mb-1">🚫 Hidden</p>
+          <p className="text-3xl font-black text-red-600">{reviews.filter(r => r.is_hidden).length}</p>
+        </div>
+      </div>
+
+      {/* Star distribution */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+        <h3 className="text-sm font-bold text-gray-500 mb-3">RATING DISTRIBUTION</h3>
+        <div className="space-y-2">
+          {dist.map(({ star, count }) => (
+            <div key={star} className="flex items-center gap-3">
+              <span className="text-xs font-bold text-gray-600 w-4">{star}★</span>
+              <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
+                <div
+                  className="h-full bg-yellow-400 rounded-full transition-all"
+                  style={{ width: reviews.length ? `${(count / reviews.length) * 100}%` : '0%' }}
+                />
+              </div>
+              <span className="text-xs text-gray-500 w-6">{count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Refresh button */}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold text-gray-700">All Reviews ({reviews.length})</h3>
+        <button
+          onClick={onRefresh}
+          className="text-sm text-blue-600 hover:underline"
+        >
+          ↻ Refresh
+        </button>
+      </div>
+
+      {/* Reviews table */}
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-yellow-400 border-t-transparent" />
+          <p className="mt-3 text-gray-500">Loading reviews...</p>
+        </div>
+      ) : reviews.length === 0 ? (
+        <div className="bg-white rounded-xl p-12 text-center shadow-sm">
+          <div className="text-5xl mb-3">⭐</div>
+          <p className="text-gray-500">No reviews yet. They'll appear here once customers start leaving feedback.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {reviews.map((r) => (
+            <div
+              key={r.id}
+              className={`bg-white rounded-xl shadow-sm p-4 border-l-4 transition-all ${
+                r.is_hidden
+                  ? 'border-red-300 opacity-60'
+                  : r.is_featured
+                  ? 'border-yellow-400'
+                  : 'border-gray-200'
+              }`}
+            >
+              <div className="flex flex-col md:flex-row md:items-start gap-3">
+                {/* Avatar + name */}
+                <div className="flex items-center gap-3 min-w-0 md:w-48">
+                  <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                    {r.reviewer_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-bold text-gray-900 text-sm truncate">
+                      {r.reviewer_name}
+                      {r.is_verified && <span className="text-green-600 text-xs ml-1">✓</span>}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                    <div className="text-xs text-gray-400">{r.order_type || 'online'}</div>
+                  </div>
+                </div>
+
+                {/* Rating + comment */}
+                <div className="flex-1 min-w-0">
+                  <StarRating rating={r.rating} readOnly size="sm" />
+                  {r.comment && (
+                    <p className="text-sm text-gray-700 mt-1 leading-relaxed">&ldquo;{r.comment}&rdquo;</p>
+                  )}
+                  {!r.comment && (
+                    <p className="text-xs text-gray-400 italic mt-1">No comment</p>
+                  )}
+                </div>
+
+                {/* Badges + actions */}
+                <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                  {r.is_featured && (
+                    <span className="text-xs bg-yellow-100 text-yellow-700 font-bold px-2 py-1 rounded-lg">⭐ Featured</span>
+                  )}
+                  {r.is_hidden && (
+                    <span className="text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded-lg">🚫 Hidden</span>
+                  )}
+                  <button
+                    onClick={() => onToggle(r.id, 'is_featured', r.is_featured)}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                      r.is_featured
+                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                        : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700'
+                    }`}
+                  >
+                    {r.is_featured ? 'Unfeature' : '⭐ Feature'}
+                  </button>
+                  <button
+                    onClick={() => onToggle(r.id, 'is_hidden', r.is_hidden)}
+                    className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors ${
+                      r.is_hidden
+                        ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        : 'bg-red-50 text-red-600 hover:bg-red-100'
+                    }`}
+                  >
+                    {r.is_hidden ? 'Unhide' : '🚫 Hide'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main Admin Dashboard ───────────────────────────────────────────────────
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth()
   const router = useRouter()
@@ -64,7 +245,9 @@ export default function AdminDashboard() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const prevOrderCountRef = useRef(0)
-  const [activeView, setActiveView] = useState<'orders' | 'analytics'>('orders')
+  const [activeView, setActiveView] = useState<'orders' | 'analytics' | 'reviews'>('orders')
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
 
   const supabase = getSupabaseBrowserClient()
 
@@ -136,6 +319,27 @@ export default function AdminDashboard() {
   }, [supabase, isAuthed, selectedStatus, playNotificationSound])
 
   useEffect(() => { fetchAll() }, [fetchAll])
+
+  const fetchReviews = useCallback(async () => {
+    if (!supabase || !isAuthed) return
+    setReviewsLoading(true)
+    const { data } = await supabase
+      .from('reviews')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (data) setReviews(data)
+    setReviewsLoading(false)
+  }, [supabase, isAuthed])
+
+  useEffect(() => {
+    if (activeView === 'reviews') fetchReviews()
+  }, [activeView, fetchReviews])
+
+  const toggleReviewField = async (id: string, field: 'is_featured' | 'is_hidden', current: boolean) => {
+    if (!supabase) return
+    await supabase.from('reviews').update({ [field]: !current }).eq('id', id)
+    fetchReviews()
+  }
 
   // Real-time subscription for new orders
   useEffect(() => {
@@ -472,9 +676,10 @@ export default function AdminDashboard() {
             tabs={[
               { id: 'orders', label: 'Orders', icon: ClipboardList, badge: stats.pendingOnline + stats.pendingTable },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+              { id: 'reviews', label: 'Reviews', icon: Star },
             ]}
             activeTab={activeView}
-            onChange={(id) => setActiveView(id as 'orders' | 'analytics')}
+            onChange={(id) => setActiveView(id as 'orders' | 'analytics' | 'reviews')}
             size="sm"
           />
         </div>
@@ -484,6 +689,13 @@ export default function AdminDashboard() {
         {/* Analytics View */}
         {activeView === 'analytics' ? (
           <AdminAnalyticsView />
+        ) : activeView === 'reviews' ? (
+          <AdminReviewsView
+            reviews={reviews}
+            loading={reviewsLoading}
+            onToggle={toggleReviewField}
+            onRefresh={fetchReviews}
+          />
         ) : (
         <>
         {/* Today's Stats */}
