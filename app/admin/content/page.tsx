@@ -169,8 +169,8 @@ export default function AdminContentPage() {
     loadRestaurantStatus()
   }, [isAuthed, loadSpecials, loadBannerMessages, loadRestaurantStatus])
 
-  // Show loading screen while auth or session refresh is in progress
-  if (authLoading || refreshing) {
+  // Show loading screen while auth is in progress
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
