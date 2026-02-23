@@ -1,5 +1,5 @@
 'use client'
-
+// v2 - full admin with Orders, Analytics, Reviews, Content nav, Reception nav
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
