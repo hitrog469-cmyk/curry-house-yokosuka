@@ -14,10 +14,21 @@ export default auth((req) => {
 
   // Protected routes and their allowed roles
   const protectedRoutes: { [key: string]: string[] } = {
-    '/admin': ['admin'],
-    '/staff': ['staff', 'admin'],
-    '/profile': ['customer', 'staff', 'admin'],
+    '/admin':     ['admin'],
+    '/staff':     ['staff', 'admin'],
+    '/reception': ['reception', 'admin'],
+    '/kitchen':   ['kitchen', 'staff', 'admin'],
+    '/profile':   ['customer', 'staff', 'admin', 'reception', 'kitchen'],
     '/my-orders': ['customer', 'staff', 'admin'],
+  }
+
+  // Where each role lands after login
+  const roleRedirects: { [key: string]: string } = {
+    admin:     '/admin',
+    staff:     '/staff',
+    reception: '/reception',
+    kitchen:   '/kitchen',
+    customer:  '/profile',
   }
 
   for (const [route, allowedRoles] of Object.entries(protectedRoutes)) {
@@ -29,12 +40,9 @@ export default auth((req) => {
       }
 
       if (!allowedRoles.includes(userRole)) {
-        const roleRedirects: { [key: string]: string } = {
-          admin: '/admin',
-          staff: '/staff',
-          customer: '/profile',
-        }
-        return NextResponse.redirect(new URL(roleRedirects[userRole] || '/', nextUrl.origin))
+        return NextResponse.redirect(
+          new URL(roleRedirects[userRole] || '/', nextUrl.origin)
+        )
       }
     }
   }
@@ -42,12 +50,9 @@ export default auth((req) => {
   // Redirect logged-in users away from auth pages
   const authPages = ['/auth/login', '/auth/register']
   if (isLoggedIn && authPages.some((page) => currentPath.startsWith(page))) {
-    const roleRedirects: { [key: string]: string } = {
-      admin: '/admin',
-      staff: '/staff',
-      customer: '/profile',
-    }
-    return NextResponse.redirect(new URL(roleRedirects[userRole], nextUrl.origin))
+    return NextResponse.redirect(
+      new URL(roleRedirects[userRole] || '/', nextUrl.origin)
+    )
   }
 
   return NextResponse.next()
