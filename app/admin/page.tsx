@@ -277,10 +277,11 @@ export default function AdminDashboard() {
     if (!supabase || !isAuthed) return
     setLoading(true)
 
-    // Fetch delivery orders
+    // Fetch delivery orders only — exclude in-house/table orders
     let query = supabase
       .from('orders')
       .select('*')
+      .neq('order_type', 'in-house')
       .order('created_at', { ascending: false })
 
     if (selectedStatus !== 'all') {
@@ -808,7 +809,7 @@ export default function AdminDashboard() {
                     order.status === 'preparing' ? 'border-blue-500' :
                     order.status === 'delivered' || order.status === 'completed' ? 'border-green-500' :
                     'border-gray-200'
-                  }`}
+                  } ${order.status === 'delivered' || order.status === 'completed' || order.status === 'cancelled' ? 'opacity-45' : ''}`}
                 >
                   {/* Order Header - Always visible */}
                   <button
@@ -868,15 +869,37 @@ export default function AdminDashboard() {
                           <h4 className="text-xs font-bold text-gray-500 mb-2">ORDER ITEMS</h4>
                           <div className="bg-gray-50 rounded-lg p-3 space-y-2">
                             {order.items?.map((item: any, idx: number) => (
-                              <div key={idx} className="flex justify-between text-sm">
-                                <div>
-                                  <span className="font-medium">{item.name}</span>
-                                  {item.spiceLevel && <span className="text-orange-500 ml-1 text-xs">🌶️{item.spiceLevel}</span>}
-                                  {item.addOns?.map((a: any, i: number) => (
-                                    <div key={i} className="text-xs text-gray-500 ml-2">+ {a.name} ({formatPrice(a.price || 0)})</div>
-                                  ))}
+                              <div key={idx} className="text-sm border-b border-gray-100 pb-2 last:border-0">
+                                <div className="flex justify-between">
+                                  <div>
+                                    <span className="font-bold">{item.name}</span>
+                                    {item.variation && <span className="text-purple-600 ml-1 text-xs font-semibold">({item.variation})</span>}
+                                    {item.spiceLevel && <span className="text-orange-500 ml-1 text-xs">🌶️ {item.spiceLevel}</span>}
+                                  </div>
+                                  <span className="font-bold whitespace-nowrap ml-2">×{item.quantity} {formatPrice((item.price || 0) * (item.quantity || 1))}</span>
                                 </div>
-                                <span className="font-bold whitespace-nowrap">×{item.quantity} {formatPrice((item.price || 0) * (item.quantity || 1))}</span>
+                                {/* Add-ons */}
+                                {item.addOns?.length > 0 && (
+                                  <div className="ml-3 mt-1 space-y-0.5">
+                                    {item.addOns.map((a: any, i: number) => (
+                                      <div key={i} className="text-xs text-gray-500">＋ {typeof a === 'string' ? a : `${a.name}${a.price ? ` (+${formatPrice(a.price)})` : ''}`}</div>
+                                    ))}
+                                  </div>
+                                )}
+                                {/* Set meal choices */}
+                                {item.setMealChoices && (
+                                  <div className="ml-3 mt-1 space-y-0.5">
+                                    {item.setMealChoices.curries?.length > 0 && (
+                                      <div className="text-xs text-indigo-600">🍛 {item.setMealChoices.curries.join(', ')}</div>
+                                    )}
+                                    {item.setMealChoices.naan && <div className="text-xs text-amber-600">🫓 {item.setMealChoices.naan}</div>}
+                                    {item.setMealChoices.rice && <div className="text-xs text-green-600">🍚 {item.setMealChoices.rice}</div>}
+                                    {item.setMealChoices.drink && <div className="text-xs text-blue-600">🥤 {item.setMealChoices.drink}</div>}
+                                    {item.setMealChoices.upgradeDetails?.length > 0 && (
+                                      <div className="text-xs text-orange-500 font-semibold">⬆️ {item.setMealChoices.upgradeDetails.join(', ')}</div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             ))}
                             <div className="border-t pt-2 mt-2 flex justify-between font-bold">

@@ -58,10 +58,11 @@ function TableOrderContent() {
 
   // Set meal selection state
   const [showSetMealModal, setShowSetMealModal] = useState<string | null>(null)
-  const [setMealSelections, setSetMealSelections] = useState<{[setId: string]: {curries: string[], naan: string, rice: string}}>({})
+  const [setMealSelections, setSetMealSelections] = useState<{[setId: string]: {curries: string[], naan: string, rice: string, drink?: string, upgradePrice: number, upgradeDetails: string[]}}>({})
   const [tempSetMealCurries, setTempSetMealCurries] = useState<string[]>([])
   const [tempSetMealNaan, setTempSetMealNaan] = useState<string>('plain-naan')
   const [tempSetMealRice, setTempSetMealRice] = useState<string>('plain-rice')
+  const [tempSetMealDrink, setTempSetMealDrink] = useState<string>('')
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const categoryScrollRef = useRef<HTMLDivElement>(null)
@@ -120,11 +121,62 @@ function TableOrderContent() {
     ['vegetable_curry', 'seafood_curry', 'chicken_curry', 'mutton_curry'].includes(item.category)
   )
 
+  // Naan options with upgrade pricing — varies by set
+  const getNaanOptionsForSet = (setId: string) => {
+    if (setId === 'set-1') {
+      // Cheese Naan Set — base naan is Cheese Naan (free)
+      return [
+        { id: 'cheese-naan',              name: 'Cheese Naan',              nameJp: 'チーズナン',                   price: 0 },
+        { id: 'cheese-garlic-naan',       name: 'Cheese Garlic Naan',       nameJp: 'チーズガーリックナン',          price: 250 },
+        { id: 'honey-cheese-garlic-naan', name: 'Honey Cheese Garlic Naan', nameJp: 'ハニーチーズガーリックナン',    price: 250 },
+        { id: 'honey-cheese-naan',        name: 'Honey Cheese Naan',        nameJp: 'ハニーチーズナン',              price: 250 },
+        { id: 'coconut-cheese-naan',      name: 'Coconut Cheese Naan',      nameJp: 'ココナッツチーズナン',          price: 300 },
+      ]
+    }
+    // set-2 (One Curry Set), set-3 (Yokosuka Set), set-4 (CFAY Set) — base is Plain Naan (free)
+    return [
+      { id: 'plain-naan',               name: 'Plain Naan',               nameJp: 'プレーンナン',                  price: 0 },
+      { id: 'garlic-naan',              name: 'Garlic Naan',              nameJp: 'ガーリックナン',                price: 250 },
+      { id: 'honey-naan',               name: 'Honey Naan',               nameJp: 'ハニーナン',                   price: 250 },
+      { id: 'plain-paratha',            name: 'Plain Paratha',            nameJp: 'プレーンパラタ',                price: 250 },
+      { id: 'sesame-naan',              name: 'Sesame Naan',              nameJp: 'ゴマナン',                     price: 250 },
+      { id: 'cheese-naan',              name: 'Cheese Naan',              nameJp: 'チーズナン',                   price: 350 },
+      { id: 'cheese-garlic-naan',       name: 'Cheese Garlic Naan',       nameJp: 'チーズガーリックナン',          price: 450 },
+      { id: 'honey-cheese-garlic-naan', name: 'Honey Cheese Garlic Naan', nameJp: 'ハニーチーズガーリックナン',    price: 450 },
+      { id: 'coconut-cheese-naan',      name: 'Coconut Cheese Naan',      nameJp: 'ココナッツチーズナン',          price: 450 },
+      { id: 'honey-cheese-naan',        name: 'Honey Cheese Naan',        nameJp: 'ハニーチーズナン',              price: 400 },
+    ]
+  }
+
+  // Keep a simple naanOptions alias for backward compatibility (cart display uses this)
   const naanOptions = [
     { id: 'plain-naan', name: 'Plain Naan', nameJp: 'プレーンナン' },
-    { id: 'butter-naan', name: 'Butter Naan', nameJp: 'バターナン' },
     { id: 'garlic-naan', name: 'Garlic Naan', nameJp: 'ガーリックナン' },
+    { id: 'honey-naan', name: 'Honey Naan', nameJp: 'ハニーナン' },
     { id: 'cheese-naan', name: 'Cheese Naan', nameJp: 'チーズナン' },
+  ]
+
+  // Drink upgrades — optional alcohol for set meals
+  const drinkUpgradeOptions = [
+    { id: 'cocktail',    name: 'Cocktail',     nameJp: 'カクテル',     price: 300 },
+    { id: 'draft-beer',  name: 'Draft Beer',   nameJp: '生ビール',     price: 350 },
+    { id: 'bottle-beer', name: 'Bottle Beer',  nameJp: 'ボトルビール', price: 500 },
+  ]
+
+  // Premium curry upgrades (replace one of the set curries at extra cost)
+  const upgradeCurryOptions = [
+    {
+      id: 'spicy-garlic-chicken-dry',
+      name: 'Spicy Garlic Chicken Dry Curry',
+      nameJp: 'スパイシーガーリックチキンドライカレー',
+      upgradePrice: { 'set-1': 400, 'set-2': 600, 'set-3': 400, 'set-4': 400 } as Record<string, number>,
+    },
+    {
+      id: 'spicy-garlic-mutton-dry',
+      name: 'Spicy Garlic Mutton Dry Curry',
+      nameJp: 'スパイシーガーリックマトンドライカレー',
+      upgradePrice: { 'set-1': 400, 'set-2': 600, 'set-3': 400, 'set-4': 400 } as Record<string, number>,
+    },
   ]
 
   const riceOptions = [
@@ -136,9 +188,11 @@ function TableOrderContent() {
   const isSetMeal = (itemId: string) => Object.keys(setMealConfig).includes(itemId)
 
   const openSetMealModal = (setId: string) => {
+    const defaultNaan = setId === 'set-1' ? 'cheese-naan' : 'plain-naan'
     setTempSetMealCurries(setMealSelections[setId]?.curries || [])
-    setTempSetMealNaan(setMealSelections[setId]?.naan || 'plain-naan')
+    setTempSetMealNaan(setMealSelections[setId]?.naan || defaultNaan)
     setTempSetMealRice(setMealSelections[setId]?.rice || 'plain-rice')
+    setTempSetMealDrink(setMealSelections[setId]?.drink || '')
     setShowSetMealModal(setId)
   }
 
@@ -155,7 +209,8 @@ function TableOrderContent() {
 
   const confirmSetMealSelection = () => {
     if (!showSetMealModal) return
-    const config = setMealConfig[showSetMealModal]
+    const setId = showSetMealModal
+    const config = setMealConfig[setId]
     if (!config) return
 
     if (tempSetMealCurries.length !== config.curries) {
@@ -163,16 +218,50 @@ function TableOrderContent() {
       return
     }
 
+    // Calculate upgrade price and build upgrade details list
+    let upgradePrice = 0
+    const upgradeDetails: string[] = []
+
+    // Naan upgrade
+    const naanOpts = getNaanOptionsForSet(setId)
+    const selNaan = naanOpts.find(n => n.id === tempSetMealNaan)
+    if (selNaan && selNaan.price > 0) {
+      upgradePrice += selNaan.price
+      upgradeDetails.push(`${selNaan.name} (+¥${selNaan.price})`)
+    }
+
+    // Curry upgrades (premium replacements)
+    tempSetMealCurries.forEach(curryId => {
+      const upgradeCurry = upgradeCurryOptions.find(c => c.id === curryId)
+      if (upgradeCurry) {
+        const price = upgradeCurry.upgradePrice[setId] ?? 400
+        upgradePrice += price
+        upgradeDetails.push(`${upgradeCurry.name} (+¥${price})`)
+      }
+    })
+
+    // Drink upgrade
+    if (tempSetMealDrink) {
+      const drinkOpt = drinkUpgradeOptions.find(d => d.id === tempSetMealDrink)
+      if (drinkOpt) {
+        upgradePrice += drinkOpt.price
+        upgradeDetails.push(`${drinkOpt.name} (+¥${drinkOpt.price})`)
+      }
+    }
+
     setSetMealSelections(prev => ({
       ...prev,
-      [showSetMealModal]: {
+      [setId]: {
         curries: tempSetMealCurries,
         naan: tempSetMealNaan,
         rice: tempSetMealRice,
+        drink: tempSetMealDrink || undefined,
+        upgradePrice,
+        upgradeDetails,
       }
     }))
 
-    setCart(prev => ({ ...prev, [showSetMealModal]: (prev[showSetMealModal] || 0) + 1 }))
+    setCart(prev => ({ ...prev, [setId]: (prev[setId] || 0) + 1 }))
     setShowSetMealModal(null)
   }
 
@@ -257,6 +346,10 @@ function TableOrderContent() {
           basePrice += addOn.price
         }
       })
+    }
+    // Add set meal upgrade price (premium naan / curry / drink upgrades)
+    if (isSetMeal(itemId) && setMealSelections[itemId]?.upgradePrice) {
+      basePrice += setMealSelections[itemId].upgradePrice
     }
     return basePrice
   }
@@ -625,11 +718,19 @@ function TableOrderContent() {
           variation: item?.variations && selectedVariations[itemId] !== undefined
             ? item.variations[selectedVariations[itemId]].name
             : null,
-          // Set meal curry/naan/rice selections for kitchen
+          // Set meal curry/naan/rice/drink selections for kitchen
           setMealChoices: setSelections ? {
-            curries: setSelections.curries.map(cId => menuItems.find(i => i.id === cId)?.name || cId),
-            naan: naanOptions.find(n => n.id === setSelections.naan)?.name || 'Plain Naan',
+            curries: setSelections.curries.map(cId => {
+              const upgradeCurry = upgradeCurryOptions.find(c => c.id === cId)
+              if (upgradeCurry) return upgradeCurry.name
+              return menuItems.find(i => i.id === cId)?.name || cId
+            }),
+            naan: getNaanOptionsForSet(itemId).find(n => n.id === setSelections.naan)?.name || 'Plain Naan',
             rice: riceOptions.find(r => r.id === setSelections.rice)?.name || 'Plain Rice',
+            drink: setSelections.drink
+              ? drinkUpgradeOptions.find(d => d.id === setSelections.drink)?.name
+              : undefined,
+            upgradeDetails: setSelections.upgradeDetails || [],
           } : null
         }
       })
@@ -1370,9 +1471,18 @@ function TableOrderContent() {
                         <p className="text-[10px] text-blue-600">+ {selectedAddOns[itemId].join(', ')}</p>
                       )}
                       {setMealSelections[itemId] && (
-                        <div className="text-[10px] text-purple-600 mt-0.5">
-                          <p>🍛 {setMealSelections[itemId].curries.map(cId => menuItems.find(i => i.id === cId)?.name || cId).join(', ')}</p>
-                          <p>🫓 {naanOptions.find(n => n.id === setMealSelections[itemId].naan)?.name || 'Plain Naan'} · {riceOptions.find(r => r.id === setMealSelections[itemId].rice)?.name || 'Plain Rice'}</p>
+                        <div className="text-[10px] text-purple-600 mt-0.5 space-y-0.5">
+                          <p>🍛 {setMealSelections[itemId].curries.map(cId => {
+                            const uc = upgradeCurryOptions.find(c => c.id === cId)
+                            return uc ? uc.name : (menuItems.find(i => i.id === cId)?.name || cId)
+                          }).join(', ')}</p>
+                          <p>🫓 {getNaanOptionsForSet(itemId).find(n => n.id === setMealSelections[itemId].naan)?.name || 'Plain Naan'} · {riceOptions.find(r => r.id === setMealSelections[itemId].rice)?.name || 'Plain Rice'}</p>
+                          {setMealSelections[itemId].drink && (
+                            <p>🥤 {drinkUpgradeOptions.find(d => d.id === setMealSelections[itemId].drink)?.name}</p>
+                          )}
+                          {setMealSelections[itemId].upgradeDetails && setMealSelections[itemId].upgradeDetails.length > 0 && (
+                            <p className="text-orange-600 font-semibold">⬆️ {setMealSelections[itemId].upgradeDetails.join(', ')}</p>
+                          )}
                         </div>
                       )}
                       <p className="text-sm font-bold text-green-600">{formatPrice(getItemPrice(itemId) * quantity)}</p>
@@ -1739,14 +1849,58 @@ function TableOrderContent() {
                       )
                     })}
                   </div>
+
+                  {/* Premium Curry Upgrades */}
+                  <div className="mt-3 pt-3 border-t border-dashed border-orange-200">
+                    <p className="text-xs font-bold text-orange-600 uppercase mb-2">⬆️ Premium Upgrade Curries (optional)</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {upgradeCurryOptions.map(curry => {
+                        const isSelected = tempSetMealCurries.includes(curry.id)
+                        const isDisabled = !isSelected && tempSetMealCurries.length >= config.curries
+                        const upgradePrice = curry.upgradePrice[showSetMealModal!] ?? 400
+                        return (
+                          <button
+                            key={curry.id}
+                            onClick={() => toggleSetMealCurry(curry.id, config.curries)}
+                            disabled={isDisabled}
+                            className={`flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                              isSelected
+                                ? 'border-orange-500 bg-orange-50'
+                                : isDisabled
+                                  ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                  : 'border-orange-200 hover:border-orange-400 hover:bg-orange-50'
+                            }`}
+                          >
+                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
+                              isSelected ? 'bg-orange-500 border-orange-500' : 'border-gray-300'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <p className="font-semibold text-sm text-gray-900">{curry.name}</p>
+                                <span className="text-xs bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded">+¥{upgradePrice}</span>
+                              </div>
+                              <p className="text-xs text-gray-500 truncate">{curry.nameJp}</p>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
 
-                {/* Naan Selection */}
+                {/* Naan Selection with upgrade pricing */}
                 {config.hasNaan && (
                   <div>
-                    <h4 className="font-bold text-gray-900 mb-3">Choose Your Naan</h4>
+                    <h4 className="font-bold text-gray-900 mb-1">Choose Your Naan</h4>
+                    <p className="text-xs text-gray-500 mb-3">Upgrades available for premium naán</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {naanOptions.map(naan => (
+                      {getNaanOptionsForSet(showSetMealModal!).map(naan => (
                         <button
                           key={naan.id}
                           onClick={() => setTempSetMealNaan(naan.id)}
@@ -1756,8 +1910,14 @@ function TableOrderContent() {
                               : 'border-gray-200 hover:border-amber-300 hover:bg-amber-50'
                           }`}
                         >
-                          <p className="font-semibold text-sm text-gray-900">{naan.name}</p>
-                          <p className="text-xs text-gray-500">{naan.nameJp}</p>
+                          <div className="flex items-center justify-between gap-1 flex-wrap">
+                            <p className="font-semibold text-sm text-gray-900">{naan.name}</p>
+                            {naan.price > 0
+                              ? <span className="text-xs bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded">+¥{naan.price}</span>
+                              : <span className="text-xs bg-green-100 text-green-700 font-semibold px-1.5 py-0.5 rounded">Included</span>
+                            }
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">{naan.nameJp}</p>
                         </button>
                       ))}
                     </div>
@@ -1787,6 +1947,45 @@ function TableOrderContent() {
                   </div>
                 )}
 
+                {/* Drink Upgrade */}
+                <div>
+                  <h4 className="font-bold text-gray-900 mb-1">🥤 Upgrade Your Drink</h4>
+                  <p className="text-xs text-gray-500 mb-3">Included soft drink / water · Upgrade to something special</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => setTempSetMealDrink('')}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${
+                        tempSetMealDrink === ''
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <p className="font-semibold text-sm text-gray-900">Included Drink</p>
+                        <span className="text-xs bg-green-100 text-green-700 font-semibold px-1.5 py-0.5 rounded">Free</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5">付属のドリンク</p>
+                    </button>
+                    {drinkUpgradeOptions.map(drink => (
+                      <button
+                        key={drink.id}
+                        onClick={() => setTempSetMealDrink(drink.id)}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                          tempSetMealDrink === drink.id
+                            ? 'border-blue-500 bg-blue-50'
+                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="font-semibold text-sm text-gray-900">{drink.name}</p>
+                          <span className="text-xs bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded">+¥{drink.price}</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">{drink.nameJp}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Set Contents Summary */}
                 <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                   <h4 className="font-bold text-gray-700 text-sm mb-2">Set Includes:</h4>
@@ -1794,8 +1993,39 @@ function TableOrderContent() {
                 </div>
               </div>
 
-              {/* Footer */}
+              {/* Footer with upgrade total */}
               <div className="p-5 border-t bg-gray-50 shrink-0">
+                {/* Price breakdown */}
+                {(() => {
+                  const naanOpts = getNaanOptionsForSet(showSetMealModal!)
+                  const selNaan = naanOpts.find(n => n.id === tempSetMealNaan)
+                  const naanUpgrade = selNaan?.price ?? 0
+                  const curryUpgrade = tempSetMealCurries.reduce((sum, cId) => {
+                    const uc = upgradeCurryOptions.find(c => c.id === cId)
+                    return sum + (uc ? (uc.upgradePrice[showSetMealModal!] ?? 400) : 0)
+                  }, 0)
+                  const drinkUpgrade = tempSetMealDrink ? (drinkUpgradeOptions.find(d => d.id === tempSetMealDrink)?.price ?? 0) : 0
+                  const totalUpgrade = naanUpgrade + curryUpgrade + drinkUpgrade
+                  const totalPrice = setItem.price + totalUpgrade
+                  return (
+                    <div className="mb-4 space-y-1 text-sm">
+                      <div className="flex justify-between text-gray-600">
+                        <span>Base price</span>
+                        <span>{formatPrice(setItem.price)}</span>
+                      </div>
+                      {totalUpgrade > 0 && (
+                        <div className="flex justify-between text-orange-600 font-semibold">
+                          <span>Upgrades</span>
+                          <span>+{formatPrice(totalUpgrade)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-black text-gray-900 border-t pt-1 text-base">
+                        <span>Total</span>
+                        <span>{formatPrice(totalPrice)}</span>
+                      </div>
+                    </div>
+                  )
+                })()}
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowSetMealModal(null)}
@@ -1812,7 +2042,17 @@ function TableOrderContent() {
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >
-                    Add to Order — {formatPrice(setItem.price)}
+                    {(() => {
+                      const naanOpts = getNaanOptionsForSet(showSetMealModal!)
+                      const selNaan = naanOpts.find(n => n.id === tempSetMealNaan)
+                      const naanUpgrade = selNaan?.price ?? 0
+                      const curryUpgrade = tempSetMealCurries.reduce((sum, cId) => {
+                        const uc = upgradeCurryOptions.find(c => c.id === cId)
+                        return sum + (uc ? (uc.upgradePrice[showSetMealModal!] ?? 400) : 0)
+                      }, 0)
+                      const drinkUpgrade = tempSetMealDrink ? (drinkUpgradeOptions.find(d => d.id === tempSetMealDrink)?.price ?? 0) : 0
+                      return `Add to Order — ${formatPrice(setItem.price + naanUpgrade + curryUpgrade + drinkUpgrade)}`
+                    })()}
                   </button>
                 </div>
               </div>
