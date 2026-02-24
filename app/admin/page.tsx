@@ -252,6 +252,9 @@ export default function AdminDashboard() {
   const [activeView, setActiveView] = useState<'orders' | 'analytics' | 'reviews' | 'users' | 'contact' | 'careers' | 'catering'>('orders')
   const [reviews, setReviews] = useState<Review[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [tablePins, setTablePins] = useState<{table_number: number, pin: string}[]>([])
+  const [showPinPanel, setShowPinPanel] = useState(false)
+  const [pinPanelLoading, setPinPanelLoading] = useState(false)
 
   const supabase = getSupabaseBrowserClient()
 
@@ -344,6 +347,39 @@ export default function AdminDashboard() {
     if (!supabase) return
     await supabase.from('reviews').update({ [field]: !current }).eq('id', id)
     fetchReviews()
+  }
+
+  const fetchTablePins = useCallback(async () => {
+    if (!supabase || !isAuthed) return
+    setPinPanelLoading(true)
+    const { data } = await supabase
+      .from('table_pins')
+      .select('table_number, pin')
+      .order('table_number')
+    if (data) setTablePins(data)
+    setPinPanelLoading(false)
+  }, [supabase, isAuthed])
+
+  const regeneratePin = async (tableNumber: number) => {
+    if (!supabase) return
+    const newPin = String(Math.floor(1000 + Math.random() * 9000))
+    await supabase.from('table_pins').upsert(
+      { table_number: tableNumber, pin: newPin, updated_at: new Date().toISOString() },
+      { onConflict: 'table_number' }
+    )
+    fetchTablePins()
+  }
+
+  const regenerateAllPins = async () => {
+    if (!supabase) return
+    if (!window.confirm('Regenerate ALL 18 table PINs? Print new table cards afterwards.')) return
+    const rows = Array.from({ length: 18 }, (_, i) => ({
+      table_number: i + 1,
+      pin: String(Math.floor(1000 + Math.random() * 9000)),
+      updated_at: new Date().toISOString(),
+    }))
+    await supabase.from('table_pins').upsert(rows, { onConflict: 'table_number' })
+    fetchTablePins()
   }
 
   // Real-time subscription for new orders
@@ -743,6 +779,57 @@ export default function AdminDashboard() {
           <AdminCateringView />
         ) : (
         <>
+        {/* ── Table PIN Management ──────────────────────────────────────────── */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => { setShowPinPanel(v => { if (!v) fetchTablePins(); return !v }) }}
+              className="bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 border border-purple-200"
+            >
+              🔐 Table PINs {showPinPanel ? '▲' : '▼'}
+            </button>
+            {showPinPanel && (
+              <button
+                onClick={regenerateAllPins}
+                className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-4 py-2 rounded-xl font-bold text-sm transition-all border border-orange-200"
+              >
+                🔄 Regenerate ALL PINs
+              </button>
+            )}
+          </div>
+
+          {showPinPanel && (
+            <div className="mt-3 bg-white rounded-2xl shadow-sm border border-purple-100 p-5">
+              <p className="text-sm text-gray-500 mb-4">
+                Each table has a physical PIN card. Customers enter this PIN when scanning the QR code to prevent orders from outside the restaurant.
+              </p>
+              {pinPanelLoading ? (
+                <div className="text-center text-gray-400 py-4">Loading PINs...</div>
+              ) : tablePins.length === 0 ? (
+                <div className="text-center text-gray-400 py-4">
+                  No PINs found. Run the SQL setup in Supabase first, then click the button above to load.
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                  {tablePins.map(tp => (
+                    <div key={tp.table_number} className="bg-gray-50 rounded-xl p-3 text-center border border-gray-200 hover:border-purple-300 transition-all">
+                      <div className="text-xs font-bold text-gray-500 mb-1">TABLE {tp.table_number}</div>
+                      <div className="text-2xl font-black text-gray-900 tracking-widest mb-2 font-mono">{tp.pin}</div>
+                      <button
+                        onClick={() => regeneratePin(tp.table_number)}
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1.5 rounded-lg transition-all"
+                        title={`New PIN for Table ${tp.table_number}`}
+                      >
+                        🔄 New PIN
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Today's Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
           <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-blue-500">

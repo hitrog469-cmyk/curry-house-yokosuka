@@ -74,16 +74,16 @@ export default function KitchenDisplayPage() {
         .order('created_at', { ascending: true })
       setOrders(activeData || [])
 
-      // Completed today
+      // Completed / cancelled today
       const todayStart = new Date()
       todayStart.setHours(0, 0, 0, 0)
       const { data: completedData } = await supabase
         .from('table_orders')
         .select('*')
-        .eq('status', 'completed')
+        .in('status', ['completed', 'cancelled'])
         .gte('created_at', todayStart.toISOString())
         .order('created_at', { ascending: false })
-        .limit(15)
+        .limit(20)
       setCompletedOrders(completedData || [])
     } catch (error) {
       console.error('Error fetching orders:', error)
@@ -101,6 +101,13 @@ export default function KitchenDisplayPage() {
   const completeOrder = async (orderId: string) => {
     if (!supabase) return
     await supabase.from('table_orders').update({ status: 'completed' }).eq('id', orderId)
+    fetchOrders()
+  }
+
+  const cancelOrder = async (orderId: string) => {
+    if (!supabase) return
+    if (!window.confirm('Cancel this order? Kitchen will stop preparing it.')) return
+    await supabase.from('table_orders').update({ status: 'cancelled' }).eq('id', orderId)
     fetchOrders()
   }
 
@@ -470,6 +477,12 @@ export default function KitchenDisplayPage() {
               🧾 Customer Bill
             </button>
           </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); cancelOrder(order.id) }}
+            className="w-full bg-red-800/80 hover:bg-red-700 font-bold py-2 rounded-lg text-sm transition-all text-red-200 border border-red-700/50"
+          >
+            ✕ Cancel Order
+          </button>
         </div>
       </div>
     )
@@ -561,14 +574,19 @@ export default function KitchenDisplayPage() {
           <div className="opacity-40 hover:opacity-60 transition-opacity">
             <h2 className="text-xl font-bold mb-4 flex items-center gap-3">
               <span className="bg-gray-600 px-3 py-1 rounded-lg text-base">✅ DONE</span>
-              <span>Completed Today ({completedOrders.length})</span>
+              <span>Completed / Cancelled Today ({completedOrders.length})</span>
             </h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {completedOrders.map(order => (
                 <div key={order.id} className="bg-gray-800 rounded-xl p-4 border border-gray-700">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-2xl font-black text-gray-400">T{order.table_number}</div>
-                    <div className="text-xs text-gray-500">{new Date(order.created_at).toLocaleTimeString('ja-JP')}</div>
+                    <div className="flex flex-col items-end gap-1">
+                      <div className="text-xs text-gray-500">{new Date(order.created_at).toLocaleTimeString('ja-JP')}</div>
+                      {order.status === 'cancelled' && (
+                        <span className="text-xs bg-red-800 text-red-200 px-2 py-0.5 rounded font-bold">CANCELLED</span>
+                      )}
+                    </div>
                   </div>
                   {order.customer_name && (
                     <div className="text-xs text-gray-500 mb-2">{order.customer_name}</div>

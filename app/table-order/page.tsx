@@ -20,6 +20,17 @@ function TableOrderContent() {
   const [tableOccupied, setTableOccupied] = useState(false)
   const [isAddOnMode, setIsAddOnMode] = useState(false)
 
+  // PIN verification — check sessionStorage on first render to avoid flicker
+  const [pinVerified, setPinVerified] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    const tableNum = new URLSearchParams(window.location.search).get('table')
+    if (!tableNum) return true // no table in URL → skip PIN gate
+    return sessionStorage.getItem(`pin_verified_table_${tableNum}`) === 'true'
+  })
+  const [pinInput, setPinInput] = useState('')
+  const [pinError, setPinError] = useState(false)
+  const [pinLoading, setPinLoading] = useState(false)
+
   // Order setup state
   const [setupComplete, setSetupComplete] = useState(false)
   const [selectedTables, setSelectedTables] = useState<number[]>(urlTableNumber ? [parseInt(urlTableNumber)] : [])
@@ -263,6 +274,29 @@ function TableOrderContent() {
 
     setCart(prev => ({ ...prev, [setId]: (prev[setId] || 0) + 1 }))
     setShowSetMealModal(null)
+  }
+
+  // ========================
+  // PIN VERIFICATION
+  // ========================
+  const verifyPin = async (pinToCheck?: string) => {
+    const pin = pinToCheck ?? pinInput
+    if (!urlTableNumber || !supabase || pin.length !== 4) return
+    setPinLoading(true)
+    setPinError(false)
+    const { data } = await supabase
+      .from('table_pins')
+      .select('pin')
+      .eq('table_number', parseInt(urlTableNumber))
+      .maybeSingle()
+    if (data && data.pin === pin) {
+      sessionStorage.setItem(`pin_verified_table_${urlTableNumber}`, 'true')
+      setPinVerified(true)
+    } else {
+      setPinError(true)
+      setPinInput('')
+    }
+    setPinLoading(false)
   }
 
   const filteredItems = useMemo(() => {
@@ -880,6 +914,85 @@ function TableOrderContent() {
         <div className="text-center text-white">
           <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-lg font-semibold">Loading table...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ==========================================
+  // PIN VERIFICATION SCREEN
+  // ==========================================
+  if (urlTableNumber && !pinVerified) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
+          <img src="/images/Logo.png" alt="The Curry House" className="w-16 h-16 mx-auto mb-4 object-contain" />
+          <h1 className="text-2xl font-black text-gray-900 mb-1">Table {urlTableNumber}</h1>
+          <p className="text-gray-500 text-sm mb-6">
+            Enter the <strong>4-digit PIN</strong> from the card on your table to start ordering.
+          </p>
+
+          {/* PIN dots display */}
+          <div className="flex justify-center gap-3 mb-2">
+            {[0, 1, 2, 3].map(i => (
+              <div
+                key={i}
+                className={`w-14 h-16 border-2 rounded-xl flex items-center justify-center text-3xl font-black transition-all
+                  ${pinInput.length > i
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : 'border-gray-200 bg-gray-50 text-gray-200'
+                  } ${pinError ? 'border-red-400 bg-red-50 animate-pulse' : ''}`}
+              >
+                {pinInput[i] ? '●' : '·'}
+              </div>
+            ))}
+          </div>
+
+          {pinError && (
+            <p className="text-red-500 text-sm font-semibold mb-3 mt-2">
+              ❌ Wrong PIN. Check the card on your table.
+            </p>
+          )}
+          {!pinError && <div className="mb-3" />}
+
+          {/* Number pad */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, i) => (
+              <button
+                key={i}
+                disabled={!key || pinLoading}
+                onClick={() => {
+                  if (!key) return
+                  if (key === '⌫') {
+                    setPinInput(p => p.slice(0, -1))
+                    setPinError(false)
+                  } else if (pinInput.length < 4) {
+                    const next = pinInput + key
+                    setPinInput(next)
+                    setPinError(false)
+                    if (next.length === 4) verifyPin(next)
+                  }
+                }}
+                className={`h-14 rounded-xl font-bold text-xl transition-all select-none
+                  ${!key ? 'invisible' : 'bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-800 cursor-pointer'}
+                  ${pinLoading ? 'opacity-50 cursor-wait' : ''}`}
+              >
+                {key}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => verifyPin()}
+            disabled={pinInput.length !== 4 || pinLoading}
+            className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3.5 rounded-xl text-lg transition-all"
+          >
+            {pinLoading ? '⏳ Checking...' : 'Enter →'}
+          </button>
+
+          <p className="text-xs text-gray-400 mt-4">
+            Can't find the PIN? Ask a staff member for help.
+          </p>
         </div>
       </div>
     )
