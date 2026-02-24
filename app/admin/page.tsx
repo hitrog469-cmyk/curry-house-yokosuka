@@ -464,6 +464,38 @@ export default function AdminDashboard() {
       `
     }
 
+    // Build fully itemised line rows for each order item
+    const buildItemRows = (item: any): string => {
+      const addonRows = (item.addOns || []).map((a: any) => {
+        const n = typeof a === 'string' ? a : a.name
+        const p = typeof a !== 'string' ? (a.price || 0) : 0
+        return `<div class="sub-row addon"><span class="sn">＋ ${n}</span><span class="sq"></span><span class="sp">${p > 0 ? '+¥' + p : ''}</span></div>`
+      }).join('')
+
+      const upgradeRows = (item.setMealChoices?.upgradeDetails || []).map((d: string) => {
+        const m = d.match(/\+¥(\d+)/)
+        const p = m ? parseInt(m[1]) : 0
+        const lbl = d.replace(/\s*\(\+¥\d+\)\s*$/, '').trim()
+        return `<div class="sub-row upgrade"><span class="sn">⬆️ ${lbl}</span><span class="sq"></span><span class="sp">+¥${p}</span></div>`
+      }).join('')
+
+      return `
+        <div class="iblock">
+          <div class="row">
+            <span class="rn"><b>${item.name}${item.variation ? ` (${item.variation})` : ''}</b></span>
+            <span class="rq">×${item.quantity}</span>
+            <span class="rp">${formatPrice((item.price || 0) * (item.quantity || 1))}</span>
+          </div>
+          ${item.spiceLevel ? `<div class="sub-row info"><span class="sn">🌶️ ${item.spiceLevel}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.curries?.length ? `<div class="sub-row info"><span class="sn">🍛 ${item.setMealChoices.curries.join(' + ')}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.naan ? `<div class="sub-row info"><span class="sn">🫓 ${item.setMealChoices.naan}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.rice ? `<div class="sub-row info"><span class="sn">🍚 ${item.setMealChoices.rice}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.drink ? `<div class="sub-row info"><span class="sn">🥤 ${item.setMealChoices.drink}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${addonRows}
+          ${upgradeRows}
+        </div>`
+    }
+
     // 58mm thermal paper (MPSB20) = 220px at 96dpi — opening at this width forces Safari/iPad to render at receipt width
     const printWindow = window.open('', '', 'width=220,height=600')
     if (!printWindow) return
@@ -484,12 +516,21 @@ export default function AdminDashboard() {
         .info { text-align: center; margin: 4px 0; }
         .info .table-num { font-size: 12pt; font-weight: bold; }
         .info .detail { font-size: 7pt; color: #666; }
-        .items { margin: 4px 0; }
-        .item { display: flex; justify-content: space-between; padding: 2px 0; }
-        .item-name { flex: 1; word-break: break-word; padding-right: 2px; font-size: 8pt; }
-        .item-qty { width: 20px; text-align: center; flex-shrink: 0; font-size: 8pt; }
-        .item-price { width: 46px; text-align: right; font-weight: bold; flex-shrink: 0; font-size: 8pt; }
-        .addon { font-size: 7pt; color: #666; padding-left: 4px; }
+        /* Main item row */
+        .iblock { border-bottom: 1px dotted #bbb; padding: 2px 0 4px; margin-bottom: 2px; }
+        .row { display: flex; justify-content: space-between; padding: 2px 0; }
+        .rn { flex: 1; word-break: break-word; padding-right: 2px; font-size: 8pt; }
+        .rq { width: 20px; text-align: center; flex-shrink: 0; font-size: 8pt; }
+        .rp { width: 48px; text-align: right; font-weight: bold; flex-shrink: 0; font-size: 8pt; }
+        /* Sub-item rows */
+        .sub-row { display: flex; justify-content: space-between; padding: 1px 0; }
+        .sn { flex: 1; word-break: break-word; padding-left: 6px; font-size: 7pt; }
+        .sq { width: 20px; flex-shrink: 0; }
+        .sp { width: 48px; text-align: right; flex-shrink: 0; font-size: 7pt; }
+        .info .sn { color: #555; }
+        .addon .sn { color: #444; } .addon .sp { color: #444; }
+        .upgrade .sn { color: #b35900; font-weight: bold; } .upgrade .sp { color: #b35900; font-weight: bold; }
+        /* Totals */
         .totals { border-top: 1px solid #000; padding-top: 3px; margin-top: 3px; }
         .total-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 8pt; }
         .grand-total { font-size: 11pt; font-weight: bold; border-top: 2px solid #000; margin-top: 3px; padding-top: 3px; }
@@ -515,26 +556,13 @@ export default function AdminDashboard() {
           <div class="detail">Order #${order.id.slice(0, 8).toUpperCase()}</div>
         </div>
         <div class="divider"></div>
-        <div class="items">
-          <div class="item" style="font-weight:bold;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:4px;">
-            <span class="item-name">ITEM</span>
-            <span class="item-qty">QTY</span>
-            <span class="item-price">PRICE</span>
+        <div>
+          <div class="row" style="font-weight:bold;border-bottom:1px solid #000;padding-bottom:3px;margin-bottom:3px;">
+            <span class="rn">ITEM</span>
+            <span class="rq">QTY</span>
+            <span class="rp">PRICE</span>
           </div>
-          ${items.map((item: any) => `
-            <div class="item">
-              <span class="item-name">${item.name}</span>
-              <span class="item-qty">×${item.quantity}</span>
-              <span class="item-price">${formatPrice((item.price || 0) * (item.quantity || 1))}</span>
-            </div>
-            ${item.addOns?.map((a: any) => `
-              <div class="item addon">
-                <span class="item-name">+ ${a.name}</span>
-                <span class="item-qty"></span>
-                <span class="item-price">${formatPrice(a.price || 0)}</span>
-              </div>
-            `).join('') || ''}
-          `).join('')}
+          ${items.map(buildItemRows).join('')}
         </div>
         <div class="totals">
           <div class="total-row">

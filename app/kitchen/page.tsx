@@ -191,6 +191,38 @@ export default function KitchenDisplayPage() {
     const printWindow = window.open('', '', 'width=220,height=600')
     if (!printWindow) return
 
+    // Build detailed item rows: each add-on and upgrade as a separate priced line
+    const buildItemRows = (item: OrderItem): string => {
+      const addonRows = (item.addOns || []).map((a: any) => {
+        const n = typeof a === 'string' ? a : a.name
+        const p = typeof a !== 'string' ? (a.price || 0) : 0
+        return `<div class="sub-row addon"><span class="sn">＋ ${n}</span><span class="sq"></span><span class="sp">${p > 0 ? '+¥' + p : ''}</span></div>`
+      }).join('')
+
+      const upgradeRows = (item.setMealChoices?.upgradeDetails || []).map((d: string) => {
+        const m = d.match(/\+¥(\d+)/)
+        const p = m ? parseInt(m[1]) : 0
+        const lbl = d.replace(/\s*\(\+¥\d+\)\s*$/, '').trim()
+        return `<div class="sub-row upgrade"><span class="sn">⬆️ ${lbl}</span><span class="sq"></span><span class="sp">+¥${p}</span></div>`
+      }).join('')
+
+      return `
+        <div class="iblock">
+          <div class="row">
+            <span class="rn"><b>${item.name}${item.variation ? ` (${item.variation})` : ''}</b></span>
+            <span class="rq">×${item.quantity}</span>
+            <span class="rp">${formatPrice((item.price || 0) * (item.quantity || 1))}</span>
+          </div>
+          ${item.spiceLevel ? `<div class="sub-row info"><span class="sn">🌶️ ${item.spiceLevel}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.curries?.length ? `<div class="sub-row info"><span class="sn">🍛 ${item.setMealChoices.curries.join(' + ')}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.naan ? `<div class="sub-row info"><span class="sn">🫓 ${item.setMealChoices.naan}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.rice ? `<div class="sub-row info"><span class="sn">🍚 ${item.setMealChoices.rice}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.drink ? `<div class="sub-row info"><span class="sn">🥤 ${item.setMealChoices.drink}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${addonRows}
+          ${upgradeRows}
+        </div>`
+    }
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html><head><title></title>
@@ -203,14 +235,24 @@ export default function KitchenDisplayPage() {
         .header { text-align: center; margin-bottom: 5px; }
         .divider { border-top: 2px dashed #000; margin: 4px 0; }
         .info { text-align: center; margin: 4px 0; }
-        .item { display: flex; justify-content: space-between; padding: 2px 0; }
-        .item-name { flex: 1; word-break: break-word; padding-right: 2px; font-size: 8pt; }
-        .item-qty { width: 20px; text-align: center; flex-shrink: 0; font-size: 8pt; }
-        .item-price { width: 46px; text-align: right; font-weight: bold; flex-shrink: 0; font-size: 8pt; }
-        .sub { font-size: 7pt; color: #555; padding-left: 4px; }
+        /* Main item row */
+        .row { display: flex; justify-content: space-between; padding: 2px 0; }
+        .rn { flex: 1; word-break: break-word; padding-right: 2px; font-size: 8pt; }
+        .rq { width: 20px; text-align: center; flex-shrink: 0; font-size: 8pt; }
+        .rp { width: 48px; text-align: right; font-weight: bold; flex-shrink: 0; font-size: 8pt; }
+        /* Sub-item rows */
+        .iblock { border-bottom: 1px dotted #bbb; padding: 2px 0 4px; margin-bottom: 2px; }
+        .sub-row { display: flex; justify-content: space-between; padding: 1px 0; }
+        .sn { flex: 1; word-break: break-word; padding-left: 6px; font-size: 7pt; }
+        .sq { width: 20px; flex-shrink: 0; }
+        .sp { width: 48px; text-align: right; flex-shrink: 0; font-size: 7pt; }
+        .info .sn { color: #555; }
+        .addon .sn { color: #555; } .addon .sp { color: #555; }
+        .upgrade .sn { color: #b35900; font-weight: bold; } .upgrade .sp { color: #b35900; font-weight: bold; }
+        /* Totals */
         .totals { border-top: 1px solid #000; padding-top: 3px; margin-top: 3px; }
-        .total-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 8pt; }
-        .grand-total { font-size: 11pt; font-weight: bold; border-top: 2px solid #000; margin-top: 3px; padding-top: 3px; }
+        .trow { display: flex; justify-content: space-between; padding: 2px 0; font-size: 8pt; }
+        .grand { font-size: 11pt; font-weight: bold; border-top: 2px solid #000; margin-top: 3px; padding-top: 3px; }
         .footer { text-align: center; margin-top: 6px; font-size: 8pt; }
         @media print { @page { size: 58mm auto; margin: 0mm; } html, body { width: 58mm !important; margin: 0 !important; } }
       </style></head><body>
@@ -229,35 +271,22 @@ export default function KitchenDisplayPage() {
         </div>
         <div class="divider"></div>
         <div>
-          <div class="item" style="font-weight:bold;border-bottom:1px solid #ccc;padding-bottom:4px;margin-bottom:4px;">
-            <span class="item-name">ITEM</span>
-            <span class="item-qty">QTY</span>
-            <span class="item-price">PRICE</span>
+          <div class="row" style="font-weight:bold;border-bottom:1px solid #000;padding-bottom:3px;margin-bottom:3px;">
+            <span class="rn">ITEM</span>
+            <span class="rq">QTY</span>
+            <span class="rp">PRICE</span>
           </div>
-          ${items.map((item: OrderItem) => `
-            <div class="item">
-              <span class="item-name">${item.name}${item.variation ? ` (${item.variation})` : ''}</span>
-              <span class="item-qty">×${item.quantity}</span>
-              <span class="item-price">${formatPrice((item.price || 0) * (item.quantity || 1))}</span>
-            </div>
-            ${item.spiceLevel ? `<div class="sub">🌶️ ${item.spiceLevel}</div>` : ''}
-            ${item.addOns?.map((a: any) => `<div class="sub">＋ ${typeof a === 'string' ? a : a.name}${typeof a !== 'string' && a.price ? ` (+${formatPrice(a.price)})` : ''}</div>`).join('') || ''}
-            ${item.setMealChoices?.curries?.length ? `<div class="sub">🍛 ${item.setMealChoices.curries.join(' + ')}</div>` : ''}
-            ${item.setMealChoices?.naan ? `<div class="sub">🫓 ${item.setMealChoices.naan}</div>` : ''}
-            ${item.setMealChoices?.rice ? `<div class="sub">🍚 ${item.setMealChoices.rice}</div>` : ''}
-            ${item.setMealChoices?.drink ? `<div class="sub">🥤 ${item.setMealChoices.drink}</div>` : ''}
-            ${item.setMealChoices?.upgradeDetails?.length ? `<div class="sub" style="color:#c47000;font-weight:bold;">⬆️ ${item.setMealChoices.upgradeDetails.join(', ')}</div>` : ''}
-          `).join('')}
+          ${items.map(buildItemRows).join('')}
         </div>
         <div class="totals">
-          <div class="total-row">
+          <div class="trow">
             <span>Subtotal / 小計</span>
             <span>${formatPrice(total)}</span>
           </div>
-          <div class="total-row" style="font-size:7pt;color:#666;">
+          <div class="trow" style="font-size:7pt;color:#666;">
             <span>Tax Included / 消費税込</span>
           </div>
-          <div class="total-row grand-total">
+          <div class="trow grand">
             <span>TOTAL / 合計</span>
             <span>${formatPrice(total)}</span>
           </div>
