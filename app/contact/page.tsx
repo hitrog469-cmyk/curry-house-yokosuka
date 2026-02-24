@@ -13,16 +13,27 @@ export default function ContactPage() {
     subject: '',
     message: ''
   });
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate form submission
-    setStatus('success');
-    setTimeout(() => {
+    setStatus('loading');
+    setErrorMsg('');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to send message');
+      setStatus('success');
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
-      setStatus('idle');
-    }, 3000);
+    } catch (err: any) {
+      setStatus('error');
+      setErrorMsg(err.message || 'Something went wrong. Please try again.');
+    }
   };
 
   // Restaurant info
@@ -236,7 +247,14 @@ export default function ContactPage() {
               {status === 'success' && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
                   <p className="text-green-700 font-semibold text-center flex items-center justify-center gap-2">
-                    Thank you! Your message has been sent.
+                    ✅ Thank you! Your message has been sent. Check your email for confirmation.
+                  </p>
+                </div>
+              )}
+              {status === 'error' && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <p className="text-red-700 font-semibold text-center">
+                    ❌ {errorMsg}
                   </p>
                 </div>
               )}
@@ -324,9 +342,10 @@ export default function ContactPage() {
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-4 rounded-xl transition-all font-bold text-lg shadow-md hover:shadow-lg"
+                  disabled={status === 'loading'}
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-60 text-white px-8 py-4 rounded-xl transition-all font-bold text-lg shadow-md hover:shadow-lg"
                 >
-                  Send Message
+                  {status === 'loading' ? '⏳ Sending...' : '✉️ Send Message'}
                 </button>
               </form>
             </div>

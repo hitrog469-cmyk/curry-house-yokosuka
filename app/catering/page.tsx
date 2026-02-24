@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
-import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import Link from 'next/link'
 
 export default function CateringPage() {
@@ -19,39 +18,39 @@ export default function CateringPage() {
   })
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-
-  const supabase = getSupabaseBrowserClient()
+  const [errorMsg, setErrorMsg] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!supabase) return
     setLoading(true)
+    setErrorMsg('')
 
     try {
-      const { error } = await supabase
-        .from('catering_inquiries')
-        .insert({
-          ...formData,
-          guest_count: parseInt(formData.guestCount),
-          status: 'pending'
-        })
-
-      if (error) throw error
+      const res = await fetch('/api/catering', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          event_type: formData.eventType,
+          guest_count: formData.guestCount,
+          event_date: formData.eventDate,
+          event_time: formData.eventTime,
+          special_requirements: formData.specialRequirements,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Failed to submit')
 
       setSubmitted(true)
       setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        eventType: '',
-        guestCount: '',
-        eventDate: '',
-        eventTime: '',
-        specialRequirements: ''
+        name: '', phone: '', email: '', eventType: '',
+        guestCount: '', eventDate: '', eventTime: '', specialRequirements: ''
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting inquiry:', error)
-      alert('Failed to submit inquiry. Please try again or call us directly.')
+      setErrorMsg(error.message || 'Failed to submit inquiry. Please try again or call us directly.')
     } finally {
       setLoading(false)
     }

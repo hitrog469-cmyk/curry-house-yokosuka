@@ -19,6 +19,37 @@ export default function CareersPage() {
   const [selectedJob, setSelectedJob] = useState<JobPosition | null>(null);
   const [showApplicationForm, setShowApplicationForm] = useState(false);
 
+  // Application form state
+  const [appForm, setAppForm] = useState({
+    name: '', email: '', phone: '', position: '', cover_letter: '',
+  });
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [appStatus, setAppStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [appError, setAppError] = useState('');
+
+  const handleAppSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAppStatus('loading');
+    setAppError('');
+    try {
+      const fd = new FormData();
+      fd.append('name', appForm.name);
+      fd.append('email', appForm.email);
+      fd.append('phone', appForm.phone);
+      fd.append('position', appForm.position);
+      fd.append('cover_letter', appForm.cover_letter);
+      if (cvFile) fd.append('cv', cvFile);
+
+      const res = await fetch('/api/careers', { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Submission failed');
+      setAppStatus('success');
+    } catch (err: any) {
+      setAppStatus('error');
+      setAppError(err.message || 'Something went wrong');
+    }
+  };
+
   const jobs: JobPosition[] = [
     {
       id: '1',
@@ -327,11 +358,30 @@ export default function CareersPage() {
                 Fill out this form and we'll get back to you within 48 hours
               </p>
 
-              <form className="space-y-6" onSubmit={(e) => {
-                e.preventDefault();
-                alert('Application submitted! We\'ll contact you soon.');
-                setShowApplicationForm(false);
-              }}>
+              {/* Success state */}
+              {appStatus === 'success' ? (
+                <div className="text-center py-8">
+                  <div className="text-6xl mb-4">🎉</div>
+                  <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Application Submitted!</h3>
+                  <p className="text-gray-500 dark:text-gray-400 mb-6">
+                    We&apos;ve received your application and sent a confirmation to your email.<br />
+                    We&apos;ll be in touch within 48 hours.
+                  </p>
+                  <button
+                    onClick={() => { setShowApplicationForm(false); setAppStatus('idle'); setAppForm({ name:'', email:'', phone:'', position:'', cover_letter:'' }); setCvFile(null); }}
+                    className="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-purple-700 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+              <form className="space-y-6" onSubmit={handleAppSubmit}>
+                {appStatus === 'error' && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-red-700 font-semibold text-sm">❌ {appError}</p>
+                  </div>
+                )}
+
                 <div className="grid md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
@@ -340,6 +390,8 @@ export default function CareersPage() {
                     <input
                       type="text"
                       required
+                      value={appForm.name}
+                      onChange={e => setAppForm(f => ({ ...f, name: e.target.value }))}
                       className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors text-gray-900 dark:text-white"
                     />
                   </div>
@@ -351,6 +403,8 @@ export default function CareersPage() {
                     <input
                       type="email"
                       required
+                      value={appForm.email}
+                      onChange={e => setAppForm(f => ({ ...f, email: e.target.value }))}
                       className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors text-gray-900 dark:text-white"
                     />
                   </div>
@@ -363,6 +417,8 @@ export default function CareersPage() {
                   <input
                     type="tel"
                     required
+                    value={appForm.phone}
+                    onChange={e => setAppForm(f => ({ ...f, phone: e.target.value }))}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors text-gray-900 dark:text-white"
                   />
                 </div>
@@ -373,13 +429,15 @@ export default function CareersPage() {
                   </label>
                   <select
                     required
+                    value={appForm.position}
+                    onChange={e => setAppForm(f => ({ ...f, position: e.target.value }))}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors text-gray-900 dark:text-white"
                   >
                     <option value="">Select a position</option>
                     {jobs.map(job => (
-                      <option key={job.id} value={job.id}>{job.title}</option>
+                      <option key={job.id} value={job.title}>{job.title}</option>
                     ))}
-                    <option value="other">Other / General Application</option>
+                    <option value="Other / General Application">Other / General Application</option>
                   </select>
                 </div>
 
@@ -390,6 +448,8 @@ export default function CareersPage() {
                   <textarea
                     required
                     rows={4}
+                    value={appForm.cover_letter}
+                    onChange={e => setAppForm(f => ({ ...f, cover_letter: e.target.value }))}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors text-gray-900 dark:text-white resize-none"
                   />
                 </div>
@@ -401,20 +461,26 @@ export default function CareersPage() {
                   <input
                     type="file"
                     accept=".pdf,.doc,.docx"
+                    onChange={e => setCvFile(e.target.files?.[0] || null)}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 outline-none transition-colors text-gray-900 dark:text-white"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    PDF, DOC, or DOCX format (optional)
+                    PDF, DOC, or DOCX format · Max 5MB (optional)
                   </p>
+                  {cvFile && (
+                    <p className="text-xs text-purple-600 mt-1 font-semibold">📎 {cvFile.name}</p>
+                  )}
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-bold text-lg shadow-xl"
+                  disabled={appStatus === 'loading'}
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 transition-all font-bold text-lg shadow-xl"
                 >
-                  Submit Application
+                  {appStatus === 'loading' ? '⏳ Submitting...' : '🚀 Submit Application'}
                 </button>
               </form>
+              )}
             </div>
           </div>
         </div>

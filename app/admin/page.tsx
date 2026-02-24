@@ -6,11 +6,14 @@ import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
-import { ClipboardList, BarChart3, Star, Users } from 'lucide-react'
+import { ClipboardList, BarChart3, Star, Users, Mail, Briefcase, PartyPopper } from 'lucide-react'
 import ToggleTabs from '@/components/ui/ToggleTabs'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import AdminAnalyticsView from '@/components/admin/AdminAnalyticsView'
 import AdminUsersView from '@/components/admin/AdminUsersView'
+import AdminContactView from '@/components/admin/AdminContactView'
+import AdminCareersView from '@/components/admin/AdminCareersView'
+import AdminCateringView from '@/components/admin/AdminCateringView'
 import StarRating from '@/components/StarRating'
 
 type Order = {
@@ -246,7 +249,7 @@ export default function AdminDashboard() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const prevOrderCountRef = useRef(0)
-  const [activeView, setActiveView] = useState<'orders' | 'analytics' | 'reviews' | 'users'>('orders')
+  const [activeView, setActiveView] = useState<'orders' | 'analytics' | 'reviews' | 'users' | 'contact' | 'careers' | 'catering'>('orders')
   const [reviews, setReviews] = useState<Review[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
 
@@ -678,10 +681,13 @@ export default function AdminDashboard() {
               { id: 'orders', label: 'Orders', icon: ClipboardList, badge: stats.pendingOnline + stats.pendingTable },
               { id: 'analytics', label: 'Analytics', icon: BarChart3 },
               { id: 'reviews', label: 'Reviews', icon: Star },
+              { id: 'contact', label: 'Contact', icon: Mail },
+              { id: 'careers', label: 'Careers', icon: Briefcase },
+              { id: 'catering', label: 'Catering', icon: PartyPopper },
               { id: 'users', label: 'Users', icon: Users },
             ]}
             activeTab={activeView}
-            onChange={(id) => setActiveView(id as 'orders' | 'analytics' | 'reviews' | 'users')}
+            onChange={(id) => setActiveView(id as 'orders' | 'analytics' | 'reviews' | 'users' | 'contact' | 'careers' | 'catering')}
             size="sm"
           />
         </div>
@@ -700,6 +706,12 @@ export default function AdminDashboard() {
           />
         ) : activeView === 'users' ? (
           <AdminUsersView />
+        ) : activeView === 'contact' ? (
+          <AdminContactView />
+        ) : activeView === 'careers' ? (
+          <AdminCareersView />
+        ) : activeView === 'catering' ? (
+          <AdminCateringView />
         ) : (
         <>
         {/* Today's Stats */}
