@@ -31,6 +31,18 @@ function TableOrderContent() {
   const [pinError, setPinError] = useState(false)
   const [pinLoading, setPinLoading] = useState(false)
 
+  // Re-order PIN — required to place additional orders after the first
+  const [reorderPinVerified, setReorderPinVerified] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false
+    const tableNum = new URLSearchParams(window.location.search).get('table')
+    if (!tableNum) return true
+    return sessionStorage.getItem(`reorder_verified_table_${tableNum}`) === 'true'
+  })
+  const [showReorderPinModal, setShowReorderPinModal] = useState(false)
+  const [reorderPinInput, setReorderPinInput] = useState('')
+  const [reorderPinError, setReorderPinError] = useState(false)
+  const [reorderPinLoading, setReorderPinLoading] = useState(false)
+
   // Order setup state
   const [setupComplete, setSetupComplete] = useState(false)
   const [selectedTables, setSelectedTables] = useState<number[]>(urlTableNumber ? [parseInt(urlTableNumber)] : [])
@@ -69,11 +81,12 @@ function TableOrderContent() {
 
   // Set meal selection state
   const [showSetMealModal, setShowSetMealModal] = useState<string | null>(null)
-  const [setMealSelections, setSetMealSelections] = useState<{[setId: string]: {curries: string[], naan: string, rice: string, drink?: string, upgradePrice: number, upgradeDetails: string[]}}>({})
+  const [setMealSelections, setSetMealSelections] = useState<{[setId: string]: {curries: string[], naan: string, rice: string, drink?: string, includedDrink?: string, upgradePrice: number, upgradeDetails: string[]}}>({})
   const [tempSetMealCurries, setTempSetMealCurries] = useState<string[]>([])
   const [tempSetMealNaan, setTempSetMealNaan] = useState<string>('plain-naan')
   const [tempSetMealRice, setTempSetMealRice] = useState<string>('plain-rice')
   const [tempSetMealDrink, setTempSetMealDrink] = useState<string>('')
+  const [tempSetMealIncludedDrink, setTempSetMealIncludedDrink] = useState<string>('')
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const categoryScrollRef = useRef<HTMLDivElement>(null)
@@ -196,6 +209,25 @@ function TableOrderContent() {
     { id: 'jeera-rice', name: 'Jeera Rice', nameJp: 'ジーラライス' },
   ]
 
+  // Included soft drink choices for set meals (same drinks as the menu's drink category)
+  const includedSoftDrinkOptions = [
+    { id: 'lassi',             name: 'Lassi',             nameJp: 'ラッシー' },
+    { id: 'mango-lassi',       name: 'Mango Lassi',       nameJp: 'マンゴーラッシー' },
+    { id: 'strawberry-lassi',  name: 'Strawberry Lassi',  nameJp: 'いちごラッシー' },
+    { id: 'blueberry-lassi',   name: 'Blueberry Lassi',   nameJp: 'ブルーベリーラッシー' },
+    { id: 'coke-zero',         name: 'Coke Zero',         nameJp: 'コーラゼロ' },
+    { id: 'coke',              name: 'Coke',              nameJp: 'コーラ' },
+    { id: 'ginger-ale',        name: 'Ginger Ale',        nameJp: 'ジンジャーエール' },
+    { id: 'oolong-tea',        name: 'Oolong Tea',        nameJp: 'ウーロン茶' },
+    { id: 'orange-juice',      name: 'Orange Juice',      nameJp: 'オレンジジュース' },
+    { id: 'pineapple-juice',   name: 'Pineapple Juice',   nameJp: 'パイナップルジュース' },
+    { id: 'apple-juice',       name: 'Apple Juice',       nameJp: 'アップルジュース' },
+    { id: 'grapefruit-juice',  name: 'Grapefruit Juice',  nameJp: 'グレープフルーツジュース' },
+    { id: 'ice-coffee',        name: 'Ice Coffee',        nameJp: 'アイスコーヒー' },
+    { id: 'ice-tea',           name: 'Ice Tea',           nameJp: 'アイスティー' },
+    { id: 'water',             name: 'Water',             nameJp: 'お水' },
+  ]
+
   const isSetMeal = (itemId: string) => Object.keys(setMealConfig).includes(itemId)
 
   const openSetMealModal = (setId: string) => {
@@ -204,6 +236,7 @@ function TableOrderContent() {
     setTempSetMealNaan(setMealSelections[setId]?.naan || defaultNaan)
     setTempSetMealRice(setMealSelections[setId]?.rice || 'plain-rice')
     setTempSetMealDrink(setMealSelections[setId]?.drink || '')
+    setTempSetMealIncludedDrink(setMealSelections[setId]?.includedDrink || '')
     setShowSetMealModal(setId)
   }
 
@@ -267,6 +300,7 @@ function TableOrderContent() {
         naan: tempSetMealNaan,
         rice: tempSetMealRice,
         drink: tempSetMealDrink || undefined,
+        includedDrink: !tempSetMealDrink && tempSetMealIncludedDrink ? tempSetMealIncludedDrink : undefined,
         upgradePrice,
         upgradeDetails,
       }
@@ -291,12 +325,38 @@ function TableOrderContent() {
       .maybeSingle()
     if (data && data.pin === pin) {
       sessionStorage.setItem(`pin_verified_table_${urlTableNumber}`, 'true')
+      // Entering the table PIN also clears the re-order gate for this session
+      sessionStorage.setItem(`reorder_verified_table_${urlTableNumber}`, 'true')
       setPinVerified(true)
+      setReorderPinVerified(true)
     } else {
       setPinError(true)
       setPinInput('')
     }
     setPinLoading(false)
+  }
+
+  const verifyReorderPin = async (pinToCheck?: string, onSuccess?: () => void) => {
+    const pin = pinToCheck ?? reorderPinInput
+    if (!urlTableNumber || !supabase || pin.length !== 4) return
+    setReorderPinLoading(true)
+    setReorderPinError(false)
+    const { data } = await supabase
+      .from('table_pins')
+      .select('pin')
+      .eq('table_number', parseInt(urlTableNumber))
+      .maybeSingle()
+    if (data && data.pin === pin) {
+      sessionStorage.setItem(`reorder_verified_table_${urlTableNumber}`, 'true')
+      setReorderPinVerified(true)
+      setShowReorderPinModal(false)
+      setReorderPinInput('')
+      onSuccess?.()
+    } else {
+      setReorderPinError(true)
+      setReorderPinInput('')
+    }
+    setReorderPinLoading(false)
   }
 
   const filteredItems = useMemo(() => {
@@ -763,7 +823,9 @@ function TableOrderContent() {
             rice: riceOptions.find(r => r.id === setSelections.rice)?.name || 'Plain Rice',
             drink: setSelections.drink
               ? drinkUpgradeOptions.find(d => d.id === setSelections.drink)?.name
-              : undefined,
+              : setSelections.includedDrink
+                ? includedSoftDrinkOptions.find(d => d.id === setSelections.includedDrink)?.name || 'Soft Drink'
+                : 'Soft Drink (not specified)',
             upgradeDetails: setSelections.upgradeDetails || [],
           } : null
         }
@@ -1234,8 +1296,13 @@ function TableOrderContent() {
           <div className="space-y-3">
             <button
               onClick={() => {
-                setOrderSubmitted(false)
-                // Stay in add-on mode — table, name, session all preserved
+                if (urlTableNumber && !reorderPinVerified) {
+                  setReorderPinInput('')
+                  setReorderPinError(false)
+                  setShowReorderPinModal(true)
+                } else {
+                  setOrderSubmitted(false)
+                }
               }}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-md"
             >
@@ -1590,9 +1657,12 @@ function TableOrderContent() {
                             return uc ? uc.name : (menuItems.find(i => i.id === cId)?.name || cId)
                           }).join(', ')}</p>
                           <p>🫓 {getNaanOptionsForSet(itemId).find(n => n.id === setMealSelections[itemId].naan)?.name || 'Plain Naan'} · {riceOptions.find(r => r.id === setMealSelections[itemId].rice)?.name || 'Plain Rice'}</p>
-                          {setMealSelections[itemId].drink && (
-                            <p>🥤 {drinkUpgradeOptions.find(d => d.id === setMealSelections[itemId].drink)?.name}</p>
-                          )}
+                          {setMealSelections[itemId].drink
+                            ? <p>🥤 {drinkUpgradeOptions.find(d => d.id === setMealSelections[itemId].drink)?.name} (upgrade)</p>
+                            : setMealSelections[itemId].includedDrink
+                              ? <p>🥤 {includedSoftDrinkOptions.find(d => d.id === setMealSelections[itemId].includedDrink)?.name}</p>
+                              : <p className="text-amber-600">🥤 Soft drink not chosen yet</p>
+                          }
                           {setMealSelections[itemId].upgradeDetails && setMealSelections[itemId].upgradeDetails.length > 0 && (
                             <p className="text-orange-600 font-semibold">⬆️ {setMealSelections[itemId].upgradeDetails.join(', ')}</p>
                           )}
@@ -2060,11 +2130,13 @@ function TableOrderContent() {
                   </div>
                 )}
 
-                {/* Drink Upgrade */}
+                {/* Drink Selection */}
                 <div>
-                  <h4 className="font-bold text-gray-900 mb-1">🥤 Upgrade Your Drink</h4>
-                  <p className="text-xs text-gray-500 mb-3">Included soft drink / water · Upgrade to something special</p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <h4 className="font-bold text-gray-900 mb-1">🥤 Choose Your Drink</h4>
+                  <p className="text-xs text-gray-500 mb-3">Pick a soft drink (included) or upgrade to something special</p>
+
+                  {/* Tier selector: Included vs Upgrade */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
                     <button
                       onClick={() => setTempSetMealDrink('')}
                       className={`p-3 rounded-xl border-2 text-left transition-all ${
@@ -2074,29 +2146,55 @@ function TableOrderContent() {
                       }`}
                     >
                       <div className="flex items-center justify-between gap-1">
-                        <p className="font-semibold text-sm text-gray-900">Included Drink</p>
+                        <p className="font-semibold text-sm text-gray-900">Soft Drink</p>
                         <span className="text-xs bg-green-100 text-green-700 font-semibold px-1.5 py-0.5 rounded">Free</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">付属のドリンク</p>
+                      <p className="text-xs text-gray-500 mt-0.5">ソフトドリンク</p>
                     </button>
-                    {drinkUpgradeOptions.map(drink => (
-                      <button
-                        key={drink.id}
-                        onClick={() => setTempSetMealDrink(drink.id)}
-                        className={`p-3 rounded-xl border-2 text-left transition-all ${
-                          tempSetMealDrink === drink.id
-                            ? 'border-blue-500 bg-blue-50'
-                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1">
-                          <p className="font-semibold text-sm text-gray-900">{drink.name}</p>
-                          <span className="text-xs bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded">+¥{drink.price}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-0.5">{drink.nameJp}</p>
-                      </button>
-                    ))}
+                    <div className="relative">
+                      <p className="text-[10px] font-bold text-orange-600 uppercase mb-1">Paid Upgrades</p>
+                      {drinkUpgradeOptions.map(drink => (
+                        <button
+                          key={drink.id}
+                          onClick={() => setTempSetMealDrink(drink.id)}
+                          className={`w-full p-3 rounded-xl border-2 text-left transition-all mb-1 ${
+                            tempSetMealDrink === drink.id
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="font-semibold text-sm text-gray-900">{drink.name}</p>
+                            <span className="text-xs bg-orange-100 text-orange-700 font-bold px-1.5 py-0.5 rounded">+¥{drink.price}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">{drink.nameJp}</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Soft drink picker — shown only when "Soft Drink" (no upgrade) is selected */}
+                  {tempSetMealDrink === '' && (
+                    <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                      <p className="text-xs font-bold text-blue-800 mb-2">Which soft drink would you like?</p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {includedSoftDrinkOptions.map(sd => (
+                          <button
+                            key={sd.id}
+                            onClick={() => setTempSetMealIncludedDrink(sd.id)}
+                            className={`p-2.5 rounded-lg border-2 text-left transition-all ${
+                              tempSetMealIncludedDrink === sd.id
+                                ? 'border-blue-500 bg-white shadow-sm'
+                                : 'border-transparent bg-white/70 hover:bg-white hover:border-blue-300'
+                            }`}
+                          >
+                            <p className="font-semibold text-xs text-gray-900">{sd.name}</p>
+                            <p className="text-[10px] text-gray-500">{sd.nameJp}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Set Contents Summary */}
@@ -2248,6 +2346,87 @@ function TableOrderContent() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== RE-ORDER PIN MODAL ===== */}
+      {showReorderPinModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-7 text-center">
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-black text-gray-900 mb-1">Confirm to Order More</h2>
+            <p className="text-gray-500 text-sm mb-5">
+              Enter the <strong>4-digit table PIN</strong> from the card on your table.
+            </p>
+
+            {/* PIN dots */}
+            <div className="flex justify-center gap-3 mb-2">
+              {[0, 1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className={`w-13 h-14 border-2 rounded-xl flex items-center justify-center text-2xl font-black transition-all w-12
+                    ${reorderPinInput.length > i
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : 'border-gray-200 bg-gray-50 text-gray-200'
+                    } ${reorderPinError ? 'border-red-400 bg-red-50 animate-pulse' : ''}`}
+                >
+                  {reorderPinInput[i] ? '●' : '·'}
+                </div>
+              ))}
+            </div>
+
+            {reorderPinError && (
+              <p className="text-red-500 text-sm font-semibold mb-3 mt-2">
+                Wrong PIN. Check the card on your table.
+              </p>
+            )}
+            {!reorderPinError && <div className="mb-3" />}
+
+            {/* Number pad */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, i) => (
+                <button
+                  key={i}
+                  disabled={!key || reorderPinLoading}
+                  onClick={() => {
+                    if (!key) return
+                    if (key === '⌫') {
+                      setReorderPinInput(p => p.slice(0, -1))
+                      setReorderPinError(false)
+                    } else if (reorderPinInput.length < 4) {
+                      const next = reorderPinInput + key
+                      setReorderPinInput(next)
+                      setReorderPinError(false)
+                      if (next.length === 4) verifyReorderPin(next, () => setOrderSubmitted(false))
+                    }
+                  }}
+                  className={`h-12 rounded-xl font-bold text-lg transition-all select-none
+                    ${!key ? 'invisible' : 'bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-800 cursor-pointer'}
+                    ${reorderPinLoading ? 'opacity-50 cursor-wait' : ''}`}
+                >
+                  {key}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => verifyReorderPin(undefined, () => setOrderSubmitted(false))}
+              disabled={reorderPinInput.length !== 4 || reorderPinLoading}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3 rounded-xl transition-all mb-2"
+            >
+              {reorderPinLoading ? '⏳ Checking...' : 'Confirm →'}
+            </button>
+            <button
+              onClick={() => { setShowReorderPinModal(false); setReorderPinInput(''); setReorderPinError(false) }}
+              className="w-full text-gray-400 text-sm py-2 hover:text-gray-600 transition-colors"
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
