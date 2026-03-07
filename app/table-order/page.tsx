@@ -918,12 +918,26 @@ function TableOrderContent() {
         throw tableError
       }
 
-      // Update session total amount
+      // Update session total amount — accumulate add-on orders
       if (sessionId) {
-        await supabase
-          .from('table_sessions')
-          .update({ total_amount: totalAmount, updated_at: new Date().toISOString() })
-          .eq('id', sessionId)
+        if (isAddOnMode) {
+          // Fetch current session total and add the new order on top
+          const { data: currentSession } = await supabase
+            .from('table_sessions')
+            .select('total_amount')
+            .eq('id', sessionId)
+            .maybeSingle()
+          const prevTotal = currentSession?.total_amount ?? 0
+          await supabase
+            .from('table_sessions')
+            .update({ total_amount: prevTotal + totalAmount, updated_at: new Date().toISOString() })
+            .eq('id', sessionId)
+        } else {
+          await supabase
+            .from('table_sessions')
+            .update({ total_amount: totalAmount, updated_at: new Date().toISOString() })
+            .eq('id', sessionId)
+        }
       }
 
       const { error: orderError } = await supabase
