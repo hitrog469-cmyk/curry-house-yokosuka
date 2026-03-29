@@ -27,7 +27,7 @@ const TABLE_TOKENS: { [key: number]: string } = {
 }
 
 export default function QRCodesPage() {
-  const [baseUrl, setBaseUrl] = useState('https://curry-house-yokosuka.vercel.app')
+  const [baseUrl, setBaseUrl] = useState('https://www.thecurryhouseyokosuka.com')
   const totalTables = 18
 
   const generateQRCodeUrl = (tableNumber: number) => {
