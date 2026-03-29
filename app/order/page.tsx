@@ -288,16 +288,11 @@ export default function OrderPage() {
       return
     }
 
-    if (!placeSelected) {
-      alert('Please select your delivery address from the Google Maps suggestions to ensure accurate delivery.')
-      return
-    }
-
-    // Block orders outside 5km radius
+    // Block orders outside 5km radius (only if GPS location was used)
     if (selectedLat && selectedLng) {
       const distance = calculateDistance(RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng, selectedLat, selectedLng)
       if (distance > 5) {
-        alert(`❌ Sorry! We only deliver within 5km of our restaurant.\n\nYour address is ${distance.toFixed(1)}km away.\n\nPlease contact us for special arrangements.`)
+        alert(`❌ Sorry! We only deliver within 5km of our restaurant.\n\nYour location is ${distance.toFixed(1)}km away.\n\nPlease contact us for special arrangements.`)
         return
       }
     }
@@ -858,9 +853,57 @@ export default function OrderPage() {
                     )}
                   </div>
 
-                  {/* Delivery Address with Google Maps Autocomplete */}
+                  {/* Delivery Address */}
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Delivery Address *</label>
+
+                    {/* Use My Location button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!navigator.geolocation) {
+                          alert('Geolocation is not supported by your browser.')
+                          return
+                        }
+                        navigator.geolocation.getCurrentPosition(
+                          async (position) => {
+                            const lat = position.coords.latitude
+                            const lng = position.coords.longitude
+                            setSelectedLat(lat)
+                            setSelectedLng(lng)
+                            setPlaceSelected(true)
+                            const distance = calculateDistance(RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng, lat, lng)
+                            const feeResult = calculateDeliveryFee(distance)
+                            setDeliveryFee(feeResult.isWithinRange ? feeResult.fee : 0)
+                            setDeliveryFeeInfo(feeResult.message)
+                            setDeliveryDistance(distance)
+                            // Reverse geocode to get address text
+                            try {
+                              const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`)
+                              const data = await res.json()
+                              if (data.results?.[0]) {
+                                setFormData(prev => ({ ...prev, address: data.results[0].formatted_address }))
+                              } else {
+                                setFormData(prev => ({ ...prev, address: `${lat.toFixed(5)}, ${lng.toFixed(5)}` }))
+                              }
+                            } catch {
+                              setFormData(prev => ({ ...prev, address: `${lat.toFixed(5)}, ${lng.toFixed(5)}` }))
+                            }
+                          },
+                          () => alert('Could not get your location. Please type your address manually below.')
+                        )
+                      }}
+                      className="w-full mb-3 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all"
+                    >
+                      📍 Use My Current Location
+                    </button>
+
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="flex-1 h-px bg-gray-200" />
+                      <span className="text-xs text-gray-400 font-medium">or type manually</span>
+                      <div className="flex-1 h-px bg-gray-200" />
+                    </div>
+
                     <div className="relative">
                       <input
                         ref={addressInputRef}
@@ -868,44 +911,25 @@ export default function OrderPage() {
                         value={formData.address}
                         onChange={(e) => {
                           setFormData({...formData, address: e.target.value})
-                          // If user edits manually after selecting, invalidate the selection
-                          if (placeSelected) {
-                            setPlaceSelected(false)
-                            setSelectedLat(null)
-                            setSelectedLng(null)
-                            setDeliveryFee(0)
-                            setDeliveryFeeInfo('')
-                          }
+                          setPlaceSelected(false)
+                          setSelectedLat(null)
+                          setSelectedLng(null)
+                          setDeliveryFee(0)
+                          setDeliveryFeeInfo('')
+                          setDeliveryDistance(null)
                         }}
-                        className={`w-full px-4 py-3.5 border-2 rounded-xl focus:outline-none bg-gray-50 focus:bg-white transition-all focus:shadow-sm pr-10 ${
-                          placeSelected
-                            ? 'border-green-400 focus:border-green-500'
-                            : 'border-gray-200 focus:border-green-500'
-                        }`}
-                        placeholder="Start typing your address..."
-                        autoComplete="off"
+                        className="w-full px-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none bg-gray-50 focus:bg-white transition-all"
+                        placeholder="e.g. 2-3-2 Honcho, Yokosuka"
+                        autoComplete="street-address"
                       />
-                      {placeSelected && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-lg">✓</span>
-                      )}
                     </div>
 
-                    {/* Guidance text */}
-                    {!placeSelected && (
-                      <div className="mt-2 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
-                        <span className="text-blue-500 text-sm shrink-0">📍</span>
-                        <p className="text-blue-700 text-xs font-medium">
-                          Type your address and <strong>select it from the dropdown</strong> that appears. This ensures your exact location is confirmed on the map.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Map preview after place is selected */}
+                    {/* Map + distance preview after GPS location selected */}
                     {placeSelected && selectedLat && selectedLng && (
                       <div className="mt-3 rounded-xl overflow-hidden border-2 border-green-200 shadow-sm">
                         <div className="bg-green-50 px-3 py-2 flex items-center gap-2">
-                          <span className="text-green-600 text-sm">📍</span>
-                          <p className="text-green-700 text-xs font-bold">Location confirmed on map</p>
+                          <span className="text-green-600 text-sm">✅</span>
+                          <p className="text-green-700 text-xs font-bold">Location confirmed</p>
                         </div>
                         <iframe
                           src={`https://www.google.com/maps?q=${selectedLat},${selectedLng}&z=16&output=embed`}
