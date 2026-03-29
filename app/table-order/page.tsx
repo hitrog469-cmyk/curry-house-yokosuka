@@ -31,6 +31,11 @@ function TableOrderContent() {
   const [pinError, setPinError] = useState(false)
   const [pinLoading, setPinLoading] = useState(false)
 
+  // PIN reveal — shown to new customers after setup so they can save it
+  const [showPinReveal, setShowPinReveal] = useState(false)
+  const [revealedPin, setRevealedPin] = useState('')
+  const [pinCopied, setPinCopied] = useState(false)
+
   // Re-order PIN — required to place additional orders after the first
   const [reorderPinVerified, setReorderPinVerified] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false
@@ -114,13 +119,20 @@ function TableOrderContent() {
         .maybeSingle()
 
       if (activeSession) {
-        // Table is occupied - switch to add-on mode
+        // Table is occupied — PIN required to add more items
         setSessionId(activeSession.id)
         setTableOccupied(true)
         setIsAddOnMode(true)
         setCustomerName(activeSession.customer_name || '')
         setSelectedTables([tableNum])
-        setSetupComplete(true) // Skip setup, go straight to menu
+        setSetupComplete(true)
+        // PIN gate stays active (pinVerified stays false if not in sessionStorage)
+      } else {
+        // No active session — new customer, skip PIN gate, go straight to setup
+        setPinVerified(true)
+        sessionStorage.setItem(`pin_verified_table_${tableNum}`, 'true')
+        sessionStorage.setItem(`reorder_verified_table_${tableNum}`, 'true')
+        setReorderPinVerified(true)
       }
       setSessionChecked(true)
     }
@@ -766,6 +778,23 @@ function TableOrderContent() {
         .single()
 
       if (newSession) setSessionId(newSession.id)
+
+      // Fetch PIN for this table and reveal it to the customer
+      if (supabase && selectedTables[0]) {
+        const { data: pinRow } = await supabase
+          .from('table_pins')
+          .select('pin')
+          .eq('table_number', selectedTables[0])
+          .maybeSingle()
+        if (pinRow?.pin) {
+          setRevealedPin(pinRow.pin)
+          setShowPinReveal(true)
+          sessionStorage.setItem(`pin_verified_table_${selectedTables[0]}`, 'true')
+          sessionStorage.setItem(`reorder_verified_table_${selectedTables[0]}`, 'true')
+          setPinVerified(true)
+          setReorderPinVerified(true)
+        }
+      }
     }
 
     setSetupComplete(true)
@@ -1069,6 +1098,65 @@ function TableOrderContent() {
           <p className="text-xs text-gray-400 mt-4">
             Can't find the PIN? Ask a staff member for help.
           </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ==========================================
+  // PIN REVEAL SCREEN — shown once after setup
+  // ==========================================
+  if (setupComplete && showPinReveal && revealedPin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
+          <img src="/images/Logo.png" alt="The Curry House" className="w-16 h-16 mx-auto mb-4 object-contain" />
+          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span className="text-2xl">🔐</span>
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 mb-1">Your Table PIN</h1>
+          <p className="text-gray-500 text-sm mb-6">
+            Save this PIN — you&apos;ll need it to add more items later!
+          </p>
+
+          {/* Big PIN display */}
+          <div className="flex justify-center gap-3 mb-4">
+            {revealedPin.split('').map((digit, i) => (
+              <div
+                key={i}
+                className="w-16 h-20 bg-green-50 border-2 border-green-400 rounded-2xl flex items-center justify-center text-4xl font-black text-green-700 shadow-sm"
+              >
+                {digit}
+              </div>
+            ))}
+          </div>
+
+          {/* Copy button */}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(revealedPin)
+              setPinCopied(true)
+              setTimeout(() => setPinCopied(false), 2000)
+            }}
+            className={`w-full py-3 rounded-xl font-bold text-base transition-all mb-4 ${
+              pinCopied
+                ? 'bg-green-100 text-green-700 border-2 border-green-400'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-2 border-gray-200'
+            }`}
+          >
+            {pinCopied ? '✅ Copied!' : '📋 Tap to Copy PIN'}
+          </button>
+
+          <p className="text-xs text-amber-600 bg-amber-50 rounded-xl p-3 mb-5">
+            ⚠️ Keep this PIN safe. You&apos;ll need it if you want to order more items later at this table.
+          </p>
+
+          <button
+            onClick={() => setShowPinReveal(false)}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg transition-all"
+          >
+            Got it — Let&apos;s Order! 🍛
+          </button>
         </div>
       </div>
     )

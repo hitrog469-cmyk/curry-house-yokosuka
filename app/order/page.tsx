@@ -46,6 +46,11 @@ export default function OrderPage() {
     estimatedTime: string
   } | null>(null)
 
+  // 4-minute cancel window
+  const [cancelSecondsLeft, setCancelSecondsLeft] = useState(0)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelled, setCancelled] = useState(false)
+
   const supabase = getSupabaseBrowserClient()
 
   // Order form data
@@ -79,6 +84,27 @@ export default function OrderPage() {
   const [selectedAddOns, setSelectedAddOns] = useState<{[itemId: string]: string[]}>({})
   const [selectedVariations, setSelectedVariations] = useState<{[itemId: string]: number}>({})
   const [selectedSpiceLevels, setSelectedSpiceLevels] = useState<{[itemId: string]: string}>({})
+
+  // 4-minute cancel countdown timer
+  useEffect(() => {
+    if (cancelSecondsLeft <= 0) return
+    const timer = setInterval(() => {
+      setCancelSecondsLeft(s => {
+        if (s <= 1) { clearInterval(timer); return 0 }
+        return s - 1
+      })
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [cancelSecondsLeft])
+
+  const cancelOrder = async () => {
+    if (!confirmedOrder || !supabase || cancelSecondsLeft <= 0) return
+    setCancelling(true)
+    await supabase.from('orders').update({ status: 'cancelled' }).eq('id', confirmedOrder.id)
+    setCancelled(true)
+    setCancelling(false)
+    setCancelSecondsLeft(0)
+  }
 
   useEffect(() => {
     // Load cart from localStorage
@@ -343,6 +369,7 @@ export default function OrderPage() {
       setSelectedAddOns({})
       setSelectedVariations({})
       setSelectedSpiceLevels({})
+      setCancelSecondsLeft(4 * 60)
       setStep('confirmation')
     }
   }
@@ -1089,6 +1116,40 @@ export default function OrderPage() {
                   Order More
                 </Link>
               </div>
+
+              {/* 4-minute cancel window */}
+              {!cancelled && cancelSecondsLeft > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+                  <p className="text-sm text-red-600 font-semibold mb-1">
+                    Changed your mind? You can cancel within:
+                  </p>
+                  <p className="text-3xl font-black text-red-600 mb-3">
+                    {String(Math.floor(cancelSecondsLeft / 60)).padStart(2, '0')}:
+                    {String(cancelSecondsLeft % 60).padStart(2, '0')}
+                  </p>
+                  <button
+                    onClick={cancelOrder}
+                    disabled={cancelling}
+                    className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all"
+                  >
+                    {cancelling ? '⏳ Cancelling...' : '❌ Cancel Order'}
+                  </button>
+                </div>
+              )}
+
+              {cancelled && (
+                <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 text-center">
+                  <p className="text-2xl mb-2">✅</p>
+                  <p className="font-bold text-gray-800">Order Cancelled</p>
+                  <p className="text-sm text-gray-500 mt-1">Your order has been cancelled. No payment was taken.</p>
+                </div>
+              )}
+
+              {!cancelled && cancelSecondsLeft === 0 && (
+                <p className="text-center text-xs text-gray-400">
+                  ⏱️ Cancellation window has closed — your order is being prepared.
+                </p>
+              )}
             </div>
           )}
         </div>

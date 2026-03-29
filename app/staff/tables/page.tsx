@@ -84,6 +84,15 @@ export default function StaffTablesPage() {
 
       if (error) throw error
 
+      // Auto-regenerate PIN for this table so next customer gets a fresh one
+      const newPin = String(Math.floor(1000 + Math.random() * 9000))
+      await supabase
+        .from('table_pins')
+        .upsert(
+          { table_number: session.table_number, pin: newPin, updated_at: new Date().toISOString() },
+          { onConflict: 'table_number' }
+        )
+
       // Clear localStorage for this table (if staff is using same browser)
       localStorage.removeItem(`table_session_${session.table_number}`)
 
