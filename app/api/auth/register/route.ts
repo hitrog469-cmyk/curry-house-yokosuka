@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
+import { randomBytes } from 'crypto'
+import { sendVerificationEmail } from '@/lib/mailer'
 
 function getSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -52,13 +54,20 @@ export async function POST(request: Request) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 12)
 
-    // Create profile - use gen_random_uuid() on DB side for id
+    // Generate email verification token (expires in 24h)
+    const verificationToken = randomBytes(32).toString('hex')
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+    // Create profile — role always forced to 'customer'
     const insertData: any = {
       email: email.toLowerCase(),
       full_name: fullName.trim(),
       password_hash: passwordHash,
-      role: role || 'customer',
+      role: 'customer',
       is_active: true,
+      email_verified: false,
+      verification_token: verificationToken,
+      verification_token_expires: verificationExpires,
     }
 
     // Only add phone if provided and non-empty
@@ -81,7 +90,19 @@ export async function POST(request: Request) {
       }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, id: profile.id, role: profile.role })
+    // Send verification email (non-blocking — don't fail registration if email fails)
+    try {
+      await sendVerificationEmail(profile.email, fullName.trim(), verificationToken)
+    } catch (emailErr) {
+      console.error('Verification email failed to send:', emailErr)
+    }
+
+    return NextResponse.json({
+      success: true,
+      id: profile.id,
+      role: profile.role,
+      message: 'Account created! Please check your email to verify your account.'
+    })
   } catch (err: any) {
     console.error('Registration catch error:', err)
     return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })

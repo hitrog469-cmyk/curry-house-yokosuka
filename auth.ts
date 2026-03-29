@@ -30,13 +30,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const supabase = getSupabaseAdmin()
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('id, email, full_name, phone, role, password_hash, is_active, user_id, created_at')
+          .select('id, email, full_name, phone, role, password_hash, is_active, email_verified, user_id, created_at')
           .eq('email', credentials.email as string)
           .single()
 
         if (error || !profile) return null
         if (!profile.is_active) return null
         if (!profile.password_hash) return null
+
+        // Block login if email not verified (skip for admin/staff)
+        if (!profile.email_verified && profile.role === 'customer') {
+          throw new Error('EMAIL_NOT_VERIFIED')
+        }
 
         const valid = await bcrypt.compare(credentials.password as string, profile.password_hash)
         if (!valid) return null

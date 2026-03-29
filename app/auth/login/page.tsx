@@ -31,6 +31,9 @@ function LoginContent() {
       const errorMsg = searchParams.get('error_message');
       setError(errorMsg || 'Authentication failed. Please try again.');
     }
+    if (authError === 'invalid_token' || authError === 'token_expired') {
+      setError('Verification link is invalid or expired. Please sign up again.')
+    }
   }, [authError, searchParams]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -78,6 +81,21 @@ function LoginContent() {
 
         {/* Login Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
+          {/* Verified success message */}
+          {searchParams.get('verified') === 'true' && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
+              <p className="text-sm text-green-700 font-semibold">✅ Email verified! You can now log in.</p>
+            </div>
+          )}
+
+          {/* Unverified error message */}
+          {searchParams.get('error') === 'EMAIL_NOT_VERIFIED' && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <p className="text-sm text-amber-800 font-semibold">📧 Please verify your email first.</p>
+              <p className="text-xs text-amber-700 mt-1">Check your inbox for a verification link. Check spam too!</p>
+            </div>
+          )}
+
           {/* Error Message */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
