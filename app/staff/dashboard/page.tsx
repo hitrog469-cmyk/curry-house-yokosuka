@@ -32,7 +32,14 @@ interface OrderItem {
   subtotal?: number
   spiceLevel?: string
   addOns?: { name: string; price: number }[]
-  variation?: { name: string; price: number }
+  variation?: { name: string; price: number } | string
+  setMealChoices?: {
+    curries?: string[]
+    naan?: string
+    rice?: string
+    drink?: string
+    upgradeDetails?: string[]
+  } | null
 }
 
 interface SessionOrder {
