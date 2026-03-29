@@ -109,7 +109,7 @@ export default function QRCodesPage() {
       </head>
       <body>
         <div class="container">
-          <div class="logo">🍛 The Curry House Yokosuka</div>
+          <div class="logo">The Curry House Yokosuka</div>
           <h1>Scan & Order</h1>
           <div class="table-number">TABLE ${tableNumber}</div>
           <img src="${qrUrl}" alt="Table ${tableNumber} QR Code" />
