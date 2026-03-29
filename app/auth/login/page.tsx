@@ -19,11 +19,18 @@ function LoginContent() {
   const authError = searchParams.get('error');
 
   // If user is already logged in, redirect them
+  // But don't redirect if we just verified email — let them see the success message
   useEffect(() => {
-    if (!authLoading && user) {
+    const isVerified = searchParams.get('verified') === 'true'
+    if (!authLoading && user && !isVerified) {
       router.push(redirectTo);
     }
-  }, [user, authLoading, router, redirectTo]);
+    // If verified + logged in, show message briefly then redirect to profile
+    if (!authLoading && user && isVerified) {
+      const timer = setTimeout(() => router.push('/profile'), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [user, authLoading, router, redirectTo, searchParams]);
 
   // Show auth callback errors
   useEffect(() => {
@@ -83,8 +90,12 @@ function LoginContent() {
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {/* Verified success message */}
           {searchParams.get('verified') === 'true' && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-              <p className="text-sm text-green-700 font-semibold">✅ Email verified! You can now log in.</p>
+            <div className="mb-6 p-5 bg-green-50 border-2 border-green-300 rounded-xl text-center">
+              <p className="text-2xl mb-1">🎉</p>
+              <p className="text-green-800 font-black text-lg">Email Verified!</p>
+              <p className="text-green-700 text-sm mt-1">
+                {user ? 'Redirecting you to your profile...' : 'You can now log in below.'}
+              </p>
             </div>
           )}
 
