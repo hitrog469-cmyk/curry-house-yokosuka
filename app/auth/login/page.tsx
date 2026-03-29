@@ -41,6 +41,10 @@ function LoginContent() {
     if (authError === 'invalid_token' || authError === 'token_expired') {
       setError('Verification link is invalid or expired. Please sign up again.')
     }
+    // NextAuth OAuth errors (e.g. OAuthSignin, OAuthCallback, OAuthCreateAccount, Callback)
+    if (authError && !['EMAIL_NOT_VERIFIED', 'auth_failed', 'invalid_token', 'token_expired'].includes(authError)) {
+      setError('Google sign-in failed. Please try again or use email/password.')
+    }
   }, [authError, searchParams]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
@@ -63,6 +67,11 @@ function LoginContent() {
     const { error } = await signInWithEmail(email, password);
 
     if (error) {
+      if (error.message === 'EMAIL_NOT_VERIFIED') {
+        // Redirect to show the amber email-not-verified banner
+        router.push('/auth/login?error=EMAIL_NOT_VERIFIED');
+        return;
+      }
       setError(error.message || 'Login failed. Please try again.');
       setLoading(false);
     } else {

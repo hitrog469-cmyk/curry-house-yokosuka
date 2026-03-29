@@ -99,6 +99,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (result?.error) {
+        // Pass specific error codes through so the UI can show the right message
+        if (result.error === 'EMAIL_NOT_VERIFIED') {
+          return { error: new Error('EMAIL_NOT_VERIFIED') };
+        }
         return { error: new Error('Invalid email or password') };
       }
 
