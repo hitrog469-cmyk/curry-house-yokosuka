@@ -51,6 +51,9 @@ export default function OrderPage() {
   const [cancelling, setCancelling] = useState(false)
   const [cancelled, setCancelled] = useState(false)
 
+  // Delivery distance
+  const [deliveryDistance, setDeliveryDistance] = useState<number | null>(null)
+
   const supabase = getSupabaseBrowserClient()
 
   // Order form data
@@ -290,6 +293,15 @@ export default function OrderPage() {
       return
     }
 
+    // Block orders outside 5km radius
+    if (selectedLat && selectedLng) {
+      const distance = calculateDistance(RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng, selectedLat, selectedLng)
+      if (distance > 5) {
+        alert(`❌ Sorry! We only deliver within 5km of our restaurant.\n\nYour address is ${distance.toFixed(1)}km away.\n\nPlease contact us for special arrangements.`)
+        return
+      }
+    }
+
     setLoading(true)
 
     const orderData: any = {
@@ -408,6 +420,7 @@ export default function OrderPage() {
         const feeResult = calculateDeliveryFee(distance)
         setDeliveryFee(feeResult.isWithinRange ? feeResult.fee : 0)
         setDeliveryFeeInfo(feeResult.message)
+        setDeliveryDistance(distance)
       }
     })
 
@@ -765,7 +778,7 @@ export default function OrderPage() {
                       )}
                       <div className="flex justify-between text-gray-600">
                         <span className="font-semibold">Delivery Fee:</span>
-                        <span className="font-bold text-gray-500 text-sm">Calculated at next step</span>
+                        <span className="font-bold text-green-600">FREE 🎉</span>
                       </div>
                       <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t-2">
                         <span>Total:</span>
@@ -904,10 +917,10 @@ export default function OrderPage() {
                           title="Delivery location"
                         />
                         {deliveryFeeInfo && (
-                          <div className={`px-3 py-2 text-xs font-semibold ${
-                            deliveryFee === 0 && deliveryFeeInfo.includes('only deliver')
+                          <div className={`px-3 py-2 text-xs font-semibold rounded-b-xl ${
+                            !deliveryFeeInfo.includes('FREE')
                               ? 'bg-red-50 text-red-700'
-                              : 'bg-gray-50 text-gray-600'
+                              : 'bg-green-50 text-green-700'
                           }`}>
                             {deliveryFeeInfo}
                           </div>
@@ -1041,6 +1054,12 @@ export default function OrderPage() {
                 <div className="bg-gray-50 rounded-xl p-4 mb-4">
                   <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Delivering To</p>
                   <p className="font-semibold text-gray-900">{confirmedOrder.address}</p>
+                  {deliveryDistance !== null && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="text-green-600 text-xs font-bold">📍 {deliveryDistance.toFixed(1)}km from restaurant</span>
+                      <span className="text-green-600 text-xs font-bold">· 🚗 Delivery FREE</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Order Items */}

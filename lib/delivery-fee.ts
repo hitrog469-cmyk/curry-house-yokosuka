@@ -10,17 +10,11 @@ export const RESTAURANT_LOCATION = {
 };
 
 // Maximum delivery distance in kilometers
-export const MAX_DELIVERY_DISTANCE_KM = 50;
+export const MAX_DELIVERY_DISTANCE_KM = 5;
 
-// Delivery fee structure (in JPY)
+// Delivery is FREE within 5km
 export const DELIVERY_FEE_STRUCTURE = [
-  { minKm: 0, maxKm: 3, fee: 300 },      // 0-3km: ¥300
-  { minKm: 3, maxKm: 5, fee: 500 },      // 3-5km: ¥500
-  { minKm: 5, maxKm: 10, fee: 700 },     // 5-10km: ¥700
-  { minKm: 10, maxKm: 15, fee: 1000 },   // 10-15km: ¥1000
-  { minKm: 15, maxKm: 20, fee: 1300 },   // 15-20km: ¥1300
-  { minKm: 20, maxKm: 30, fee: 1600 },   // 20-30km: ¥1600
-  { minKm: 30, maxKm: 50, fee: 2000 },   // 30-50km: ¥2000
+  { minKm: 0, maxKm: 5, fee: 0 }, // FREE within 5km
 ];
 
 /**
@@ -67,29 +61,14 @@ export function calculateDeliveryFee(distanceKm: number): {
     return {
       fee: 0,
       isWithinRange: false,
-      message: `Sorry, this address is ${distanceKm.toFixed(1)}km away. We only deliver within ${MAX_DELIVERY_DISTANCE_KM}km.`,
-    };
-  }
-
-  // Find appropriate fee tier
-  const tier = DELIVERY_FEE_STRUCTURE.find(
-    (t) => distanceKm >= t.minKm && distanceKm < t.maxKm
-  );
-
-  if (!tier) {
-    // Fallback to last tier
-    const lastTier = DELIVERY_FEE_STRUCTURE[DELIVERY_FEE_STRUCTURE.length - 1];
-    return {
-      fee: lastTier.fee,
-      isWithinRange: true,
-      message: `Delivery fee: ¥${lastTier.fee} (${distanceKm.toFixed(1)}km)`,
+      message: `Sorry, we only deliver within 5km of our restaurant. Your address is ${distanceKm.toFixed(1)}km away.`,
     };
   }
 
   return {
-    fee: tier.fee,
+    fee: 0,
     isWithinRange: true,
-    message: `Delivery fee: ¥${tier.fee} (${distanceKm.toFixed(1)}km from restaurant)`,
+    message: `✅ FREE Delivery! You are ${distanceKm.toFixed(1)}km from our restaurant.`,
   };
 }
 
