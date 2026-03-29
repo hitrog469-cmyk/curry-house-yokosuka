@@ -78,16 +78,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!existing) {
           // Create new profile for Google user
-          const { data: newProfile } = await supabase
+          const { data: newProfile, error: insertError } = await supabase
             .from('profiles')
             .insert({
               email: user.email,
               full_name: user.name || '',
               role: 'customer',
               is_active: true,
+              email_verified: true, // Google already verified their email
             })
             .select('id, role, phone, user_id')
             .single()
+
+          if (insertError) {
+            console.error('[Google OAuth] Failed to create profile:', insertError.message)
+          }
 
           if (newProfile) {
             user.id = newProfile.id
@@ -96,11 +101,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             ;(user as any).user_id = newProfile.user_id
           }
         } else {
-          // Fetch existing profile data
+          // Fetch existing profile data and mark email_verified (Google proves it)
           const { data: profile } = await supabase
             .from('profiles')
-            .select('id, role, phone, full_name, user_id')
+            .update({ email_verified: true })
             .eq('email', user.email)
+            .select('id, role, phone, full_name, user_id')
             .single()
 
           if (profile) {

@@ -43,7 +43,7 @@ function LoginContent() {
     }
     // NextAuth OAuth errors (e.g. OAuthSignin, OAuthCallback, OAuthCreateAccount, Callback)
     if (authError && !['EMAIL_NOT_VERIFIED', 'auth_failed', 'invalid_token', 'token_expired'].includes(authError)) {
-      setError('Google sign-in failed. Please try again or use email/password.')
+      setError(`Google sign-in failed (code: ${authError}). Please try again or use email/password.`)
     }
   }, [authError, searchParams]);
 
