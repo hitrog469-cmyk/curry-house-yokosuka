@@ -284,9 +284,16 @@ export default function StaffDashboardPage() {
             <div class="item">
               <div>
                 <div class="item-name">${item.name}</div>
+                ${item.setMealChoices ? `
+                  ${item.setMealChoices.curries?.length ? `<div class="item-details">🍛 ${item.setMealChoices.curries.join(' + ')}</div>` : ''}
+                  <div class="item-details">🫓 ${item.setMealChoices.naan || 'Plain Naan'}</div>
+                  <div class="item-details">🍚 ${item.setMealChoices.rice || 'Plain Rice'}</div>
+                  ${item.setMealChoices.drink ? `<div class="item-details">🥤 ${item.setMealChoices.drink}</div>` : ''}
+                  ${item.setMealChoices.upgradeDetails?.length ? `<div class="item-details">⬆️ ${item.setMealChoices.upgradeDetails.join(', ')}</div>` : ''}
+                ` : ''}
                 ${item.spiceLevel ? `<div class="item-details">🌶️ ${item.spiceLevel}</div>` : ''}
-                ${item.addOns?.length ? `<div class="item-details">+ ${item.addOns.map(a => a.name).join(', ')}</div>` : ''}
-                ${item.variation ? `<div class="item-details">• ${item.variation.name}</div>` : ''}
+                ${item.addOns?.length ? `<div class="item-details">+ ${item.addOns.map(a => typeof a === 'string' ? a : a.name).join(', ')}</div>` : ''}
+                ${item.variation ? `<div class="item-details">• ${typeof item.variation === 'string' ? item.variation : item.variation.name}</div>` : ''}
               </div>
               <div class="item-qty">×${item.quantity}</div>
             </div>
@@ -393,11 +400,18 @@ export default function StaffDashboardPage() {
               <span class="item-qty">×${item.quantity}</span>
               <span class="item-price">${formatPrice(item.price * item.quantity)}</span>
             </div>
+            ${item.setMealChoices ? `
+              ${item.setMealChoices.curries?.length ? `<div style="font-size:10px;color:#444;padding:1px 0;">　🍛 ${item.setMealChoices.curries.join(' + ')}</div>` : ''}
+              <div style="font-size:10px;color:#444;padding:1px 0;">　🫓 ${item.setMealChoices.naan || 'Plain Naan'} · 🍚 ${item.setMealChoices.rice || 'Plain Rice'}</div>
+              ${item.setMealChoices.drink ? `<div style="font-size:10px;color:#444;padding:1px 0;">　🥤 ${item.setMealChoices.drink}</div>` : ''}
+              ${item.setMealChoices.upgradeDetails?.length ? `<div style="font-size:10px;color:#e65c00;padding:1px 0;">　⬆️ ${item.setMealChoices.upgradeDetails.join(', ')}</div>` : ''}
+            ` : ''}
+            ${item.spiceLevel ? `<div style="font-size:10px;color:#666;padding:1px 0;">　🌶️ ${item.spiceLevel}</div>` : ''}
             ${item.addOns?.map(addon => `
               <div class="item" style="font-size:10px;color:#666;">
-                <span class="item-name">　+ ${addon.name}</span>
+                <span class="item-name">　+ ${typeof addon === 'string' ? addon : addon.name}</span>
                 <span class="item-qty"></span>
-                <span class="item-price">${formatPrice(addon.price)}</span>
+                <span class="item-price">${addon.price ? formatPrice(addon.price) : ''}</span>
               </div>
             `).join('') || ''}
           `).join('')}
