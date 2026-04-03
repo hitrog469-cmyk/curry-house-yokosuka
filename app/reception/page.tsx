@@ -183,12 +183,12 @@ function printBill(table: TableSummary | null, delivery: DeliveryOrder | null) {
     </body></html>
   `)
   printWindow.document.close()
-  printWindow.onload = () => {
+  setTimeout(() => {
     printWindow.document.title = ''
     printWindow.focus()
     printWindow.print()
     printWindow.onafterprint = () => printWindow.close()
-  }
+  }, 250)
 }
 
 // ── Main Component ───────────────────────────────────────

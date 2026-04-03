@@ -169,12 +169,12 @@ export default function KitchenDisplayPage() {
       </body></html>
     `)
     printWindow.document.close()
-    printWindow.onload = () => {
+    setTimeout(() => {
       printWindow.document.title = ''
       printWindow.focus()
       printWindow.print()
       printWindow.onafterprint = () => printWindow.close()
-    }
+    }, 250)
   }
 
   // ─── 58mm Customer Bill ───────────────────────────────────────────────────
@@ -308,12 +308,12 @@ export default function KitchenDisplayPage() {
       </body></html>
     `)
     printWindow.document.close()
-    printWindow.onload = () => {
+    setTimeout(() => {
       printWindow.document.title = ''
       printWindow.focus()
       printWindow.print()
       printWindow.onafterprint = () => printWindow.close()
-    }
+    }, 250)
   }
 
   // Keyboard shortcut: Enter prints kitchen slip for selected order

@@ -316,12 +316,12 @@ export default function StaffDashboardPage() {
 
     printWindow.document.write(printContent)
     printWindow.document.close()
-    printWindow.onload = () => {
-      printWindow.document.title = '' // Clear title — removes Safari URL/title stamp
+    setTimeout(() => {
+      printWindow.document.title = ''
       printWindow.focus()
       printWindow.print()
       printWindow.onafterprint = () => printWindow.close()
-    }
+    }, 250)
 
     // Mark orders as preparing after print
     markOrdersAsPreparing(unprintedOrders.map(o => o.id))
@@ -452,12 +452,12 @@ export default function StaffDashboardPage() {
 
     printWindow.document.write(printContent)
     printWindow.document.close()
-    printWindow.onload = () => {
-      printWindow.document.title = '' // Clear title — removes Safari URL/title stamp
+    setTimeout(() => {
+      printWindow.document.title = ''
       printWindow.focus()
       printWindow.print()
       printWindow.onafterprint = () => printWindow.close()
-    }
+    }, 250)
   }
 
   // Mark orders as preparing

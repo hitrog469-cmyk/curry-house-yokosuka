@@ -469,12 +469,12 @@ export default function AdminDashboard() {
       </body></html>
     `)
     printWindow.document.close()
-    printWindow.onload = () => {
-      printWindow.document.title = '' // Clear title — removes Safari URL/title stamp
+    setTimeout(() => {
+      printWindow.document.title = ''
       printWindow.focus()
       printWindow.print()
       printWindow.onafterprint = () => printWindow.close()
-    }
+    }, 250)
   }
 
   // Print customer bill / PDF receipt
@@ -630,12 +630,12 @@ export default function AdminDashboard() {
       </body></html>
     `)
     printWindow.document.close()
-    printWindow.onload = () => {
-      printWindow.document.title = '' // Clear title — removes Safari URL/title stamp
+    setTimeout(() => {
+      printWindow.document.title = ''
       printWindow.focus()
       printWindow.print()
       printWindow.onafterprint = () => printWindow.close()
-    }
+    }, 250)
   }
 
   // Stats
