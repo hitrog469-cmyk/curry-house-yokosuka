@@ -437,7 +437,7 @@ export default function OrderPage() {
   const itemSupportsSpice = (itemId: string) => {
     const item = menuItems.find(i => i.id === itemId)
     if (!item) return false
-    const spiceCategories = ['vegetable_curry', 'seafood_curry', 'chicken_curry', 'mutton_curry', 'rice', 'biryani', 'noodles']
+    const spiceCategories = ['vegetable_curry', 'seafood_curry', 'chicken_curry', 'mutton_curry', 'rice', 'biryani', 'noodles', 'sets', 'special_curry']
     return spiceCategories.includes(item.category) || item.spiceLevel !== undefined
   }
 

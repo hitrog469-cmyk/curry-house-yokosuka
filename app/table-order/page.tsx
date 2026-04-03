@@ -92,6 +92,7 @@ function TableOrderContent() {
   const [tempSetMealRice, setTempSetMealRice] = useState<string>('plain-rice')
   const [tempSetMealDrink, setTempSetMealDrink] = useState<string>('')
   const [tempSetMealIncludedDrink, setTempSetMealIncludedDrink] = useState<string>('')
+  const [tempSetMealSpice, setTempSetMealSpice] = useState<string>('NORMAL')
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const categoryScrollRef = useRef<HTMLDivElement>(null)
@@ -249,6 +250,7 @@ function TableOrderContent() {
     setTempSetMealRice(setMealSelections[setId]?.rice || 'plain-rice')
     setTempSetMealDrink(setMealSelections[setId]?.drink || '')
     setTempSetMealIncludedDrink(setMealSelections[setId]?.includedDrink || '')
+    setTempSetMealSpice(selectedSpiceLevels[setId] || 'NORMAL')
     setShowSetMealModal(setId)
   }
 
@@ -318,6 +320,7 @@ function TableOrderContent() {
       }
     }))
 
+    setSelectedSpiceLevels(prev => ({ ...prev, [setId]: tempSetMealSpice }))
     setCart(prev => ({ ...prev, [setId]: (prev[setId] || 0) + 1 }))
     setShowSetMealModal(null)
   }
@@ -2297,6 +2300,34 @@ function TableOrderContent() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Spice Level */}
+                <div className="bg-red-50 rounded-xl p-4 border border-red-100">
+                  <h4 className="font-bold text-gray-800 text-sm mb-3">🌶️ Spice Level</h4>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[
+                      { level: 'MILD',     emoji: '😊', labelJp: 'マイルド',  color: 'bg-yellow-100 border-yellow-400 text-yellow-800' },
+                      { level: 'NORMAL',   emoji: '🙂', labelJp: '普通',      color: 'bg-orange-100 border-orange-400 text-orange-800' },
+                      { level: 'MEDIUM',   emoji: '😅', labelJp: '中辛',      color: 'bg-orange-200 border-orange-500 text-orange-900' },
+                      { level: 'HOT',      emoji: '🥵', labelJp: '辛口',      color: 'bg-red-100 border-red-400 text-red-800' },
+                      { level: 'VERY HOT', emoji: '🔥', labelJp: '激辛',      color: 'bg-red-200 border-red-600 text-red-900' },
+                    ].map(s => (
+                      <button
+                        key={s.level}
+                        onClick={() => setTempSetMealSpice(s.level)}
+                        className={`flex flex-col items-center p-2 rounded-xl border-2 transition-all ${
+                          tempSetMealSpice === s.level
+                            ? `${s.color} border-current shadow-md scale-105`
+                            : 'bg-white border-gray-200 text-gray-500'
+                        }`}
+                      >
+                        <span className="text-xl">{s.emoji}</span>
+                        <span className="text-[10px] font-bold mt-0.5">{s.level === 'VERY HOT' ? 'V.HOT' : s.level}</span>
+                        <span className="text-[9px] opacity-70">{s.labelJp}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Set Contents Summary */}
