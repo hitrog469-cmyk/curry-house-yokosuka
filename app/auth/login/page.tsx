@@ -69,8 +69,8 @@ function LoginContent() {
 
     if (error) {
       if (error.message === 'EMAIL_NOT_VERIFIED') {
-        // Redirect to show the amber email-not-verified banner
-        router.push('/auth/login?error=EMAIL_NOT_VERIFIED');
+        // Send them to the verification screen to enter the emailed code
+        router.push(`/auth/verify?email=${encodeURIComponent(email.toLowerCase().trim())}`);
         return;
       }
       setError(error.message || 'Login failed. Please try again.');
@@ -112,7 +112,7 @@ function LoginContent() {
           {searchParams.get('error') === 'EMAIL_NOT_VERIFIED' && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
               <p className="text-sm text-amber-800 font-semibold flex items-center gap-1.5"><Mail className="w-4 h-4" />Please verify your email first.</p>
-              <p className="text-xs text-amber-700 mt-1">Check your inbox for a verification link. Check spam too!</p>
+              <p className="text-xs text-amber-700 mt-1">Enter the 6-digit code we emailed you. Check spam too!</p>
             </div>
           )}
 

@@ -71,28 +71,17 @@ export default function StaffTablesPage() {
       return
     }
 
-    if (!supabase) return
     setReleasing(true)
     try {
-      const { error } = await supabase
-        .from('table_sessions')
-        .update({
-          status: 'released',
-          released_at: new Date().toISOString(),
-          released_by: staffName
-        })
-        .eq('id', session.id)
-
-      if (error) throw error
-
-      // Auto-regenerate PIN for this table so next customer gets a fresh one
-      const newPin = String(Math.floor(1000 + Math.random() * 9000))
-      await supabase
-        .from('table_pins')
-        .upsert(
-          { table_number: session.table_number, pin: newPin, updated_at: new Date().toISOString() },
-          { onConflict: 'table_number' }
-        )
+      const res = await fetch('/api/table/release', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: session.id }),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'release failed')
+      }
 
       // Clear localStorage for this table (if staff is using same browser)
       localStorage.removeItem(`table_session_${session.table_number}`)

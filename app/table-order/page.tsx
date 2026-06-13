@@ -1,17 +1,17 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 import { menuItems, menuCategories, type MenuItem, type AddOn, needsCurryPairing, needsBreadRicePairing, getCurrySuggestions, getBreadRiceSuggestions } from '@/lib/menu-data'
 import { getMenuItemImage } from '@/lib/image-mapping'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense } from 'react'
+import { useAuth } from '@/contexts/auth-context'
 import TodaysSpecialPopup from '@/components/TodaysSpecialPopup'
 import { ORDERING_ENABLED, ORDERING_DISABLED_MESSAGE } from '@/lib/site-config'
 import OrderingDisabledBanner from '@/components/OrderingDisabledBanner'
-import { Flame, Lock, AlertTriangle, Search, UtensilsCrossed, Star, Soup, Wheat, CupSoda, Beer, Martini, ArrowUp } from 'lucide-react'
+import { Flame, AlertTriangle, Search, UtensilsCrossed, Star, Soup, Wheat, CupSoda, Beer, Martini, ArrowUp, QrCode, KeyRound } from 'lucide-react'
 
 // Renders a row of flame icons for a spice level
 const SpiceFlames = ({ count, className = 'w-3 h-3' }: { count: number; className?: string }) => (
@@ -24,41 +24,34 @@ const SpiceFlames = ({ count, className = 'w-3 h-3' }: { count: number; classNam
 
 function TableOrderContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const urlTableNumber = searchParams.get('table')
+  const urlToken = searchParams.get('token')
 
-  // Session state - track active session for this table
+  // Access state machine for secure QR table entry:
+  //   'checking' = validating; 'new' = fresh table (show setup);
+  //   'resume' = same-login auto-resume or key-verified; 'locked' = key required;
+  //   'blocked' = missing/invalid QR; 'login' = login required
+  const [accessState, setAccessState] = useState<'checking' | 'new' | 'resume' | 'locked' | 'blocked' | 'login'>('checking')
+
+  // Session state
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [sessionChecked, setSessionChecked] = useState(false)
-  const [tableOccupied, setTableOccupied] = useState(false)
   const [isAddOnMode, setIsAddOnMode] = useState(false)
 
-  // PIN verification — check sessionStorage on first render to avoid flicker
-  const [pinVerified, setPinVerified] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    const tableNum = new URLSearchParams(window.location.search).get('table')
-    if (!tableNum) return true // no table in URL → skip PIN gate
-    return sessionStorage.getItem(`pin_verified_table_${tableNum}`) === 'true'
-  })
-  const [pinInput, setPinInput] = useState('')
-  const [pinError, setPinError] = useState(false)
-  const [pinLoading, setPinLoading] = useState(false)
+  // Per-session key held in memory so writes can be re-authorized when a
+  // different account resumed the table via the key.
+  const [sessionKey, setSessionKey] = useState<string>('')
 
-  // PIN reveal — shown to new customers after setup so they can save it
-  const [showPinReveal, setShowPinReveal] = useState(false)
-  const [revealedPin, setRevealedPin] = useState('')
-  const [pinCopied, setPinCopied] = useState(false)
+  // Key reveal — shown once to a new customer so they can save it
+  const [showKeyReveal, setShowKeyReveal] = useState(false)
+  const [revealedKey, setRevealedKey] = useState('')
+  const [keyCopied, setKeyCopied] = useState(false)
 
-  // Re-order PIN — required to place additional orders after the first
-  const [reorderPinVerified, setReorderPinVerified] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false
-    const tableNum = new URLSearchParams(window.location.search).get('table')
-    if (!tableNum) return true
-    return sessionStorage.getItem(`reorder_verified_table_${tableNum}`) === 'true'
-  })
-  const [showReorderPinModal, setShowReorderPinModal] = useState(false)
-  const [reorderPinInput, setReorderPinInput] = useState('')
-  const [reorderPinError, setReorderPinError] = useState(false)
-  const [reorderPinLoading, setReorderPinLoading] = useState(false)
+  // Key entry (locked table — a different account scanned the same table)
+  const [keyInput, setKeyInput] = useState('')
+  const [keyError, setKeyError] = useState('')
+  const [keyLoading, setKeyLoading] = useState(false)
 
   // Order setup state
   const [setupComplete, setSetupComplete] = useState(false)
@@ -109,48 +102,65 @@ function TableOrderContent() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const categoryScrollRef = useRef<HTMLDivElement>(null)
 
-  const supabase = getSupabaseBrowserClient()
-
   // ========================
-  // SESSION CHECK ON LOAD
-  // Check if QR table already has an active session
+  // SECURE ACCESS CHECK ON LOAD
+  // Table ordering requires a valid QR (table + token) AND a logged-in device.
+  // The server decides whether this is a new table, an owner auto-resume, or a
+  // locked table that needs the saved key.
   // ========================
   useEffect(() => {
-    if (!urlTableNumber || !supabase) {
-      setSessionChecked(true)
+    // Missing/invalid QR params → not reachable as a normal web page
+    if (!urlTableNumber || !urlToken) {
+      setAccessState('blocked')
       return
     }
-    const tableNum = parseInt(urlTableNumber)
-    const checkSession = async () => {
-      const { data: activeSession } = await supabase
-        .from('table_sessions')
-        .select('id, customer_name, party_size, status')
-        .eq('table_number', tableNum)
-        .in('status', ['active', 'bill_requested'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (activeSession) {
-        // Table is occupied — PIN required to add more items
-        setSessionId(activeSession.id)
-        setTableOccupied(true)
-        setIsAddOnMode(true)
-        setCustomerName(activeSession.customer_name || '')
-        setSelectedTables([tableNum])
-        setSetupComplete(true)
-        // PIN gate stays active (pinVerified stays false if not in sessionStorage)
-      } else {
-        // No active session — new customer, skip PIN gate, go straight to setup
-        setPinVerified(true)
-        sessionStorage.setItem(`pin_verified_table_${tableNum}`, 'true')
-        sessionStorage.setItem(`reorder_verified_table_${tableNum}`, 'true')
-        setReorderPinVerified(true)
-      }
-      setSessionChecked(true)
+    // Wait for auth to resolve; require login
+    if (authLoading) return
+    if (!user) {
+      setAccessState('login')
+      const here = `/table-order?table=${encodeURIComponent(urlTableNumber)}&token=${encodeURIComponent(urlToken)}`
+      router.push(`/auth/login?redirectTo=${encodeURIComponent(here)}`)
+      return
     }
-    checkSession()
-  }, [urlTableNumber, supabase])
+
+    let cancelled = false
+    const checkAccess = async () => {
+      try {
+        const res = await fetch('/api/table/access', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: urlTableNumber, token: urlToken }),
+        })
+        const data = await res.json()
+        if (cancelled) return
+
+        if (res.status === 401) { setAccessState('login'); return }
+        if (res.status === 403 || data.error === 'INVALID_QR') { setAccessState('blocked'); return }
+
+        if (data.state === 'new') {
+          setAccessState('new')
+        } else if (data.state === 'resume') {
+          setSessionId(data.sessionId)
+          setCustomerName(data.customerName || '')
+          if (data.partySize) setNumberOfPeople(String(data.partySize))
+          setSelectedTables([parseInt(urlTableNumber)])
+          setIsAddOnMode(true)
+          setSetupComplete(true)
+          setAccessState('resume')
+        } else if (data.state === 'locked') {
+          setSessionId(data.sessionId)
+          setSelectedTables([parseInt(urlTableNumber)])
+          setAccessState('locked')
+        } else {
+          setAccessState('blocked')
+        }
+      } catch {
+        if (!cancelled) setAccessState('blocked')
+      }
+    }
+    checkAccess()
+    return () => { cancelled = true }
+  }, [urlTableNumber, urlToken, user, authLoading, router])
 
   const categories = menuCategories.filter(c =>
     c.id === 'all' || menuItems.some(item => item.category === c.id)
@@ -338,52 +348,39 @@ function TableOrderContent() {
   }
 
   // ========================
-  // PIN VERIFICATION
+  // KEY VERIFICATION (locked table — a different account is resuming)
   // ========================
-  const verifyPin = async (pinToCheck?: string) => {
-    const pin = pinToCheck ?? pinInput
-    if (!urlTableNumber || !supabase || pin.length !== 4) return
-    setPinLoading(true)
-    setPinError(false)
-    const { data } = await supabase
-      .from('table_pins')
-      .select('pin')
-      .eq('table_number', parseInt(urlTableNumber))
-      .maybeSingle()
-    if (data && data.pin === pin) {
-      sessionStorage.setItem(`pin_verified_table_${urlTableNumber}`, 'true')
-      // Entering the table PIN also clears the re-order gate for this session
-      sessionStorage.setItem(`reorder_verified_table_${urlTableNumber}`, 'true')
-      setPinVerified(true)
-      setReorderPinVerified(true)
-    } else {
-      setPinError(true)
-      setPinInput('')
+  const verifyKey = async () => {
+    const key = keyInput.trim().toUpperCase()
+    if (!urlTableNumber || !urlToken || key.length < 4) return
+    setKeyLoading(true)
+    setKeyError('')
+    try {
+      const res = await fetch('/api/table/resume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ table: urlTableNumber, token: urlToken, key }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setKeyError('That key is incorrect. Please check the key you saved.')
+        setKeyInput('')
+        return
+      }
+      // Key accepted — load the session and start adding items
+      setSessionId(data.sessionId)
+      setSessionKey(key)
+      setCustomerName(data.customerName || '')
+      if (data.partySize) setNumberOfPeople(String(data.partySize))
+      setSelectedTables([parseInt(urlTableNumber)])
+      setIsAddOnMode(true)
+      setSetupComplete(true)
+      setAccessState('resume')
+    } catch {
+      setKeyError('Something went wrong. Please try again.')
+    } finally {
+      setKeyLoading(false)
     }
-    setPinLoading(false)
-  }
-
-  const verifyReorderPin = async (pinToCheck?: string, onSuccess?: () => void) => {
-    const pin = pinToCheck ?? reorderPinInput
-    if (!urlTableNumber || !supabase || pin.length !== 4) return
-    setReorderPinLoading(true)
-    setReorderPinError(false)
-    const { data } = await supabase
-      .from('table_pins')
-      .select('pin')
-      .eq('table_number', parseInt(urlTableNumber))
-      .maybeSingle()
-    if (data && data.pin === pin) {
-      sessionStorage.setItem(`reorder_verified_table_${urlTableNumber}`, 'true')
-      setReorderPinVerified(true)
-      setShowReorderPinModal(false)
-      setReorderPinInput('')
-      onSuccess?.()
-    } else {
-      setReorderPinError(true)
-      setReorderPinInput('')
-    }
-    setReorderPinLoading(false)
   }
 
   const filteredItems = useMemo(() => {
@@ -405,14 +402,6 @@ function TableOrderContent() {
 
     return items
   }, [selectedCategory, searchQuery])
-
-  const toggleTable = (tableNum: number) => {
-    setSelectedTables(prev =>
-      prev.includes(tableNum)
-        ? prev.filter(t => t !== tableNum)
-        : [...prev, tableNum]
-    )
-  }
 
   const addSplitPerson = () => {
     setSplitPersons(prev => [...prev, {name: '', items: []}])
@@ -765,7 +754,8 @@ function TableOrderContent() {
 
   const handleSetupComplete = async () => {
     if (!ORDERING_ENABLED) { alert(ORDERING_DISABLED_MESSAGE); return }
-    if (selectedTables.length === 0 || !customerName || !numberOfPeople) {
+    if (!urlTableNumber || !urlToken) { setAccessState('blocked'); return }
+    if (!customerName || !numberOfPeople) {
       alert('Please fill in all required fields')
       return
     }
@@ -777,43 +767,43 @@ function TableOrderContent() {
       }
     }
 
-    // Create a new table session in Supabase
-    if (supabase) {
-      const { data: newSession } = await supabase
-        .from('table_sessions')
-        .insert({
-          table_number: selectedTables[0],
-          session_token: `tbl${selectedTables[0]}_${Date.now()}`,
-          customer_name: customerName,
-          party_size: parseInt(numberOfPeople),
-          split_bill: splitBill,
-          number_of_splits: splitBill ? splitPersons.filter(p => p.name.trim() !== '').length : 1,
-          status: 'active',
-        })
-        .select('id')
-        .single()
+    // Create the session server-side (owner = logged-in user) and get the key
+    try {
+      const res = await fetch('/api/table/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          table: urlTableNumber,
+          token: urlToken,
+          customerName,
+          partySize: parseInt(numberOfPeople),
+        }),
+      })
+      const data = await res.json()
 
-      if (newSession) setSessionId(newSession.id)
-
-      // Fetch PIN for this table and reveal it to the customer
-      if (supabase && selectedTables[0]) {
-        const { data: pinRow } = await supabase
-          .from('table_pins')
-          .select('pin')
-          .eq('table_number', selectedTables[0])
-          .maybeSingle()
-        if (pinRow?.pin) {
-          setRevealedPin(pinRow.pin)
-          setShowPinReveal(true)
-          sessionStorage.setItem(`pin_verified_table_${selectedTables[0]}`, 'true')
-          sessionStorage.setItem(`reorder_verified_table_${selectedTables[0]}`, 'true')
-          setPinVerified(true)
-          setReorderPinVerified(true)
-        }
+      if (res.status === 401) { setAccessState('login'); return }
+      if (res.status === 403) { setAccessState('blocked'); return }
+      if (res.status === 409) {
+        // Someone already started this table — switch to key entry
+        alert('This table already has an active order. Please enter the key to add more items.')
+        setAccessState('locked')
+        return
       }
-    }
+      if (!res.ok || !data.sessionId) {
+        alert(data.error || 'Could not start ordering. Please try again.')
+        return
+      }
 
-    setSetupComplete(true)
+      setSessionId(data.sessionId)
+      if (data.key) {
+        setRevealedKey(data.key)
+        setShowKeyReveal(true)
+      }
+      setAccessState('resume')
+      setSetupComplete(true)
+    } catch {
+      alert('Could not start ordering. Please try again.')
+    }
   }
 
   // ========================
@@ -841,7 +831,7 @@ function TableOrderContent() {
   const handleSubmitOrder = async () => {
     if (!ORDERING_ENABLED) { alert(ORDERING_DISABLED_MESSAGE); return }
     if (Object.keys(cart).length === 0) return
-    if (!supabase) { alert('Order system not configured'); return }
+    if (!urlTableNumber || !urlToken || !sessionId) { alert('Your table session has expired. Please rescan the QR code.'); return }
     setLoading(true)
 
     try {
@@ -939,74 +929,38 @@ function TableOrderContent() {
       }
 
       const tableNumbers = selectedTables.join(', ')
+      const tableOrderNotes = `Tables: ${tableNumbers}${isAddOnMode ? ' [ADD-ON]' : ''}${splitBill ? ` | Split (${splitType}): ${validSplitPersons.map(p => p.name).join(', ')}` : ''}`
+      const ordersNotes = splitBill ? `Split bill (${splitType}): ${JSON.stringify(splitDetails)}` : ''
 
-      // Insert into table_orders (kitchen display) only - NOT into orders (delivery)
-      const { error: tableError } = await supabase
-        .from('table_orders')
-        .insert({
-          table_number: selectedTables[0],
-          customer_name: customerName,
-          party_size: parseInt(numberOfPeople),
-          split_bill: splitBill,
-          number_of_splits: numberOfSplits,
-          items: orderItems,
-          total_amount: totalAmount,
-          amount_per_split: splitType === 'equal' ? Math.ceil(totalAmount / numberOfSplits) : 0,
-          status: 'pending',
-          order_type: 'in-house',
-          session_id: sessionId,
-          is_addon: isAddOnMode,
-          notes: `Tables: ${tableNumbers}${isAddOnMode ? ' [ADD-ON]' : ''}${splitBill ? ` | Split (${splitType}): ${validSplitPersons.map(p => p.name).join(', ')}` : ''}`
-        })
-        .select()
-
-      if (tableError) {
-        console.error('Table order insert failed:', tableError.message, tableError.details, tableError.hint)
-        throw tableError
+      // All writes go through the authorized server route (login + QR token +
+      // session owner/key are re-checked server-side).
+      const res = await fetch('/api/table/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId,
+          table: urlTableNumber,
+          token: urlToken,
+          key: sessionKey || undefined,
+          orderItems,
+          totalAmount,
+          customerName,
+          partySize: parseInt(numberOfPeople),
+          splitBill,
+          numberOfSplits,
+          amountPerSplit: splitType === 'equal' ? Math.ceil(totalAmount / numberOfSplits) : 0,
+          tableOrderNotes,
+          ordersNotes,
+          isAddon: isAddOnMode,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        if (res.status === 401) { setAccessState('login'); return }
+        if (data.error === 'ORDERING_DISABLED') { alert(ORDERING_DISABLED_MESSAGE); return }
+        if (data.error === 'NOT_AUTHORIZED') { setAccessState('locked'); return }
+        throw new Error(data.error || 'order failed')
       }
-
-      // Update session total amount — accumulate add-on orders
-      if (sessionId) {
-        if (isAddOnMode) {
-          // Fetch current session total and add the new order on top
-          const { data: currentSession } = await supabase
-            .from('table_sessions')
-            .select('total_amount')
-            .eq('id', sessionId)
-            .maybeSingle()
-          const prevTotal = currentSession?.total_amount ?? 0
-          await supabase
-            .from('table_sessions')
-            .update({ total_amount: prevTotal + totalAmount, updated_at: new Date().toISOString() })
-            .eq('id', sessionId)
-        } else {
-          await supabase
-            .from('table_sessions')
-            .update({ total_amount: totalAmount, updated_at: new Date().toISOString() })
-            .eq('id', sessionId)
-        }
-      }
-
-      const { error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          total_amount: totalAmount,
-          status: 'pending',
-          order_type: 'in-house',
-          table_number: selectedTables[0],
-          customer_name: customerName || 'Table Guest',
-          customer_phone: '',
-          party_size: parseInt(numberOfPeople),
-          split_bill: splitBill,
-          number_of_splits: numberOfSplits,
-          items: orderItems,
-          payment_method: 'pending',
-          payment_status: 'pending',
-          delivery_address: `Tables: ${tableNumbers} - ${customerName} (${numberOfPeople} ${parseInt(numberOfPeople) === 1 ? 'person' : 'people'})`,
-          notes: splitBill ? `Split bill (${splitType}): ${JSON.stringify(splitDetails)}` : ''
-        })
-
-      if (orderError) console.error('Failed to sync to orders table:', orderError.message, orderError.details, orderError.hint)
 
       setOrderSubmitted(true)
       setCart({})
@@ -1029,92 +983,87 @@ function TableOrderContent() {
   }
 
   // ==========================================
-  // SESSION LOADING SCREEN
+  // ACCESS LOADING / LOGIN REDIRECT SCREEN
   // ==========================================
-  if (!sessionChecked) {
+  if (accessState === 'checking' || accessState === 'login') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
         <div className="text-center text-white">
           <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-lg font-semibold">Loading table...</p>
+          <p className="text-lg font-semibold">{accessState === 'login' ? 'Please sign in to continue…' : 'Loading your table…'}</p>
         </div>
       </div>
     )
   }
 
   // ==========================================
-  // PIN VERIFICATION SCREEN
+  // BLOCKED SCREEN — not reachable without a valid QR scan
   // ==========================================
-  if (urlTableNumber && !pinVerified) {
+  if (accessState === 'blocked') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
-          <img src="/images/Logo.png" alt="The Curry House" className="w-16 h-16 mx-auto mb-4 object-contain" />
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <QrCode className="w-8 h-8 text-gray-500" />
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 mb-2">Scan to Order</h1>
+          <p className="text-gray-500 text-sm mb-6">
+            Table ordering is only available inside the restaurant. Please scan the QR code on
+            your table to start your order.
+          </p>
+          <a
+            href="/menu"
+            className="inline-block w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 rounded-xl text-base transition-all"
+          >
+            View Our Menu
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  // ==========================================
+  // KEY ENTRY SCREEN — table already has an active order (different account)
+  // ==========================================
+  if (accessState === 'locked') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
+          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <KeyRound className="w-6 h-6 text-green-600" />
+          </div>
           <h1 className="text-2xl font-black text-gray-900 mb-1">Table {urlTableNumber}</h1>
           <p className="text-gray-500 text-sm mb-6">
-            Enter the <strong>4-digit PIN</strong> from the card on your table to start ordering.
+            This table already has an active order. Enter the <strong>key</strong> you saved
+            earlier to add more items.
           </p>
 
-          {/* PIN dots display */}
-          <div className="flex justify-center gap-3 mb-2">
-            {[0, 1, 2, 3].map(i => (
-              <div
-                key={i}
-                className={`w-14 h-16 border-2 rounded-xl flex items-center justify-center text-3xl font-black transition-all
-                  ${pinInput.length > i
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 bg-gray-50 text-gray-200'
-                  } ${pinError ? 'border-red-400 bg-red-50 animate-pulse' : ''}`}
-              >
-                {pinInput[i] ? '●' : '·'}
-              </div>
-            ))}
-          </div>
+          <input
+            type="text"
+            inputMode="text"
+            autoCapitalize="characters"
+            maxLength={8}
+            value={keyInput}
+            onChange={(e) => { setKeyInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')); setKeyError('') }}
+            onKeyDown={(e) => { if (e.key === 'Enter') verifyKey() }}
+            placeholder="ENTER KEY"
+            className={`w-full text-center text-2xl font-black tracking-[0.3em] px-4 py-4 border-2 rounded-xl focus:outline-none transition-all mb-2
+              ${keyError ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50 focus:border-green-500 focus:bg-white'}`}
+          />
 
-          {pinError && (
-            <p className="text-red-500 text-sm font-semibold mb-3 mt-2">
-              Wrong PIN. Check the card on your table.
-            </p>
-          )}
-          {!pinError && <div className="mb-3" />}
-
-          {/* Number pad */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, i) => (
-              <button
-                key={i}
-                disabled={!key || pinLoading}
-                onClick={() => {
-                  if (!key) return
-                  if (key === '⌫') {
-                    setPinInput(p => p.slice(0, -1))
-                    setPinError(false)
-                  } else if (pinInput.length < 4) {
-                    const next = pinInput + key
-                    setPinInput(next)
-                    setPinError(false)
-                    if (next.length === 4) verifyPin(next)
-                  }
-                }}
-                className={`h-14 rounded-xl font-bold text-xl transition-all select-none
-                  ${!key ? 'invisible' : 'bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-800 cursor-pointer'}
-                  ${pinLoading ? 'opacity-50 cursor-wait' : ''}`}
-              >
-                {key}
-              </button>
-            ))}
-          </div>
+          {keyError && <p className="text-red-500 text-sm font-semibold mb-3">{keyError}</p>}
+          {!keyError && <div className="mb-3" />}
 
           <button
-            onClick={() => verifyPin()}
-            disabled={pinInput.length !== 4 || pinLoading}
+            onClick={verifyKey}
+            disabled={keyInput.length < 4 || keyLoading}
             className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3.5 rounded-xl text-lg transition-all"
           >
-            {pinLoading ? 'Checking...' : 'Enter →'}
+            {keyLoading ? 'Checking…' : 'Continue'}
           </button>
 
           <p className="text-xs text-gray-400 mt-4">
-            Can't find the PIN? Ask a staff member for help.
+            Lost your key? Please ask a staff member for help.
           </p>
         </div>
       </div>
@@ -1122,29 +1071,30 @@ function TableOrderContent() {
   }
 
   // ==========================================
-  // PIN REVEAL SCREEN — shown once after setup
+  // KEY REVEAL SCREEN — shown once after a new table is started
   // ==========================================
-  if (setupComplete && showPinReveal && revealedPin) {
+  if (setupComplete && showKeyReveal && revealedKey) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
           <img src="/images/Logo.png" alt="The Curry House" className="w-16 h-16 mx-auto mb-4 object-contain" />
           <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <Lock className="w-6 h-6 text-green-600" />
+            <KeyRound className="w-6 h-6 text-green-600" />
           </div>
-          <h1 className="text-2xl font-black text-gray-900 mb-1">Your Table PIN</h1>
+          <h1 className="text-2xl font-black text-gray-900 mb-1">Your Table Key</h1>
           <p className="text-gray-500 text-sm mb-6">
-            Save this PIN — you&apos;ll need it to add more items later!
+            Please save this key. You&apos;ll need it to add more items if someone else scans
+            this table, or if you get signed out.
           </p>
 
-          {/* Big PIN display */}
-          <div className="flex justify-center gap-3 mb-4">
-            {revealedPin.split('').map((digit, i) => (
+          {/* Big key display */}
+          <div className="flex justify-center gap-2 mb-4">
+            {revealedKey.split('').map((ch, i) => (
               <div
                 key={i}
-                className="w-16 h-20 bg-green-50 border-2 border-green-400 rounded-2xl flex items-center justify-center text-4xl font-black text-green-700 shadow-sm"
+                className="w-11 h-16 bg-green-50 border-2 border-green-400 rounded-xl flex items-center justify-center text-3xl font-black text-green-700 shadow-sm"
               >
-                {digit}
+                {ch}
               </div>
             ))}
           </div>
@@ -1152,29 +1102,29 @@ function TableOrderContent() {
           {/* Copy button */}
           <button
             onClick={() => {
-              navigator.clipboard.writeText(revealedPin)
-              setPinCopied(true)
-              setTimeout(() => setPinCopied(false), 2000)
+              navigator.clipboard?.writeText(revealedKey)
+              setKeyCopied(true)
+              setTimeout(() => setKeyCopied(false), 2000)
             }}
             className={`w-full py-3 rounded-xl font-bold text-base transition-all mb-4 ${
-              pinCopied
+              keyCopied
                 ? 'bg-green-100 text-green-700 border-2 border-green-400'
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-2 border-gray-200'
             }`}
           >
-            {pinCopied ? 'Copied!' : 'Tap to Copy PIN'}
+            {keyCopied ? 'Copied!' : 'Tap to Copy Key'}
           </button>
 
-          <p className="text-xs text-amber-600 bg-amber-50 rounded-xl p-3 mb-5">
+          <p className="text-xs text-amber-600 bg-amber-50 rounded-xl p-3 mb-5 text-left">
             <AlertTriangle className="w-3.5 h-3.5 inline -mt-0.5 mr-1" />
-            Keep this PIN safe. You&apos;ll need it if you want to order more items later at this table.
+            Write it down or take a screenshot. For your security, we can&apos;t show this key again.
           </p>
 
           <button
-            onClick={() => setShowPinReveal(false)}
+            onClick={() => setShowKeyReveal(false)}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg transition-all"
           >
-            Got it — Let&apos;s Order!
+            I&apos;ve Saved It — Let&apos;s Order!
           </button>
         </div>
       </div>
@@ -1203,31 +1153,15 @@ function TableOrderContent() {
           </div>
 
           <div className="space-y-5">
-            {/* Table Selection */}
+            {/* Table (locked to the scanned QR) */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Select Your Table(s) <span className="text-red-500">*</span>
-              </label>
-              <div className="grid grid-cols-6 gap-2">
-                {Array.from({ length: 18 }, (_, i) => i + 1).map(num => (
-                  <button
-                    key={num}
-                    onClick={() => toggleTable(num)}
-                    className={`p-2.5 rounded-xl font-bold transition-all text-sm ${
-                      selectedTables.includes(num)
-                        ? 'bg-green-600 text-white shadow-md scale-105 ring-2 ring-green-300'
-                        : 'bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200'
-                    }`}
-                  >
-                    {num}
-                  </button>
-                ))}
+              <label className="block text-sm font-bold text-gray-700 mb-2">Your Table</label>
+              <div className="flex items-center gap-3 bg-green-50 border-2 border-green-200 rounded-xl px-4 py-3">
+                <div className="w-10 h-10 bg-green-600 text-white rounded-lg flex items-center justify-center font-black text-lg">
+                  {urlTableNumber}
+                </div>
+                <span className="text-sm font-semibold text-green-800">Table {urlTableNumber}</span>
               </div>
-              {selectedTables.length > 0 && (
-                <p className="text-xs text-green-600 mt-2 font-semibold">
-                  Table {selectedTables.sort((a, b) => a - b).join(', ')} selected
-                </p>
-              )}
             </div>
 
             {/* Customer Name */}
@@ -1428,40 +1362,26 @@ function TableOrderContent() {
           {/* Action Buttons */}
           <div className="space-y-3">
             <button
-              onClick={() => {
-                if (urlTableNumber && !reorderPinVerified) {
-                  setReorderPinInput('')
-                  setReorderPinError(false)
-                  setShowReorderPinModal(true)
-                } else {
-                  setOrderSubmitted(false)
-                }
-              }}
+              onClick={() => setOrderSubmitted(false)}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-md"
             >
               + Order More Items
             </button>
 
-            {/* Pay Now button */}
+            {/* Request the bill */}
             <button
               onClick={async () => {
-                if (supabase && sessionId) {
-                  await supabase
-                    .from('table_sessions')
-                    .update({ status: 'bill_requested' })
-                    .eq('id', sessionId)
+                try {
+                  const res = await fetch('/api/table/bill', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId, table: urlTableNumber, token: urlToken, key: sessionKey || undefined }),
+                  })
+                  if (!res.ok) throw new Error('bill failed')
+                  alert('Bill requested! Our staff will be with you shortly.')
+                } catch {
+                  alert('Could not request the bill. Please ask a staff member.')
                 }
-                if (supabase) {
-                  supabase.from('notifications').insert({
-                    type: 'bill_request',
-                    title: 'Bill Requested - Table ' + selectedTables[0],
-                    message: customerName + ' is ready to pay',
-                    target_role: 'reception',
-                    sound_type: 'billRequest',
-                    metadata: { table_number: selectedTables[0], customer_name: customerName }
-                  }).then(() => {})
-                }
-                alert('Bill requested! Our staff will be with you shortly.')
               }}
               className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white font-bold py-4 rounded-xl transition-all shadow-md"
             >
@@ -2508,87 +2428,6 @@ function TableOrderContent() {
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* ===== RE-ORDER PIN MODAL ===== */}
-      {showReorderPinModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-7 text-center">
-            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h2 className="text-xl font-black text-gray-900 mb-1">Confirm to Order More</h2>
-            <p className="text-gray-500 text-sm mb-5">
-              Enter the <strong>4-digit table PIN</strong> from the card on your table.
-            </p>
-
-            {/* PIN dots */}
-            <div className="flex justify-center gap-3 mb-2">
-              {[0, 1, 2, 3].map(i => (
-                <div
-                  key={i}
-                  className={`w-13 h-14 border-2 rounded-xl flex items-center justify-center text-2xl font-black transition-all w-12
-                    ${reorderPinInput.length > i
-                      ? 'border-green-500 bg-green-50 text-green-700'
-                      : 'border-gray-200 bg-gray-50 text-gray-200'
-                    } ${reorderPinError ? 'border-red-400 bg-red-50 animate-pulse' : ''}`}
-                >
-                  {reorderPinInput[i] ? '●' : '·'}
-                </div>
-              ))}
-            </div>
-
-            {reorderPinError && (
-              <p className="text-red-500 text-sm font-semibold mb-3 mt-2">
-                Wrong PIN. Check the card on your table.
-              </p>
-            )}
-            {!reorderPinError && <div className="mb-3" />}
-
-            {/* Number pad */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((key, i) => (
-                <button
-                  key={i}
-                  disabled={!key || reorderPinLoading}
-                  onClick={() => {
-                    if (!key) return
-                    if (key === '⌫') {
-                      setReorderPinInput(p => p.slice(0, -1))
-                      setReorderPinError(false)
-                    } else if (reorderPinInput.length < 4) {
-                      const next = reorderPinInput + key
-                      setReorderPinInput(next)
-                      setReorderPinError(false)
-                      if (next.length === 4) verifyReorderPin(next, () => setOrderSubmitted(false))
-                    }
-                  }}
-                  className={`h-12 rounded-xl font-bold text-lg transition-all select-none
-                    ${!key ? 'invisible' : 'bg-gray-100 hover:bg-gray-200 active:scale-95 text-gray-800 cursor-pointer'}
-                    ${reorderPinLoading ? 'opacity-50 cursor-wait' : ''}`}
-                >
-                  {key}
-                </button>
-              ))}
-            </div>
-
-            <button
-              onClick={() => verifyReorderPin(undefined, () => setOrderSubmitted(false))}
-              disabled={reorderPinInput.length !== 4 || reorderPinLoading}
-              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3 rounded-xl transition-all mb-2"
-            >
-              {reorderPinLoading ? '⏳ Checking...' : 'Confirm →'}
-            </button>
-            <button
-              onClick={() => { setShowReorderPinModal(false); setReorderPinInput(''); setReorderPinError(false) }}
-              className="w-full text-gray-400 text-sm py-2 hover:text-gray-600 transition-colors"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}

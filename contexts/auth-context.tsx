@@ -72,18 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { error: new Error(data.error || 'Registration failed') };
       }
 
-      // Auto sign-in after registration
-      const signInResult = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (signInResult?.error) {
-        // Registration succeeded but auto-login failed — still return success
-        return { error: null };
-      }
-
+      // Do NOT auto sign-in: the account starts unverified and must be
+      // confirmed with the emailed 6-digit code first. The register page
+      // redirects the user to the verification screen.
       return { error: null };
     } catch (error) {
       return { error: error as Error };

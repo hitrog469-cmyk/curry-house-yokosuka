@@ -99,8 +99,8 @@ export default function RegisterPage() {
       setError(error.message || 'Failed to create account');
       setLoading(false);
     } else {
-      // Auto signed-in after registration, redirect to profile
-      router.push('/profile');
+      // Account created (unverified) — send the user to enter the emailed code
+      router.push(`/auth/verify?email=${encodeURIComponent(formData.email.toLowerCase().trim())}`);
     }
   };
 

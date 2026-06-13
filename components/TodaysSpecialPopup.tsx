@@ -6,7 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getTodaysSpecial, isSpecialValid, type DailySpecial } from '@/lib/daily-special-api'
 import { getMenuItemImage } from '@/lib/image-mapping'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Clock } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { menuItems } from '@/lib/menu-data'
 
@@ -186,29 +186,30 @@ export default function TodaysSpecialPopup({ forceShow = false }: TodaysSpecialP
               </div>
 
               {/* Time */}
-              <p className="text-xs text-gray-400 mb-4">
-                ⏰ Available {special.valid_from} - {special.valid_until}
+              <p className="text-xs text-gray-400 mb-4 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" /> Available {special.valid_from} - {special.valid_until}
               </p>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Link
-                  href={`/table-order?special=${special.menu_item_id}`}
+              {/* Action Button — never routes to the table system from the web.
+                  Table ordering is QR-only; from a QR scan we just acknowledge. */}
+              {isFromQR ? (
+                <button
                   onClick={handleDismiss}
-                  className="flex-1 text-center text-white font-bold py-3 rounded-xl transition-all text-sm shadow-md hover:shadow-lg"
+                  className="block w-full text-center text-white font-bold py-3 rounded-xl transition-all text-sm shadow-md hover:shadow-lg"
                   style={{background: 'linear-gradient(135deg, #5DB761, #4AA64E)'}}
                 >
-                  Order In-House →
-                </Link>
+                  Got it
+                </button>
+              ) : (
                 <Link
-                  href={`/order?special=${special.menu_item_id}`}
+                  href="/menu"
                   onClick={handleDismiss}
-                  className="flex-1 text-center font-bold py-3 rounded-xl transition-all text-sm border-2"
-                  style={{borderColor: '#5DB761', color: '#3E7B41'}}
+                  className="block w-full text-center text-white font-bold py-3 rounded-xl transition-all text-sm shadow-md hover:shadow-lg"
+                  style={{background: 'linear-gradient(135deg, #5DB761, #4AA64E)'}}
                 >
-                  Delivery →
+                  View Menu →
                 </Link>
-              </div>
+              )}
 
               {/* Fine print */}
               <p className="text-[10px] text-gray-400 mt-3 text-center">

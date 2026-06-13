@@ -25,7 +25,7 @@ CREATE POLICY "Authenticated users can update site_settings"
 
 -- Default values
 INSERT INTO site_settings (key, value) VALUES
-  ('banner_messages', '["🔥 FREE DELIVERY on all orders! — TAP TO ORDER", "🌟 Check out Today''s Special — Limited Time!", "🎉 Use code WELCOME15 for 15% OFF", "📍 Yokosuka''s Finest Indian, Mexican, Nepalese & Japanese-Fusion"]'::jsonb),
+  ('banner_messages', '["The Curry House Yokosuka — Authentic Indian, Nepalese, Mexican & Japanese-Fusion", "Open daily 11:00 – 22:00 — Dine in with us", "Online ordering is launching soon — stay tuned", "Yokosuka''s home of authentic curry"]'::jsonb),
   ('restaurant_open', 'true'::jsonb),
   ('restaurant_closed_message', '"We are currently closed. We will be back soon!"'::jsonb)
 ON CONFLICT (key) DO NOTHING;

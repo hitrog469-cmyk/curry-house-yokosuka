@@ -51,11 +51,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/table-order" className="text-gray-400 hover:text-green-400 transition-colors text-sm flex items-center gap-2">
-                  <span>→</span> Dine-In QR Order
-                </Link>
-              </li>
-              <li>
                 <Link href="/track" className="text-gray-400 hover:text-green-400 transition-colors text-sm flex items-center gap-2">
                   <span>→</span> Track Order
                 </Link>

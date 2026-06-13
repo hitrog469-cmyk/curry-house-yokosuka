@@ -20,16 +20,13 @@ export function getTransporter() {
   })
 }
 
-export async function sendVerificationEmail(email: string, fullName: string, token: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.thecurryhouseyokosuka.com'
-  const verifyUrl = `${baseUrl}/api/auth/verify-email?token=${token}`
-
+export async function sendVerificationEmail(email: string, fullName: string, code: string) {
   const transporter = getTransporter()
 
   await transporter.sendMail({
     from: `"The Curry House Yokosuka" <${process.env.GMAIL_USER}>`,
     to: email,
-    subject: 'Verify your email — The Curry House Yokosuka',
+    subject: `${code} is your verification code — The Curry House Yokosuka`,
     html: `
       <!DOCTYPE html>
       <html>
@@ -41,17 +38,16 @@ export async function sendVerificationEmail(email: string, fullName: string, tok
           <div style="padding: 32px 24px;">
             <h2 style="color: #111; margin-top: 0;">Welcome, ${escapeHtml(fullName)}!</h2>
             <p style="color: #555; line-height: 1.6;">
-              Thank you for signing up! Please verify your email address to activate your account.
+              Thank you for signing up. Enter the verification code below to activate your account.
             </p>
             <div style="text-align: center; margin: 32px 0;">
-              <a href="${verifyUrl}"
-                style="background: #16a34a; color: white; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block;">
-                Verify My Email
-              </a>
+              <div style="display: inline-block; background: #f0fdf4; border: 2px solid #16a34a; border-radius: 12px; padding: 18px 32px;">
+                <span style="font-size: 36px; font-weight: bold; letter-spacing: 10px; color: #15803d; font-family: 'Courier New', monospace;">${escapeHtml(code)}</span>
+              </div>
             </div>
             <p style="color: #888; font-size: 13px; text-align: center;">
-              This link expires in <strong>24 hours</strong>.<br/>
-              If you didn't sign up, you can ignore this email.
+              This code expires in <strong>15 minutes</strong>.<br/>
+              If you didn't sign up, you can safely ignore this email.
             </p>
           </div>
           <div style="background: #f3f4f6; padding: 16px; text-align: center;">

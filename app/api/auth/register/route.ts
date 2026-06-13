@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { createClient } from '@supabase/supabase-js'
-import { randomBytes } from 'crypto'
+import { randomInt } from 'crypto'
 import { sendVerificationEmail } from '@/lib/mailer'
 
 function getSupabase() {
@@ -13,10 +13,16 @@ function getSupabase() {
   })
 }
 
+// 6-digit numeric verification code (000000–999999)
+function generateCode() {
+  return randomInt(0, 1_000_000).toString().padStart(6, '0')
+}
+const CODE_TTL_MS = 15 * 60 * 1000 // 15 minutes
+
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { email, password, fullName, phone, role } = body
+    const { email, password, fullName, phone } = body
 
     // Validate input
     if (!email || !email.includes('@')) {
@@ -35,11 +41,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Registration is temporarily unavailable. Please try again later.' }, { status: 500 })
     }
 
+    const normalizedEmail = email.toLowerCase().trim()
+    const code = generateCode()
+    const codeExpires = new Date(Date.now() + CODE_TTL_MS).toISOString()
+    const passwordHash = await bcrypt.hash(password, 12)
+
     // Check if email already exists
     const { data: existing, error: lookupError } = await supabase
       .from('profiles')
-      .select('id')
-      .eq('email', email.toLowerCase())
+      .select('id, email_verified')
+      .eq('email', normalizedEmail)
       .maybeSingle()
 
     if (lookupError) {
@@ -48,26 +59,52 @@ export async function POST(request: Request) {
     }
 
     if (existing) {
+      // If the account exists but was never verified, treat this as a re-attempt:
+      // refresh the password + code and re-send, so the user isn't stuck.
+      if (!existing.email_verified) {
+        const { error: updErr } = await supabase
+          .from('profiles')
+          .update({
+            full_name: fullName.trim(),
+            password_hash: passwordHash,
+            verification_token: code,
+            verification_token_expires: codeExpires,
+            ...(phone?.trim() ? { phone: phone.trim() } : {}),
+          })
+          .eq('id', existing.id)
+
+        if (updErr) {
+          console.error('Registration re-attempt update error:', updErr)
+          return NextResponse.json({ error: 'Registration failed. Please try again later.' }, { status: 500 })
+        }
+
+        try {
+          await sendVerificationEmail(normalizedEmail, fullName.trim(), code)
+        } catch (emailErr) {
+          console.error('Verification email failed to send:', emailErr)
+        }
+
+        return NextResponse.json({
+          success: true,
+          email: normalizedEmail,
+          message: 'Verification code sent. Please check your email.',
+        })
+      }
+
+      // Already verified → genuine duplicate
       return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
     }
 
-    // Hash password
-    const passwordHash = await bcrypt.hash(password, 12)
-
-    // Generate email verification token (expires in 24h)
-    const verificationToken = randomBytes(32).toString('hex')
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-
     // Create profile — role always forced to 'customer'
-    const insertData: any = {
-      email: email.toLowerCase(),
+    const insertData: Record<string, unknown> = {
+      email: normalizedEmail,
       full_name: fullName.trim(),
       password_hash: passwordHash,
       role: 'customer',
       is_active: true,
       email_verified: false,
-      verification_token: verificationToken,
-      verification_token_expires: verificationExpires,
+      verification_token: code,
+      verification_token_expires: codeExpires,
     }
 
     // Only add phone if provided and non-empty
@@ -78,7 +115,7 @@ export async function POST(request: Request) {
     const { data: profile, error: insertError } = await supabase
       .from('profiles')
       .insert(insertData)
-      .select('id, email, full_name, role')
+      .select('id, email, full_name')
       .single()
 
     if (insertError) {
@@ -86,20 +123,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Registration failed. Please try again later.' }, { status: 500 })
     }
 
-    // Send verification email (non-blocking — don't fail registration if email fails)
+    // Send verification code email (non-blocking — don't fail registration if email fails)
     try {
-      await sendVerificationEmail(profile.email, fullName.trim(), verificationToken)
+      await sendVerificationEmail(profile.email, fullName.trim(), code)
     } catch (emailErr) {
       console.error('Verification email failed to send:', emailErr)
     }
 
     return NextResponse.json({
       success: true,
-      id: profile.id,
-      role: profile.role,
-      message: 'Account created! Please check your email to verify your account.'
+      email: profile.email,
+      message: 'Account created! Please check your email for your verification code.',
     })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Registration catch error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
