@@ -9,6 +9,18 @@ import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import TodaysSpecialPopup from '@/components/TodaysSpecialPopup'
+import { ORDERING_ENABLED, ORDERING_DISABLED_MESSAGE } from '@/lib/site-config'
+import OrderingDisabledBanner from '@/components/OrderingDisabledBanner'
+import { Flame, Lock, AlertTriangle, Search, UtensilsCrossed, Star, Soup, Wheat, CupSoda, Beer, Martini, ArrowUp } from 'lucide-react'
+
+// Renders a row of flame icons for a spice level
+const SpiceFlames = ({ count, className = 'w-3 h-3' }: { count: number; className?: string }) => (
+  <span className="inline-flex flex-wrap items-center justify-center">
+    {Array.from({ length: count }, (_, i) => (
+      <Flame key={i} className={className} />
+    ))}
+  </span>
+)
 
 function TableOrderContent() {
   const searchParams = useSearchParams()
@@ -689,9 +701,9 @@ function TableOrderContent() {
   // ========================
   // HELPERS
   // ========================
-  const getSpiceLevelEmoji = (level: string) => {
-    const emojis: Record<string, string> = { 'MILD': '🟢', 'NORMAL': '🟡', 'MEDIUM': '🟠', 'HOT': '🔴', 'VERY HOT': '🔥' }
-    return emojis[level] || '🌶️'
+  const getSpiceLevelFlames = (level: string) => {
+    const flames: Record<string, number> = { 'MILD': 1, 'NORMAL': 2, 'MEDIUM': 3, 'HOT': 4, 'VERY HOT': 5 }
+    return flames[level] || 1
   }
 
   const getSpiceLevelJapanese = (level: string) => {
@@ -752,6 +764,7 @@ function TableOrderContent() {
   }
 
   const handleSetupComplete = async () => {
+    if (!ORDERING_ENABLED) { alert(ORDERING_DISABLED_MESSAGE); return }
     if (selectedTables.length === 0 || !customerName || !numberOfPeople) {
       alert('Please fill in all required fields')
       return
@@ -807,6 +820,7 @@ function TableOrderContent() {
   // SUBMIT ORDER — with beverage prompt
   // ========================
   const initiateSubmitOrder = () => {
+    if (!ORDERING_ENABLED) { alert(ORDERING_DISABLED_MESSAGE); return }
     if (Object.keys(cart).length === 0) return
 
     // Check if there are any alcoholic drink categories already in cart
@@ -825,6 +839,7 @@ function TableOrderContent() {
   }
 
   const handleSubmitOrder = async () => {
+    if (!ORDERING_ENABLED) { alert(ORDERING_DISABLED_MESSAGE); return }
     if (Object.keys(cart).length === 0) return
     if (!supabase) { alert('Order system not configured'); return }
     setLoading(true)
@@ -1058,7 +1073,7 @@ function TableOrderContent() {
 
           {pinError && (
             <p className="text-red-500 text-sm font-semibold mb-3 mt-2">
-              ❌ Wrong PIN. Check the card on your table.
+              Wrong PIN. Check the card on your table.
             </p>
           )}
           {!pinError && <div className="mb-3" />}
@@ -1095,7 +1110,7 @@ function TableOrderContent() {
             disabled={pinInput.length !== 4 || pinLoading}
             className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold py-3.5 rounded-xl text-lg transition-all"
           >
-            {pinLoading ? '⏳ Checking...' : 'Enter →'}
+            {pinLoading ? 'Checking...' : 'Enter →'}
           </button>
 
           <p className="text-xs text-gray-400 mt-4">
@@ -1115,7 +1130,7 @@ function TableOrderContent() {
         <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center">
           <img src="/images/Logo.png" alt="The Curry House" className="w-16 h-16 mx-auto mb-4 object-contain" />
           <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <span className="text-2xl">🔐</span>
+            <Lock className="w-6 h-6 text-green-600" />
           </div>
           <h1 className="text-2xl font-black text-gray-900 mb-1">Your Table PIN</h1>
           <p className="text-gray-500 text-sm mb-6">
@@ -1147,18 +1162,19 @@ function TableOrderContent() {
                 : 'bg-gray-100 hover:bg-gray-200 text-gray-700 border-2 border-gray-200'
             }`}
           >
-            {pinCopied ? '✅ Copied!' : '📋 Tap to Copy PIN'}
+            {pinCopied ? 'Copied!' : 'Tap to Copy PIN'}
           </button>
 
           <p className="text-xs text-amber-600 bg-amber-50 rounded-xl p-3 mb-5">
-            ⚠️ Keep this PIN safe. You&apos;ll need it if you want to order more items later at this table.
+            <AlertTriangle className="w-3.5 h-3.5 inline -mt-0.5 mr-1" />
+            Keep this PIN safe. You&apos;ll need it if you want to order more items later at this table.
           </p>
 
           <button
             onClick={() => setShowPinReveal(false)}
             className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg transition-all"
           >
-            Got it — Let&apos;s Order! 🍛
+            Got it — Let&apos;s Order!
           </button>
         </div>
       </div>
@@ -1341,12 +1357,24 @@ function TableOrderContent() {
             </div>
 
             {/* Continue Button */}
-            <button
-              onClick={handleSetupComplete}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-lg"
-            >
-              Let's Start Ordering!
-            </button>
+            {ORDERING_ENABLED ? (
+              <button
+                onClick={handleSetupComplete}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg text-lg"
+              >
+                Let's Start Ordering!
+              </button>
+            ) : (
+              <>
+                <OrderingDisabledBanner className="mb-3" />
+                <button
+                  disabled
+                  className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold py-4 rounded-xl shadow-lg text-lg opacity-50 cursor-not-allowed"
+                >
+                  Table Ordering Launching Soon
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1433,7 +1461,7 @@ function TableOrderContent() {
                     metadata: { table_number: selectedTables[0], customer_name: customerName }
                   }).then(() => {})
                 }
-                alert('Bill requested! Our staff will be with you shortly. 🙏')
+                alert('Bill requested! Our staff will be with you shortly.')
               }}
               className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white font-bold py-4 rounded-xl transition-all shadow-md"
             >
@@ -1551,7 +1579,7 @@ function TableOrderContent() {
 
         {filteredItems.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-4xl mb-3">🔍</div>
+            <Search className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 font-medium">No items found</p>
             <p className="text-gray-400 text-sm mt-1">Try a different search or category</p>
           </div>
@@ -1576,12 +1604,12 @@ function TableOrderContent() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
-                          <span className="text-4xl">🍛</span>
+                          <UtensilsCrossed className="w-10 h-10 text-green-300" />
                         </div>
                       )}
                       {item.isRecommended && (
-                        <div className="absolute top-1.5 left-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md">
-                          ⭐ TOP
+                        <div className="absolute top-1.5 left-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md inline-flex items-center gap-0.5">
+                          <Star className="w-2.5 h-2.5 fill-current" /> TOP
                         </div>
                       )}
                     </div>
@@ -1596,8 +1624,8 @@ function TableOrderContent() {
 
                       {/* Spice level badge */}
                       {selectedSpiceLevels[item.id] && (
-                        <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded-full font-bold border mt-1 ${getSpiceColor(selectedSpiceLevels[item.id])}`}>
-                          {getSpiceLevelEmoji(selectedSpiceLevels[item.id])} {selectedSpiceLevels[item.id]}
+                        <span className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-bold border mt-1 ${getSpiceColor(selectedSpiceLevels[item.id])}`}>
+                          <SpiceFlames count={getSpiceLevelFlames(selectedSpiceLevels[item.id])} className="w-2.5 h-2.5" /> {selectedSpiceLevels[item.id]}
                         </span>
                       )}
 
@@ -1629,8 +1657,8 @@ function TableOrderContent() {
                             </span>
                           )}
                           {(item.spiceLevel || item.category?.includes('curry')) && (
-                            <span className="text-[9px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded-full font-semibold border border-red-200">
-                              🌶️ Spice
+                            <span className="text-[9px] bg-red-50 text-red-700 px-1.5 py-0.5 rounded-full font-semibold border border-red-200 inline-flex items-center gap-0.5">
+                              <Flame className="w-2.5 h-2.5" /> Spice
                             </span>
                           )}
                         </div>
@@ -1744,32 +1772,32 @@ function TableOrderContent() {
                       {img ? (
                         <Image src={img} alt={item.name} width={56} height={56} className="w-full h-full object-cover scale-[1.6]" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-xl">🍽️</div>
+                        <div className="w-full h-full flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-orange-300" /></div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-gray-900 truncate">{getItemDisplayName(itemId)}</p>
                       {selectedSpiceLevels[itemId] && (
-                        <p className="text-[10px] text-gray-500">{getSpiceLevelEmoji(selectedSpiceLevels[itemId])} {selectedSpiceLevels[itemId]}</p>
+                        <p className="text-[10px] text-gray-500 inline-flex items-center gap-1"><SpiceFlames count={getSpiceLevelFlames(selectedSpiceLevels[itemId])} className="w-2.5 h-2.5" /> {selectedSpiceLevels[itemId]}</p>
                       )}
                       {selectedAddOns[itemId] && selectedAddOns[itemId].length > 0 && (
                         <p className="text-[10px] text-blue-600">+ {selectedAddOns[itemId].join(', ')}</p>
                       )}
                       {setMealSelections[itemId] && (
                         <div className="text-[10px] text-purple-600 mt-0.5 space-y-0.5">
-                          <p>🍛 {setMealSelections[itemId].curries.map(cId => {
+                          <p className="inline-flex items-center gap-1"><Soup className="w-3 h-3 shrink-0" /> {setMealSelections[itemId].curries.map(cId => {
                             const uc = upgradeCurryOptions.find(c => c.id === cId)
                             return uc ? uc.name : (menuItems.find(i => i.id === cId)?.name || cId)
                           }).join(', ')}</p>
-                          <p>🫓 {getNaanOptionsForSet(itemId).find(n => n.id === setMealSelections[itemId].naan)?.name || 'Plain Naan'} · {riceOptions.find(r => r.id === setMealSelections[itemId].rice)?.name || 'Plain Rice'}</p>
+                          <p className="inline-flex items-center gap-1"><Wheat className="w-3 h-3 shrink-0" /> {getNaanOptionsForSet(itemId).find(n => n.id === setMealSelections[itemId].naan)?.name || 'Plain Naan'} · {riceOptions.find(r => r.id === setMealSelections[itemId].rice)?.name || 'Plain Rice'}</p>
                           {setMealSelections[itemId].drink
-                            ? <p>🥤 {drinkUpgradeOptions.find(d => d.id === setMealSelections[itemId].drink)?.name} (upgrade)</p>
+                            ? <p className="inline-flex items-center gap-1"><CupSoda className="w-3 h-3 shrink-0" /> {drinkUpgradeOptions.find(d => d.id === setMealSelections[itemId].drink)?.name} (upgrade)</p>
                             : setMealSelections[itemId].includedDrink
-                              ? <p>🥤 {includedSoftDrinkOptions.find(d => d.id === setMealSelections[itemId].includedDrink)?.name}</p>
-                              : <p className="text-amber-600">🥤 Soft drink not chosen yet</p>
+                              ? <p className="inline-flex items-center gap-1"><CupSoda className="w-3 h-3 shrink-0" /> {includedSoftDrinkOptions.find(d => d.id === setMealSelections[itemId].includedDrink)?.name}</p>
+                              : <p className="text-amber-600 inline-flex items-center gap-1"><CupSoda className="w-3 h-3 shrink-0" /> Soft drink not chosen yet</p>
                           }
                           {setMealSelections[itemId].upgradeDetails && setMealSelections[itemId].upgradeDetails.length > 0 && (
-                            <p className="text-orange-600 font-semibold">⬆️ {setMealSelections[itemId].upgradeDetails.join(', ')}</p>
+                            <p className="text-orange-600 font-semibold inline-flex items-center gap-1"><ArrowUp className="w-3 h-3 shrink-0" /> {setMealSelections[itemId].upgradeDetails.join(', ')}</p>
                           )}
                         </div>
                       )}
@@ -1829,12 +1857,13 @@ function TableOrderContent() {
                 <span className="text-gray-500 font-medium">Total</span>
                 <span className="text-2xl font-black text-gray-900">{formatPrice(getCartTotal())}</span>
               </div>
+              {!ORDERING_ENABLED && <OrderingDisabledBanner className="mb-3" />}
               <button
                 onClick={() => { setShowCart(false); initiateSubmitOrder() }}
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg disabled:opacity-50 text-base"
+                disabled={loading || !ORDERING_ENABLED}
+                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-base"
               >
-                {loading ? 'Sending...' : 'Send to Kitchen'}
+                {!ORDERING_ENABLED ? 'Ordering Launching Soon' : loading ? 'Sending...' : 'Send to Kitchen'}
               </button>
             </div>
           </div>
@@ -1944,7 +1973,7 @@ function TableOrderContent() {
               return (
                 <div className="p-5">
                   <div className="mb-4 text-center">
-                    <div className="text-3xl mb-2">🌶️</div>
+                    <Flame className="w-7 h-7 mx-auto mb-2 text-red-500" />
                     <h3 className="text-lg font-black text-gray-900">{item.name}</h3>
                     <p className="text-gray-500 text-xs">{item.nameJp}</p>
                     <p className="text-gray-400 text-xs mt-1">How spicy would you like it?</p>
@@ -1963,7 +1992,7 @@ function TableOrderContent() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <span className="text-lg">{getSpiceLevelEmoji(level)}</span>
+                            <SpiceFlames count={getSpiceLevelFlames(level)} className="w-3.5 h-3.5" />
                             <div className="text-left">
                               <span className="block font-bold text-gray-900 text-sm">{level}</span>
                               <span className="block text-[11px] text-gray-500">{getSpiceLevelJapanese(level)}</span>
@@ -2076,7 +2105,7 @@ function TableOrderContent() {
               <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-5 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
-                    <span className="text-3xl">🍛</span>
+                    <Soup className="w-8 h-8" />
                   </div>
                   <div>
                     <h3 className="text-xl font-bold">{setItem.name}</h3>
@@ -2140,7 +2169,7 @@ function TableOrderContent() {
 
                   {/* Premium Curry Upgrades */}
                   <div className="mt-3 pt-3 border-t border-dashed border-orange-200">
-                    <p className="text-xs font-bold text-orange-600 uppercase mb-2">⬆️ Premium Upgrade Curries (optional)</p>
+                    <p className="text-xs font-bold text-orange-600 uppercase mb-2 inline-flex items-center gap-1"><ArrowUp className="w-3.5 h-3.5" /> Premium Upgrade Curries (optional)</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {upgradeCurryOptions.map(curry => {
                         const isSelected = tempSetMealCurries.includes(curry.id)
@@ -2237,7 +2266,7 @@ function TableOrderContent() {
 
                 {/* Drink Selection */}
                 <div>
-                  <h4 className="font-bold text-gray-900 mb-1">🥤 Choose Your Drink</h4>
+                  <h4 className="font-bold text-gray-900 mb-1 inline-flex items-center gap-2"><CupSoda className="w-4 h-4" /> Choose Your Drink</h4>
                   <p className="text-xs text-gray-500 mb-3">Pick a soft drink (included) or upgrade to something special</p>
 
                   {/* Tier selector: Included vs Upgrade */}
@@ -2304,14 +2333,14 @@ function TableOrderContent() {
 
                 {/* Spice Level */}
                 <div className="bg-red-50 rounded-xl p-4 border border-red-100">
-                  <h4 className="font-bold text-gray-800 text-sm mb-3">🌶️ Spice Level</h4>
+                  <h4 className="font-bold text-gray-800 text-sm mb-3 inline-flex items-center gap-2"><Flame className="w-4 h-4 text-red-500" /> Spice Level</h4>
                   <div className="grid grid-cols-5 gap-2">
                     {[
-                      { level: 'MILD',     emoji: '😊', labelJp: 'マイルド',  color: 'bg-yellow-100 border-yellow-400 text-yellow-800' },
-                      { level: 'NORMAL',   emoji: '🙂', labelJp: '普通',      color: 'bg-orange-100 border-orange-400 text-orange-800' },
-                      { level: 'MEDIUM',   emoji: '😅', labelJp: '中辛',      color: 'bg-orange-200 border-orange-500 text-orange-900' },
-                      { level: 'HOT',      emoji: '🥵', labelJp: '辛口',      color: 'bg-red-100 border-red-400 text-red-800' },
-                      { level: 'VERY HOT', emoji: '🔥', labelJp: '激辛',      color: 'bg-red-200 border-red-600 text-red-900' },
+                      { level: 'MILD',     flames: 1, labelJp: 'マイルド',  color: 'bg-yellow-100 border-yellow-400 text-yellow-800' },
+                      { level: 'NORMAL',   flames: 2, labelJp: '普通',      color: 'bg-orange-100 border-orange-400 text-orange-800' },
+                      { level: 'MEDIUM',   flames: 3, labelJp: '中辛',      color: 'bg-orange-200 border-orange-500 text-orange-900' },
+                      { level: 'HOT',      flames: 4, labelJp: '辛口',      color: 'bg-red-100 border-red-400 text-red-800' },
+                      { level: 'VERY HOT', flames: 5, labelJp: '激辛',      color: 'bg-red-200 border-red-600 text-red-900' },
                     ].map(s => (
                       <button
                         key={s.level}
@@ -2322,7 +2351,7 @@ function TableOrderContent() {
                             : 'bg-white border-gray-200 text-gray-500'
                         }`}
                       >
-                        <span className="text-xl">{s.emoji}</span>
+                        <SpiceFlames count={s.flames} className="w-3 h-3" />
                         <span className="text-[10px] font-bold mt-0.5">{s.level === 'VERY HOT' ? 'V.HOT' : s.level}</span>
                         <span className="text-[9px] opacity-70">{s.labelJp}</span>
                       </button>
@@ -2411,7 +2440,7 @@ function TableOrderContent() {
           <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto animate-slideUp">
             <div className="p-5">
               <div className="mb-4 text-center">
-                <div className="text-4xl mb-2">{pairingType === 'curry' ? '🍛' : '🫓'}</div>
+                <div className="flex justify-center mb-2">{pairingType === 'curry' ? <Soup className="w-9 h-9 text-orange-500" /> : <Wheat className="w-9 h-9 text-orange-500" />}</div>
                 <h3 className="text-xl font-black text-gray-900">
                   {pairingType === 'curry' ? 'Add a Curry?' : 'Add Naan or Rice?'}
                 </h3>
@@ -2434,7 +2463,7 @@ function TableOrderContent() {
                             <Image src={img} alt={item.name} width={48} height={48} className="w-full h-full object-cover scale-[1.5]" />
                           </div>
                         ) : (
-                          <span className="text-2xl">{pairingType === 'curry' ? '🍛' : '🫓'}</span>
+                          <span>{pairingType === 'curry' ? <Soup className="w-6 h-6 text-orange-500" /> : <Wheat className="w-6 h-6 text-orange-500" />}</span>
                         )}
                         <div className="flex-1">
                           <h4 className="font-bold text-sm text-gray-900">{item.name}</h4>
@@ -2570,19 +2599,19 @@ function TableOrderContent() {
           <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-md w-full shadow-2xl max-h-[85vh] overflow-y-auto animate-slideUp">
             <div className="p-5">
               <div className="mb-4 text-center">
-                <div className="text-4xl mb-2">🍻</div>
+                <div className="flex justify-center mb-2"><Beer className="w-9 h-9 text-amber-500" /></div>
                 <h3 className="text-xl font-black text-gray-900">How About a Drink?</h3>
                 <p className="text-gray-500 text-sm mt-1">A perfect pairing to complete your meal!</p>
               </div>
 
               <div className="space-y-3 mb-5">
                 {getBeverageSuggestions().map((beverage) => {
-                  const emoji = beverage.category === 'margaritas' ? '🍹' : beverage.category === 'cocktails' ? '🍺' : '🥤'
+                  const DrinkIcon = beverage.category === 'margaritas' ? Martini : beverage.category === 'cocktails' ? Beer : CupSoda
                   const qty = beverageQuantities[beverage.id] || 0
                   return (
                     <div key={beverage.id} className="p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-200">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-2xl">{emoji}</span>
+                        <DrinkIcon className="w-6 h-6 text-amber-600 shrink-0" />
                         <div className="flex-1">
                           <h4 className="font-bold text-sm text-gray-900">{beverage.name}</h4>
                           <p className="text-xs text-gray-500">{beverage.nameJp}</p>

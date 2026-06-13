@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Phone, Smartphone, Mail, MapPin } from 'lucide-react'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -105,25 +106,25 @@ export default function Footer() {
             <ul className="space-y-3">
               <li>
                 <a href="tel:046-813-5869" className="text-gray-400 hover:text-green-400 transition-colors text-sm flex items-center gap-3">
-                  <span className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0">📞</span>
+                  <span className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0"><Phone className="w-4 h-4" /></span>
                   <span>046-813-5869</span>
                 </a>
               </li>
               <li>
                 <a href="tel:046-828-6716" className="text-gray-400 hover:text-green-400 transition-colors text-sm flex items-center gap-3">
-                  <span className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0">📱</span>
+                  <span className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0"><Smartphone className="w-4 h-4" /></span>
                   <span>046-828-6716</span>
                 </a>
               </li>
               <li>
                 <a href="mailto:thecurryhouseyokosuka@gmail.com" className="text-gray-400 hover:text-green-400 transition-colors text-sm flex items-center gap-3">
-                  <span className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0">✉️</span>
+                  <span className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0"><Mail className="w-4 h-4" /></span>
                   <span className="break-all">thecurryhouseyokosuka@gmail.com</span>
                 </a>
               </li>
               <li className="pt-2">
                 <div className="text-gray-400 text-sm flex items-start gap-3">
-                  <span className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0">📍</span>
+                  <span className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center shrink-0"><MapPin className="w-4 h-4" /></span>
                   <span>Yokosuka City, Kanagawa, Japan</span>
                 </div>
               </li>

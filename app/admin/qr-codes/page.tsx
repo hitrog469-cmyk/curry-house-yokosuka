@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Download, ClipboardList, Printer } from 'lucide-react'
 
 // Pre-generated secure tokens for each table (18 tables)
 // In production, these would be stored in the database and can be regenerated
@@ -167,9 +168,9 @@ export default function QRCodesPage() {
             />
             <button
               onClick={downloadAllQRCodes}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg transition-all whitespace-nowrap"
+              className="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-3 rounded-lg transition-all whitespace-nowrap inline-flex items-center gap-2"
             >
-              📥 Download All QR Codes
+              <Download className="w-5 h-5" /> Download All QR Codes
             </button>
           </div>
           <p className="text-sm text-gray-500 mt-2">
@@ -179,7 +180,7 @@ export default function QRCodesPage() {
 
         {/* Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-          <h3 className="font-bold text-blue-900 mb-2">📝 Instructions:</h3>
+          <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Instructions:</h3>
           <ul className="text-blue-800 space-y-1 text-sm">
             <li>• Click "Print" to print a single QR code with table number</li>
             <li>• Click "Download" to save the QR code image</li>
@@ -231,15 +232,15 @@ export default function QRCodesPage() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => printQRCode(tableNumber)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all text-sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-all text-sm inline-flex items-center justify-center gap-1.5"
                   >
-                    🖨️ Print
+                    <Printer className="w-4 h-4" /> Print
                   </button>
                   <button
                     onClick={() => downloadQRCode(tableNumber)}
-                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-all text-sm"
+                    className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-all text-sm inline-flex items-center justify-center gap-1.5"
                   >
-                    📥 Download
+                    <Download className="w-4 h-4" /> Download
                   </button>
                 </div>
               </div>

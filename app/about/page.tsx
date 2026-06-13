@@ -3,6 +3,7 @@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/footer';
 import Link from 'next/link';
+import { Flame, UtensilsCrossed, Heart, Globe, Zap, Award } from 'lucide-react';
 
 export default function AboutPage() {
   return (
@@ -54,38 +55,40 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                icon: '🌶️',
+                icon: Flame,
                 title: 'Authentic Flavors',
                 description: 'We use traditional recipes and authentic spices imported directly from India and Nepal to ensure every bite is genuine.'
               },
               {
-                icon: '🥘',
+                icon: UtensilsCrossed,
                 title: 'Fresh Ingredients',
                 description: 'Only the freshest, highest-quality ingredients make it into our kitchen. We source locally when possible and never compromise on quality.'
               },
               {
-                icon: '❤️',
+                icon: Heart,
                 title: 'Made with Love',
                 description: 'Every dish is prepared by experienced chefs who pour their heart and soul into creating memorable dining experiences.'
               },
               {
-                icon: '🌍',
+                icon: Globe,
                 title: 'Community First',
                 description: 'We\'re proud to serve the Yokosuka community and create a welcoming space where everyone feels like family.'
               },
               {
-                icon: '⚡',
+                icon: Zap,
                 title: 'Fast Service',
                 description: 'Quick delivery without compromising quality. We value your time and ensure your food arrives hot and fresh.'
               },
               {
-                icon: '💯',
+                icon: Award,
                 title: 'Customer Satisfaction',
                 description: 'Your happiness is our priority. We go above and beyond to ensure every order exceeds expectations.'
               }
             ].map((value, idx) => (
               <div key={idx} className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-shadow">
-                <div className="text-6xl mb-4">{value.icon}</div>
+                <div className="w-14 h-14 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center mb-4">
+                  <value.icon className="w-7 h-7 text-orange-600 dark:text-orange-400" />
+                </div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">
                   {value.title}
                 </h3>

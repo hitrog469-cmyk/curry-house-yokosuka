@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { auth } from '@/auth'
 import { sendCateringEmail } from '@/lib/email'
 
 function getSupabaseAdmin() {
@@ -7,6 +8,11 @@ function getSupabaseAdmin() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return null
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+}
+
+async function isAdmin() {
+  const session = await auth()
+  return !!session && (session.user as any)?.role === 'admin'
 }
 
 // POST: submit catering inquiry + trigger email
@@ -37,7 +43,7 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('[catering] DB error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to submit inquiry. Please try again later.' }, { status: 500 })
     }
 
     // Send emails (non-blocking)
@@ -51,12 +57,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, id: data.id }, { status: 201 })
   } catch (err: any) {
     console.error('[catering] Error:', err)
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // GET: for admin
 export async function GET(request: Request) {
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const supabase = getSupabaseAdmin()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 500 })
 
@@ -71,12 +79,17 @@ export async function GET(request: Request) {
   if (status && status !== 'all') query = query.eq('status', status)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[catering] DB error:', error)
+    return NextResponse.json({ error: 'Failed to fetch inquiries' }, { status: 500 })
+  }
   return NextResponse.json({ inquiries: data })
 }
 
 // PATCH: update status
 export async function PATCH(request: Request) {
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const supabase = getSupabaseAdmin()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 500 })
 
@@ -90,6 +103,9 @@ export async function PATCH(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[catering] DB error:', error)
+    return NextResponse.json({ error: 'Failed to update inquiry' }, { status: 500 })
+  }
   return NextResponse.json({ inquiry: data })
 }

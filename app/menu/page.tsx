@@ -10,6 +10,9 @@ import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 import { useAuth } from '@/contexts/auth-context'
+import { ORDERING_ENABLED } from '@/lib/site-config'
+import OrderingDisabledBanner from '@/components/OrderingDisabledBanner'
+import { X, Flame, Soup, Beer, Wine, GlassWater, CookingPot } from 'lucide-react'
 
 function MenuContent() {
   const searchParams = useSearchParams()
@@ -47,6 +50,15 @@ function MenuContent() {
 
   // Favorites State
   const [favorites, setFavorites] = useState<string[]>([])
+
+  // "Ordering launching soon" toast (shown when ordering is disabled)
+  const [showOrderingNotice, setShowOrderingNotice] = useState(false)
+
+  useEffect(() => {
+    if (!showOrderingNotice) return
+    const timer = setTimeout(() => setShowOrderingNotice(false), 6000)
+    return () => clearTimeout(timer)
+  }, [showOrderingNotice])
 
   useEffect(() => {
     // Load cart from localStorage
@@ -199,6 +211,11 @@ function MenuContent() {
   }
 
   const updateCart = (itemId: string, change: number) => {
+    // Ordering kill switch: block additions, still allow removing items
+    if (!ORDERING_ENABLED && change > 0) {
+      setShowOrderingNotice(true)
+      return
+    }
     setCart(prev => {
       const newCart = { ...prev }
       const currentQty = newCart[itemId] || 0
@@ -317,6 +334,11 @@ function MenuContent() {
   }
 
   const handleAddToCart = (itemId: string) => {
+    if (!ORDERING_ENABLED) {
+      setShowOrderingNotice(true)
+      return
+    }
+
     // Check if auth is still loading - don't redirect yet
     if (authLoading) {
       return
@@ -579,15 +601,15 @@ function MenuContent() {
     }
   }
 
-  const getSpiceLevelEmoji = (level: string) => {
-    const emojis: any = {
-      'MILD': '🟢',
-      'NORMAL': '🟡',
-      'MEDIUM': '🟠',
-      'HOT': '🔴',
-      'VERY HOT': '🔥'
+  const getSpiceLevelFlames = (level: string) => {
+    const flames: any = {
+      'MILD': 1,
+      'NORMAL': 2,
+      'MEDIUM': 3,
+      'HOT': 4,
+      'VERY HOT': 5
     }
-    return emojis[level] || '🌶️'
+    return flames[level] || 1
   }
 
   const getSpiceLevelJapanese = (level: string) => {
@@ -732,6 +754,29 @@ function MenuContent() {
           </div>
         </div>
       </div>
+
+      {/* Coming-soon notice (persistent while ordering is disabled) */}
+      {!ORDERING_ENABLED && (
+        <div className="container-custom mt-6">
+          <OrderingDisabledBanner />
+        </div>
+      )}
+
+      {/* Coming-soon toast shown when a customer tries to add to cart */}
+      {showOrderingNotice && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-md animate-slideUp">
+          <div className="relative rounded-xl bg-white shadow-2xl">
+            <OrderingDisabledBanner />
+            <button
+              onClick={() => setShowOrderingNotice(false)}
+              aria-label="Dismiss"
+              className="absolute top-2 right-2 p-1 rounded-full text-emerald-700 hover:bg-emerald-100"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Floating Cart */}
       {getCartCount() > 0 && (
@@ -903,8 +948,13 @@ function MenuContent() {
                   {/* Spice Level - Show selected or default */}
                   {(item.spiceLevel || selectedSpiceLevels[item.id]) && (
                     <div className="mb-3">
-                      <span className={`text-xs px-3 py-1 rounded-full font-bold border ${getSpiceColor(selectedSpiceLevels[item.id] || item.spiceLevel || '')}`}>
-                        {selectedSpiceLevels[item.id] ? `🌶️ ${selectedSpiceLevels[item.id]}` : item.spiceLevel}
+                      <span className={`inline-flex items-center gap-1 text-xs px-3 py-1 rounded-full font-bold border ${getSpiceColor(selectedSpiceLevels[item.id] || item.spiceLevel || '')}`}>
+                        {selectedSpiceLevels[item.id] ? (
+                          <>
+                            <Flame className="w-3.5 h-3.5 fill-current" />
+                            {selectedSpiceLevels[item.id]}
+                          </>
+                        ) : item.spiceLevel}
                       </span>
                     </div>
                   )}
@@ -946,7 +996,7 @@ function MenuContent() {
                   {item.addOns && item.addOns.length > 0 && (
                     <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
                       <p className="text-xs font-semibold text-blue-900 text-center">
-                        ✨ {item.addOns.length} Add-On{item.addOns.length > 1 ? 's' : ''} Available
+                        {item.addOns.length} Add-On{item.addOns.length > 1 ? 's' : ''} Available
                       </p>
                     </div>
                   )}
@@ -1010,7 +1060,7 @@ function MenuContent() {
                 <div className="p-6">
                   {/* Header */}
                   <div className="mb-4 text-center">
-                    <div className="text-4xl mb-2">🌶️</div>
+                    <Flame className="w-10 h-10 mb-2 mx-auto text-red-500 fill-current" />
                     <h3 className="text-2xl font-bold text-gray-900 mb-1">Choose Your Spice Level</h3>
                     <p className="text-gray-600 text-sm mb-2">{item.name}</p>
                     <p className="text-gray-500 text-xs">{item.nameJp}</p>
@@ -1030,7 +1080,11 @@ function MenuContent() {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <span className="text-2xl">{getSpiceLevelEmoji(level)}</span>
+                            <span className="flex items-center gap-0.5 text-red-500">
+                              {Array.from({ length: getSpiceLevelFlames(level) }).map((_, i) => (
+                                <Flame key={i} className="w-5 h-5 fill-current" />
+                              ))}
+                            </span>
                             <div className="text-left">
                               <span className="block font-bold text-gray-900">{level}</span>
                               <span className="block text-sm text-gray-600">{getSpiceLevelJapanese(level)}</span>
@@ -1049,7 +1103,7 @@ function MenuContent() {
                   {/* Info Box */}
                   <div className="mb-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
                     <p className="text-xs text-blue-800 text-center">
-                      💡 You can always adjust spice level for each order
+                      You can always adjust spice level for each order
                     </p>
                   </div>
 
@@ -1148,7 +1202,6 @@ function MenuContent() {
                 <div className="p-6">
                   {/* Header */}
                   <div className="mb-4 text-center">
-                    <div className="text-4xl mb-2">🎉</div>
                     <h3 className="text-2xl font-bold text-gray-900 mb-1">Also Want to Add?</h3>
                     <p className="text-gray-600 text-sm">Complete your order with these items</p>
                   </div>
@@ -1223,7 +1276,7 @@ function MenuContent() {
                   <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-5 shrink-0">
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center">
-                        <span className="text-3xl">🍛</span>
+                        <Soup className="w-8 h-8 text-white" />
                       </div>
                       <div>
                         <h3 className="text-xl font-bold">{setItem.name}</h3>
@@ -1383,21 +1436,21 @@ function MenuContent() {
                 <div className="p-6">
                   {/* Header */}
                   <div className="mb-4 text-center">
-                    <div className="text-4xl mb-2">🍺</div>
+                    <Beer className="w-10 h-10 mb-2 mx-auto text-amber-500" />
                     <h3 className="text-2xl font-bold text-gray-900 mb-1">Perfect Pairing?</h3>
                     <p className="text-gray-600 text-sm mb-2">Enhance your {item.name} with a refreshing drink</p>
-                    <p className="text-gray-500 text-xs">✨ Recommended by our chef</p>
+                    <p className="text-gray-500 text-xs">Recommended by our chef</p>
                   </div>
 
                   {/* Beverage Suggestions */}
                   <div className="space-y-3 mb-6">
                     {suggestions.map((beverage) => {
-                      const emoji = beverage.category === 'margaritas' ? '🍹' : beverage.category === 'cocktails' ? '🍺' : '🥤'
+                      const BeverageIcon = beverage.category === 'margaritas' ? Wine : beverage.category === 'cocktails' ? Beer : GlassWater
                       return (
                       <div key={beverage.id} className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border-2 border-blue-200">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
-                            <span className="text-3xl">{emoji}</span>
+                            <BeverageIcon className="w-8 h-8 text-blue-500 shrink-0" />
                             <div className="flex-1">
                               <h4 className="font-bold text-lg text-gray-900">{beverage.name}</h4>
                               <p className="text-sm text-gray-600">{beverage.nameJp}</p>
@@ -1428,9 +1481,9 @@ function MenuContent() {
                         ) : (
                           <button
                             onClick={() => updateBeverageQty(beverage.id, 1)}
-                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-colors"
+                            className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
                           >
-                            Add {emoji} {beverage.name}
+                            <BeverageIcon className="w-5 h-5" /> Add {beverage.name}
                           </button>
                         )}
                       </div>
@@ -1440,7 +1493,7 @@ function MenuContent() {
                   {/* Info Box */}
                   <div className="mb-6 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                     <p className="text-xs text-yellow-800 text-center">
-                      💡 Perfect pairings enhance your dining experience!
+                      Perfect pairings enhance your dining experience!
                     </p>
                   </div>
 
@@ -1474,7 +1527,11 @@ function MenuContent() {
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="p-6">
               <div className="mb-4 text-center">
-                <div className="text-4xl mb-2">{pairingType === 'curry' ? '🍛' : '🫓'}</div>
+                <div className="mb-2 flex justify-center">
+                  {pairingType === 'curry'
+                    ? <Soup className="w-10 h-10 text-orange-500" />
+                    : <CookingPot className="w-10 h-10 text-orange-500" />}
+                </div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-1">
                   {pairingType === 'curry' ? 'Add a Curry?' : 'Add Naan or Rice?'}
                 </h3>
@@ -1497,7 +1554,9 @@ function MenuContent() {
                             <img src={img} alt={item.name} className="w-full h-full object-cover scale-[1.5]" />
                           </div>
                         ) : (
-                          <span className="text-3xl">{pairingType === 'curry' ? '🍛' : '🫓'}</span>
+                          pairingType === 'curry'
+                            ? <Soup className="w-8 h-8 text-orange-500 shrink-0" />
+                            : <CookingPot className="w-8 h-8 text-orange-500 shrink-0" />
                         )}
                         <div className="flex-1">
                           <h4 className="font-bold text-lg text-gray-900">{item.name}</h4>

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { UtensilsCrossed, Mail, Lock } from 'lucide-react';
 
 function LoginContent() {
   const [email, setEmail] = useState('');
@@ -85,7 +86,7 @@ function LoginContent() {
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-4xl">🍛</span>
+            <UtensilsCrossed className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-black text-gray-900 mb-2">
             Welcome Back!
@@ -100,7 +101,6 @@ function LoginContent() {
           {/* Verified success message */}
           {searchParams.get('verified') === 'true' && (
             <div className="mb-6 p-5 bg-green-50 border-2 border-green-300 rounded-xl text-center">
-              <p className="text-2xl mb-1">🎉</p>
               <p className="text-green-800 font-black text-lg">Email Verified!</p>
               <p className="text-green-700 text-sm mt-1">
                 {user ? 'Redirecting you to your profile...' : 'You can now log in below.'}
@@ -111,7 +111,7 @@ function LoginContent() {
           {/* Unverified error message */}
           {searchParams.get('error') === 'EMAIL_NOT_VERIFIED' && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-              <p className="text-sm text-amber-800 font-semibold">📧 Please verify your email first.</p>
+              <p className="text-sm text-amber-800 font-semibold flex items-center gap-1.5"><Mail className="w-4 h-4" />Please verify your email first.</p>
               <p className="text-xs text-amber-700 mt-1">Check your inbox for a verification link. Check spam too!</p>
             </div>
           )}
@@ -246,8 +246,9 @@ function LoginContent() {
 
           {/* Privacy Notice */}
           <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-            <p className="text-xs text-green-800 text-center">
-              🔒 We only collect your name & email for orders. Your data is safe with us.
+            <p className="text-xs text-green-800 text-center flex items-center justify-center gap-1.5">
+              <Lock className="w-3.5 h-3.5" />
+              We only collect your name &amp; email for orders. Your data is safe with us.
             </p>
           </div>
 

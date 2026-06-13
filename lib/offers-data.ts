@@ -38,7 +38,7 @@ export const offerRules: OfferRule[] = [
     combinable: false,  // Cannot combine with other offers
     restrictions: 'Valid Monday through Sunday, 11:00 AM to 3:00 PM. Dine-in orders only. Cannot be combined with other promotional offers or discounts. Discount applied automatically at checkout.',
     restrictionsJp: '毎日11:00～15:00。店内飲食のみ。他の割引との併用不可。チェックアウト時に自動適用されます。',
-    emoji: '🌞',
+    emoji: '',
     color: 'green',
     isActive: true
   },
@@ -61,7 +61,7 @@ export const offerRules: OfferRule[] = [
     combinable: true,  // Can combine with other offers
     restrictions: 'Available daily from 2:00 PM to 7:00 PM. Must be 20 years or older to order. Limit one BOGO offer per customer per visit. Valid for draft beer only. Discount applied automatically when you add 2 or more draft beers.',
     restrictionsJp: '毎日14:00～19:00。20歳以上のお客様のみ。お一人様1回限り。生ビールのみ対象。生ビールを2杯以上追加すると自動適用されます。',
-    emoji: '🍺',
+    emoji: '',
     color: 'orange',
     isActive: true
   },
@@ -82,7 +82,7 @@ export const offerRules: OfferRule[] = [
     combinable: false,
     restrictions: 'Available Monday through Friday only, all day long. Choose from Regular Margarita or Fruit Margarita, paired with Chips & Guacamole or Chips & Pico de Gallo. Bundle discount applied automatically when both items are in your cart. While supplies last.',
     restrictionsJp: '月曜日から金曜日のみ、終日利用可能。レギュラーまたはフルーツマルゲリータから選択、チップス＆グアカモレまたはチップス＆ピコデガヨ付き。両方のアイテムがカートに入ると自動的にバンドル割引が適用されます。在庫がなくなり次第終了。',
-    emoji: '🎉',
+    emoji: '',
     color: 'purple',
     isActive: true
   }

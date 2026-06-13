@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const supabase = getSupabase()
     if (!supabase) {
       console.error('Registration error: Supabase not configured')
-      return NextResponse.json({ error: 'Database not configured. Check SUPABASE_SERVICE_ROLE_KEY.' }, { status: 500 })
+      return NextResponse.json({ error: 'Registration is temporarily unavailable. Please try again later.' }, { status: 500 })
     }
 
     // Check if email already exists
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
 
     if (lookupError) {
       console.error('Registration lookup error:', lookupError)
-      return NextResponse.json({ error: `Database error: ${lookupError.message}` }, { status: 500 })
+      return NextResponse.json({ error: 'Registration failed. Please try again later.' }, { status: 500 })
     }
 
     if (existing) {
@@ -83,11 +83,7 @@ export async function POST(request: Request) {
 
     if (insertError) {
       console.error('Registration insert error:', JSON.stringify(insertError, null, 2))
-      return NextResponse.json({
-        error: `Registration failed: ${insertError.message}`,
-        code: insertError.code,
-        details: insertError.details
-      }, { status: 500 })
+      return NextResponse.json({ error: 'Registration failed. Please try again later.' }, { status: 500 })
     }
 
     // Send verification email (non-blocking — don't fail registration if email fails)
@@ -105,6 +101,6 @@ export async function POST(request: Request) {
     })
   } catch (err: any) {
     console.error('Registration catch error:', err)
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

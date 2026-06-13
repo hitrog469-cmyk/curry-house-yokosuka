@@ -5,10 +5,10 @@ import { useEffect, useState } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
 const DEFAULT_MESSAGES = [
-  '🔥 FREE DELIVERY on all orders! — TAP TO ORDER',
-  "🌟 Check out Today's Special — Limited Time!",
-  '🎉 Use code WELCOME15 for 15% OFF',
-  "📍 Yokosuka's Finest Indian, Mexican, Nepalese & Japanese-Fusion",
+  'FREE DELIVERY on all orders! — TAP TO ORDER',
+  "Check out Today's Special — Limited Time!",
+  'Use code WELCOME15 for 15% OFF',
+  "Yokosuka's Finest Indian, Mexican, Nepalese & Japanese-Fusion",
 ]
 
 export default function TopBanner() {

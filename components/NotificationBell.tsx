@@ -6,6 +6,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser';
 const supabase = getSupabaseBrowserClient();
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
+import { Package, Undo2, RefreshCw, CheckCircle, XCircle, Bell } from 'lucide-react';
 
 type Notification = {
   id: string;
@@ -125,17 +126,17 @@ export default function NotificationBell() {
   function getNotificationIcon(type: string) {
     switch (type) {
       case 'order_assigned':
-        return '📦';
+        return Package;
       case 'order_unassigned':
-        return '↩️';
+        return Undo2;
       case 'status_change':
-        return '🔄';
+        return RefreshCw;
       case 'order_delivered':
-        return '✅';
+        return CheckCircle;
       case 'order_cancelled':
-        return '❌';
+        return XCircle;
       default:
-        return '🔔';
+        return Bell;
     }
   }
 
@@ -240,8 +241,8 @@ export default function NotificationBell() {
                     }`}
                   >
                     <div className="flex gap-3">
-                      <div className="text-2xl flex-shrink-0">
-                        {getNotificationIcon(notification.type)}
+                      <div className="flex-shrink-0">
+                        {(() => { const Icon = getNotificationIcon(notification.type); return <Icon className="w-6 h-6 text-gray-600 dark:text-gray-300" /> })()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start gap-2">

@@ -6,7 +6,7 @@ import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/auth-context'
 import { useRouter } from 'next/navigation'
-import { ClipboardList, BarChart3, Star, Users, Mail, Briefcase, PartyPopper } from 'lucide-react'
+import { ClipboardList, BarChart3, Star, Users, Mail, Briefcase, PartyPopper, Clock, ChefHat, Truck, CheckCircle, XCircle, UtensilsCrossed, Flame, Phone, MapPin, CreditCard, Printer, Receipt, RefreshCw, Lock, Inbox, EyeOff, MessageSquare } from 'lucide-react'
 import ToggleTabs from '@/components/ui/ToggleTabs'
 import Breadcrumb from '@/components/ui/Breadcrumb'
 import AdminAnalyticsView from '@/components/admin/AdminAnalyticsView'
@@ -106,11 +106,11 @@ function AdminReviewsView({
           </div>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
-          <p className="text-xs font-semibold text-gray-500 mb-1">⭐ Featured</p>
+          <p className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1"><Star className="w-3.5 h-3.5" /> Featured</p>
           <p className="text-3xl font-black text-green-700">{reviews.filter(r => r.is_featured).length}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-red-400">
-          <p className="text-xs font-semibold text-gray-500 mb-1">🚫 Hidden</p>
+          <p className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1"><EyeOff className="w-3.5 h-3.5" /> Hidden</p>
           <p className="text-3xl font-black text-red-600">{reviews.filter(r => r.is_hidden).length}</p>
         </div>
       </div>
@@ -121,7 +121,7 @@ function AdminReviewsView({
         <div className="space-y-2">
           {dist.map(({ star, count }) => (
             <div key={star} className="flex items-center gap-3">
-              <span className="text-xs font-bold text-gray-600 w-4">{star}★</span>
+              <span className="text-xs font-bold text-gray-600 w-8 inline-flex items-center gap-0.5">{star}<Star className="w-3 h-3 text-yellow-400 fill-yellow-400" /></span>
               <div className="flex-1 bg-gray-100 rounded-full h-3 overflow-hidden">
                 <div
                   className="h-full bg-yellow-400 rounded-full transition-all"
@@ -139,9 +139,9 @@ function AdminReviewsView({
         <h3 className="font-bold text-gray-700">All Reviews ({reviews.length})</h3>
         <button
           onClick={onRefresh}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-blue-600 hover:underline inline-flex items-center gap-1"
         >
-          ↻ Refresh
+          <RefreshCw className="w-3.5 h-3.5" /> Refresh
         </button>
       </div>
 
@@ -153,7 +153,7 @@ function AdminReviewsView({
         </div>
       ) : reviews.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-          <div className="text-5xl mb-3">⭐</div>
+          <Star className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
           <p className="text-gray-500">No reviews yet. They'll appear here once customers start leaving feedback.</p>
         </div>
       ) : (
@@ -178,7 +178,7 @@ function AdminReviewsView({
                   <div className="min-w-0">
                     <div className="font-bold text-gray-900 text-sm truncate">
                       {r.reviewer_name}
-                      {r.is_verified && <span className="text-green-600 text-xs ml-1">✓</span>}
+                      {r.is_verified && <CheckCircle className="w-3.5 h-3.5 text-green-600 inline ml-1" />}
                     </div>
                     <div className="text-xs text-gray-400">
                       {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -201,10 +201,10 @@ function AdminReviewsView({
                 {/* Badges + actions */}
                 <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                   {r.is_featured && (
-                    <span className="text-xs bg-yellow-100 text-yellow-700 font-bold px-2 py-1 rounded-lg">⭐ Featured</span>
+                    <span className="text-xs bg-yellow-100 text-yellow-700 font-bold px-2 py-1 rounded-lg inline-flex items-center gap-1"><Star className="w-3 h-3" /> Featured</span>
                   )}
                   {r.is_hidden && (
-                    <span className="text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded-lg">🚫 Hidden</span>
+                    <span className="text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded-lg inline-flex items-center gap-1"><EyeOff className="w-3 h-3" /> Hidden</span>
                   )}
                   <button
                     onClick={() => onToggle(r.id, 'is_featured', r.is_featured)}
@@ -214,7 +214,7 @@ function AdminReviewsView({
                         : 'bg-gray-100 text-gray-600 hover:bg-yellow-50 hover:text-yellow-700'
                     }`}
                   >
-                    {r.is_featured ? 'Unfeature' : '⭐ Feature'}
+                    {r.is_featured ? 'Unfeature' : 'Feature'}
                   </button>
                   <button
                     onClick={() => onToggle(r.id, 'is_hidden', r.is_hidden)}
@@ -224,7 +224,7 @@ function AdminReviewsView({
                         : 'bg-red-50 text-red-600 hover:bg-red-100'
                     }`}
                   >
-                    {r.is_hidden ? 'Unhide' : '🚫 Hide'}
+                    {r.is_hidden ? 'Unhide' : 'Hide'}
                   </button>
                 </div>
               </div>
@@ -445,11 +445,11 @@ export default function AdminDashboard() {
         @media print { @page { size: 58mm auto; margin: 0mm; } html, body { width: 58mm !important; margin: 0mm !important; } }
       </style></head><body>
         <div class="header">
-          <h1 style="font-size:16px;">🍛 KITCHEN ORDER</h1>
-          <span class="type-badge">${isDelivery ? '🚗 DELIVERY' : '🍽️ TABLE ORDER'}</span>
+          <h1 style="font-size:16px;">KITCHEN ORDER</h1>
+          <span class="type-badge">${isDelivery ? 'DELIVERY' : 'TABLE ORDER'}</span>
         </div>
         ${tableNum ? `<div class="table-number">T${tableNum}</div>` : ''}
-        ${isDelivery ? `<div class="table-number" style="font-size:24px;">🚗 DELIVERY</div>` : ''}
+        ${isDelivery ? `<div class="table-number" style="font-size:24px;">DELIVERY</div>` : ''}
         <div class="customer">${customerName || 'Guest'}</div>
         <div class="timestamp">${new Date().toLocaleString('ja-JP')}</div>
         <div class="items">
@@ -457,7 +457,7 @@ export default function AdminDashboard() {
             <div class="item">
               <div>
                 <div class="item-name">${item.name}</div>
-                ${item.spiceLevel ? `<div class="item-details">🌶️ ${item.spiceLevel}</div>` : ''}
+                ${item.spiceLevel ? `<div class="item-details">Spice: ${item.spiceLevel}</div>` : ''}
                 ${item.addOns?.length ? `<div class="item-details">+ ${item.addOns.map((a: any) => a.name).join(', ')}</div>` : ''}
                 ${item.variation ? `<div class="item-details">• ${item.variation.name}</div>` : ''}
               </div>
@@ -494,7 +494,7 @@ export default function AdminDashboard() {
       const perPerson = Math.ceil(total / numSplits)
       splitInfo = `
         <div class="split-section">
-          <div style="font-weight:bold;margin-bottom:5px;">📋 BILL SPLIT (${numSplits} people)</div>
+          <div style="font-weight:bold;margin-bottom:5px;">BILL SPLIT (${numSplits} people)</div>
           <div style="font-size:18px;font-weight:bold;">Per Person: ${formatPrice(perPerson)}</div>
         </div>
       `
@@ -512,7 +512,7 @@ export default function AdminDashboard() {
         const m = d.match(/\+¥(\d+)/)
         const p = m ? parseInt(m[1]) : 0
         const lbl = d.replace(/\s*\(\+¥\d+\)\s*$/, '').trim()
-        return `<div class="sub-row upgrade"><span class="sn">⬆️ ${lbl}</span><span class="sq"></span><span class="sp">+¥${p}</span></div>`
+        return `<div class="sub-row upgrade"><span class="sn">Upgrade: ${lbl}</span><span class="sq"></span><span class="sp">+¥${p}</span></div>`
       }).join('')
 
       return `
@@ -522,11 +522,11 @@ export default function AdminDashboard() {
             <span class="rq">×${item.quantity}</span>
             <span class="rp">${formatPrice((item.price || 0) * (item.quantity || 1))}</span>
           </div>
-          ${item.spiceLevel ? `<div class="sub-row info"><span class="sn">🌶️ ${item.spiceLevel}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
-          ${item.setMealChoices?.curries?.length ? `<div class="sub-row info"><span class="sn">🍛 ${item.setMealChoices.curries.join(' + ')}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
-          ${item.setMealChoices?.naan ? `<div class="sub-row info"><span class="sn">🫓 ${item.setMealChoices.naan}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
-          ${item.setMealChoices?.rice ? `<div class="sub-row info"><span class="sn">🍚 ${item.setMealChoices.rice}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
-          ${item.setMealChoices?.drink ? `<div class="sub-row info"><span class="sn">🥤 ${item.setMealChoices.drink}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.spiceLevel ? `<div class="sub-row info"><span class="sn">Spice: ${item.spiceLevel}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.curries?.length ? `<div class="sub-row info"><span class="sn">Curry: ${item.setMealChoices.curries.join(' + ')}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.naan ? `<div class="sub-row info"><span class="sn">Naan: ${item.setMealChoices.naan}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.rice ? `<div class="sub-row info"><span class="sn">Rice: ${item.setMealChoices.rice}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
+          ${item.setMealChoices?.drink ? `<div class="sub-row info"><span class="sn">Drink: ${item.setMealChoices.drink}</span><span class="sq"></span><span class="sp"></span></div>` : ''}
           ${addonRows}
           ${upgradeRows}
         </div>`
@@ -578,14 +578,14 @@ export default function AdminDashboard() {
         @media print { @page { size: 58mm auto; margin: 0mm; } html, body { width: 58mm !important; margin: 0mm !important; } }
       </style></head><body>
         <div class="header">
-          <h1>🍛 THE CURRY HOUSE</h1>
+          <h1>THE CURRY HOUSE</h1>
           <p>YOKOSUKA ・ ザ・カリーハウス横須賀</p>
           <p>Tel: 046-813-5869</p>
         </div>
         <div class="divider"></div>
         <div class="info">
           ${tableNum ? `<div class="table-num">TABLE ${tableNum}</div>` : ''}
-          ${isDelivery ? `<div class="table-num">🚗 DELIVERY</div>` : ''}
+          ${isDelivery ? `<div class="table-num">DELIVERY</div>` : ''}
           ${customerName ? `<div class="detail">Customer: ${customerName}</div>` : ''}
           ${partySize ? `<div class="detail">Party: ${partySize} guests</div>` : ''}
           <div class="detail">${new Date(order.created_at).toLocaleString('ja-JP')}</div>
@@ -617,7 +617,7 @@ export default function AdminDashboard() {
         ${splitInfo}
         ${!isTableOrder && (order as Order).payment_method ? `
           <div class="payment">
-            💰 Payment: ${(order as Order).payment_method?.toUpperCase()}
+            Payment: ${(order as Order).payment_method?.toUpperCase()}
             ${(order as Order).payment_status ? ` (${(order as Order).payment_status})` : ''}
           </div>
         ` : ''}
@@ -670,8 +670,8 @@ export default function AdminDashboard() {
   }
 
   const getStatusIcon = (status: string) => {
-    const i: any = { pending: '⏳', preparing: '👨‍🍳', out_for_delivery: '🚗', delivered: '✅', completed: '✅', cancelled: '❌' }
-    return i[status] || '⏳'
+    const i: any = { pending: Clock, preparing: ChefHat, out_for_delivery: Truck, delivered: CheckCircle, completed: CheckCircle, cancelled: XCircle }
+    return i[status] || Clock
   }
 
   const getTimeAgo = (date: string) => {
@@ -786,14 +786,14 @@ export default function AdminDashboard() {
               onClick={() => { setShowPinPanel(v => { if (!v) fetchTablePins(); return !v }) }}
               className="bg-purple-100 hover:bg-purple-200 text-purple-800 px-4 py-2 rounded-xl font-bold text-sm transition-all flex items-center gap-2 border border-purple-200"
             >
-              🔐 Table PINs {showPinPanel ? '▲' : '▼'}
+              <Lock className="w-4 h-4" /> Table PINs {showPinPanel ? '▲' : '▼'}
             </button>
             {showPinPanel && (
               <button
                 onClick={regenerateAllPins}
-                className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-4 py-2 rounded-xl font-bold text-sm transition-all border border-orange-200"
+                className="bg-orange-100 hover:bg-orange-200 text-orange-800 px-4 py-2 rounded-xl font-bold text-sm transition-all border border-orange-200 inline-flex items-center gap-2"
               >
-                🔄 Regenerate ALL PINs
+                <RefreshCw className="w-4 h-4" /> Regenerate ALL PINs
               </button>
             )}
           </div>
@@ -817,10 +817,10 @@ export default function AdminDashboard() {
                       <div className="text-2xl font-black text-gray-900 tracking-widest mb-2 font-mono">{tp.pin}</div>
                       <button
                         onClick={() => regeneratePin(tp.table_number)}
-                        className="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1.5 rounded-lg transition-all"
+                        className="w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-1.5 rounded-lg transition-all inline-flex items-center justify-center gap-1"
                         title={`New PIN for Table ${tp.table_number}`}
                       >
-                        🔄 New PIN
+                        <RefreshCw className="w-3 h-3" /> New PIN
                       </button>
                     </div>
                   ))}
@@ -838,24 +838,24 @@ export default function AdminDashboard() {
             <p className="text-xs text-gray-400">{stats.pendingOnline} pending</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-purple-500">
-            <p className="text-xs font-semibold text-gray-500 mb-1">🍽️ Table Orders</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1"><UtensilsCrossed className="w-3.5 h-3.5" /> Table Orders</p>
             <p className="text-3xl font-black text-purple-700">{stats.totalTable}</p>
             <p className="text-xs text-gray-400">{stats.pendingTable} pending</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-orange-500">
-            <p className="text-xs font-semibold text-gray-500 mb-1">👨‍🍳 Preparing</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1"><ChefHat className="w-3.5 h-3.5" /> Preparing</p>
             <p className="text-3xl font-black text-orange-700">{stats.preparingAll}</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-green-500">
-            <p className="text-xs font-semibold text-gray-500 mb-1">✅ Completed</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /> Completed</p>
             <p className="text-3xl font-black text-green-700">{stats.deliveredToday + stats.completedTable}</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-emerald-500">
-            <p className="text-xs font-semibold text-gray-500 mb-1">💰 Online Revenue</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Online Revenue</p>
             <p className="text-2xl font-black text-emerald-700">{formatPrice(stats.revenueOnline)}</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border-l-4 border-teal-500">
-            <p className="text-xs font-semibold text-gray-500 mb-1">💰 Table Revenue</p>
+            <p className="text-xs font-semibold text-gray-500 mb-1">Table Revenue</p>
             <p className="text-2xl font-black text-teal-700">{formatPrice(stats.revenueTable)}</p>
           </div>
         </div>
@@ -873,28 +873,35 @@ export default function AdminDashboard() {
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                {tab === 'all' && '📋 All Orders'}
-                {tab === 'online' && '🚗 Online / Delivery'}
-                {tab === 'dine-in' && '🍽️ Dine-In / Table'}
+                {tab === 'all' && <span className="inline-flex items-center gap-1.5"><ClipboardList className="w-4 h-4" /> All Orders</span>}
+                {tab === 'online' && <span className="inline-flex items-center gap-1.5"><Truck className="w-4 h-4" /> Online / Delivery</span>}
+                {tab === 'dine-in' && <span className="inline-flex items-center gap-1.5"><UtensilsCrossed className="w-4 h-4" /> Dine-In / Table</span>}
               </button>
             ))}
           </div>
 
           {/* Status filter */}
           <div className="bg-white rounded-xl shadow-sm p-1 flex gap-1 ml-auto">
-            {['all', 'pending', 'preparing', 'delivered', 'completed'].map(status => (
-              <button
-                key={status}
-                onClick={() => setSelectedStatus(status)}
-                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-                  selectedStatus === status
-                    ? 'bg-green-600 text-white'
-                    : 'text-gray-500 hover:bg-gray-100'
-                }`}
-              >
-                {status === 'all' ? 'All' : `${getStatusIcon(status)} ${status.charAt(0).toUpperCase() + status.slice(1)}`}
-              </button>
-            ))}
+            {['all', 'pending', 'preparing', 'delivered', 'completed'].map(status => {
+              const StatusIcon = getStatusIcon(status)
+              return (
+                <button
+                  key={status}
+                  onClick={() => setSelectedStatus(status)}
+                  className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+                    selectedStatus === status
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-500 hover:bg-gray-100'
+                  }`}
+                >
+                  {status === 'all' ? 'All' : (
+                    <span className="inline-flex items-center gap-1.5">
+                      <StatusIcon className="w-3.5 h-3.5" /> {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -906,7 +913,7 @@ export default function AdminDashboard() {
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-            <div className="text-6xl mb-4">📭</div>
+            <Inbox className="w-14 h-14 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 text-lg">No orders found</p>
           </div>
         ) : (
@@ -915,6 +922,7 @@ export default function AdminDashboard() {
               const isTable = order._type === 'table'
               const isExpanded = expandedOrder === order.id
               const isPending = order.status === 'pending'
+              const StatusIcon = getStatusIcon(order.status)
 
               return (
                 <div
@@ -934,15 +942,15 @@ export default function AdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {/* Type badge */}
-                        <span className={`px-3 py-1.5 rounded-lg text-xs font-black ${
+                        <span className={`px-3 py-1.5 rounded-lg text-xs font-black inline-flex items-center gap-1 ${
                           isTable ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {isTable ? `🍽️ T${order.table_number}` : '🚗 Delivery'}
+                          {isTable ? <><UtensilsCrossed className="w-3.5 h-3.5" /> T{order.table_number}</> : <><Truck className="w-3.5 h-3.5" /> Delivery</>}
                         </span>
 
                         {/* Status badge */}
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(order.status)}`}>
-                          {getStatusIcon(order.status)} {order.status.replace(/_/g, ' ').toUpperCase()}
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold border inline-flex items-center gap-1 ${getStatusColor(order.status)}`}>
+                          <StatusIcon className="w-3.5 h-3.5" /> {order.status.replace(/_/g, ' ').toUpperCase()}
                         </span>
 
                         {/* Customer */}
@@ -989,7 +997,7 @@ export default function AdminDashboard() {
                                   <div>
                                     <span className="font-bold">{item.name}</span>
                                     {item.variation && <span className="text-purple-600 ml-1 text-xs font-semibold">({item.variation})</span>}
-                                    {item.spiceLevel && <span className="text-orange-500 ml-1 text-xs">🌶️ {item.spiceLevel}</span>}
+                                    {item.spiceLevel && <span className="text-orange-500 ml-1 text-xs inline-flex items-center gap-0.5"><Flame className="w-3 h-3" /> {item.spiceLevel}</span>}
                                   </div>
                                   <span className="font-bold whitespace-nowrap ml-2">×{item.quantity} {formatPrice((item.price || 0) * (item.quantity || 1))}</span>
                                 </div>
@@ -1005,13 +1013,13 @@ export default function AdminDashboard() {
                                 {item.setMealChoices && (
                                   <div className="ml-3 mt-1 space-y-0.5">
                                     {item.setMealChoices.curries?.length > 0 && (
-                                      <div className="text-xs text-indigo-600">🍛 {item.setMealChoices.curries.join(', ')}</div>
+                                      <div className="text-xs text-indigo-600">Curry: {item.setMealChoices.curries.join(', ')}</div>
                                     )}
-                                    {item.setMealChoices.naan && <div className="text-xs text-amber-600">🫓 {item.setMealChoices.naan}</div>}
-                                    {item.setMealChoices.rice && <div className="text-xs text-green-600">🍚 {item.setMealChoices.rice}</div>}
-                                    {item.setMealChoices.drink && <div className="text-xs text-blue-600">🥤 {item.setMealChoices.drink}</div>}
+                                    {item.setMealChoices.naan && <div className="text-xs text-amber-600">Naan: {item.setMealChoices.naan}</div>}
+                                    {item.setMealChoices.rice && <div className="text-xs text-green-600">Rice: {item.setMealChoices.rice}</div>}
+                                    {item.setMealChoices.drink && <div className="text-xs text-blue-600">Drink: {item.setMealChoices.drink}</div>}
                                     {item.setMealChoices.upgradeDetails?.length > 0 && (
-                                      <div className="text-xs text-orange-500 font-semibold">⬆️ {item.setMealChoices.upgradeDetails.join(', ')}</div>
+                                      <div className="text-xs text-orange-500 font-semibold">Upgrades: {item.setMealChoices.upgradeDetails.join(', ')}</div>
                                     )}
                                   </div>
                                 )}
@@ -1031,11 +1039,11 @@ export default function AdminDashboard() {
                             </div>
                           </div>
                           {order.notes && (
-                            <p className="text-sm text-gray-600 mt-2 italic">💬 {order.notes}</p>
+                            <p className="text-sm text-gray-600 mt-2 italic flex items-start gap-1.5"><MessageSquare className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" /> {order.notes}</p>
                           )}
                           {order.split_bill && order.number_of_splits && (
                             <div className="mt-2 p-2 bg-blue-50 rounded-lg text-xs">
-                              <span className="font-bold">📋 Split Bill:</span> {order.number_of_splits} ways • {formatPrice(Math.ceil((order.total_amount + Math.floor(order.total_amount * 0.1)) / order.number_of_splits))} each
+                              <span className="font-bold">Split Bill:</span> {order.number_of_splits} ways • {formatPrice(Math.ceil((order.total_amount + Math.floor(order.total_amount * 0.1)) / order.number_of_splits))} each
                             </div>
                           )}
                         </div>
@@ -1046,30 +1054,30 @@ export default function AdminDashboard() {
                           <div className="space-y-2 text-sm">
                             {order.customer_phone && (
                               <div className="flex items-center gap-2">
-                                <span>📞</span>
+                                <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                 <a href={`tel:${order.customer_phone}`} className="text-blue-600 hover:underline">{order.customer_phone}</a>
                               </div>
                             )}
                             {order.delivery_address && (
                               <div className="flex items-start gap-2">
-                                <span>📍</span>
+                                <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
                                 <span>{order.delivery_address}</span>
                               </div>
                             )}
                             {order.party_size && (
                               <div className="flex items-center gap-2">
-                                <span>👥</span>
+                                <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                 <span>{order.party_size} guests</span>
                               </div>
                             )}
                             {order.payment_method && (
                               <div className="flex items-center gap-2">
-                                <span>💳</span>
+                                <CreditCard className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                 <span>{order.payment_method}</span>
                               </div>
                             )}
                             <div className="flex items-center gap-2 text-gray-400">
-                              <span>🕐</span>
+                              <Clock className="w-4 h-4 flex-shrink-0" />
                               <span>{new Date(order.created_at).toLocaleString('ja-JP')}</span>
                             </div>
                             <div className="text-xs text-gray-400 mt-1">
@@ -1088,12 +1096,12 @@ export default function AdminDashboard() {
                               onChange={(e) => updateOrderStatus(order.id, e.target.value, isTable)}
                               className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm font-semibold"
                             >
-                              <option value="pending">⏳ Pending</option>
-                              <option value="preparing">👨‍🍳 Preparing</option>
-                              {!isTable && <option value="out_for_delivery">🚗 Out for Delivery</option>}
-                              {!isTable && <option value="delivered">✅ Delivered</option>}
-                              {isTable && <option value="completed">✅ Completed</option>}
-                              <option value="cancelled">❌ Cancelled</option>
+                              <option value="pending">Pending</option>
+                              <option value="preparing">Preparing</option>
+                              {!isTable && <option value="out_for_delivery">Out for Delivery</option>}
+                              {!isTable && <option value="delivered">Delivered</option>}
+                              {isTable && <option value="completed">Completed</option>}
+                              <option value="cancelled">Cancelled</option>
                             </select>
 
                             {/* Staff assignment (delivery only) */}
@@ -1103,7 +1111,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => assignStaff(order.id, e.target.value)}
                                 className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-sm"
                               >
-                                <option value="">🧑‍💼 Assign Staff</option>
+                                <option value="">Assign Staff</option>
                                 {staff.map(s => (
                                   <option key={s.id} value={s.id}>{s.full_name} {s.phone ? `(${s.phone})` : ''}</option>
                                 ))}
@@ -1115,14 +1123,14 @@ export default function AdminDashboard() {
                               onClick={() => printKitchenSlip(order.items, order.table_number, order.id, order.customer_name || 'Guest', !isTable)}
                               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
                             >
-                              🖨️ Print Kitchen Slip
+                              <Printer className="w-4 h-4" /> Print Kitchen Slip
                             </button>
 
                             <button
                               onClick={() => printBill(order, isTable)}
                               className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-lg text-sm flex items-center justify-center gap-2 transition-colors"
                             >
-                              🧾 Print Bill / Receipt
+                              <Receipt className="w-4 h-4" /> Print Bill / Receipt
                             </button>
                           </div>
                         </div>

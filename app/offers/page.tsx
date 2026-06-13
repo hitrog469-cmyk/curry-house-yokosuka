@@ -4,6 +4,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 import { offers } from '@/lib/offers-data'
 import Link from 'next/link'
+import { Instagram } from 'lucide-react'
 
 export default function OffersPage() {
   const getColorClasses = (color: string) => {
@@ -25,7 +26,6 @@ export default function OffersPage() {
       <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-16">
         <div className="container-custom">
           <div className="text-center">
-            <div className="text-6xl mb-4">🎉</div>
             <h1 className="text-5xl font-black mb-4">Special Offers & Promotions</h1>
             <p className="text-xl text-purple-100 mb-6">
               Save big with our exclusive deals and limited-time offers!
@@ -56,11 +56,6 @@ export default function OffersPage() {
                   EXPIRED
                 </div>
               )}
-
-              {/* Emoji Badge */}
-              <div className="absolute top-4 right-4 text-6xl opacity-20 transform group-hover:scale-110 transition-transform">
-                {offer.emoji}
-              </div>
 
               {/* Content */}
               <div className="relative z-10">
@@ -129,7 +124,7 @@ export default function OffersPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold px-8 py-4 rounded-full transition-all shadow-lg hover:shadow-xl"
             >
-              <span>📱</span>
+              <Instagram className="w-5 h-5" />
               <span>Follow @thecurryh</span>
             </a>
           </div>
@@ -141,21 +136,21 @@ export default function OffersPage() {
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">1️⃣</span>
+                <span className="text-2xl font-black text-purple-600">1</span>
               </div>
               <h4 className="font-bold text-lg mb-2">Browse Menu</h4>
               <p className="text-gray-600 text-sm">Check our menu and add items to your cart</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">2️⃣</span>
+                <span className="text-2xl font-black text-green-600">2</span>
               </div>
               <h4 className="font-bold text-lg mb-2">Mention Offer</h4>
               <p className="text-gray-600 text-sm">Add the offer name in your order notes</p>
             </div>
             <div className="text-center">
               <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">3️⃣</span>
+                <span className="text-2xl font-black text-orange-600">3</span>
               </div>
               <h4 className="font-bold text-lg mb-2">Enjoy Savings</h4>
               <p className="text-gray-600 text-sm">Get your discount applied at checkout!</p>

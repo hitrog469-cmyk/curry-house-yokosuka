@@ -161,7 +161,7 @@ export function getRestaurantStatusMessage(): {
   if (status.isOpen) {
     return {
       isOpen: true,
-      title: '🍛 We\'re Open!',
+      title: 'We\'re Open!',
       message: `Accepting orders until ${status.closesAt}`,
       variant: 'success',
     };
@@ -169,7 +169,7 @@ export function getRestaurantStatusMessage(): {
 
   return {
     isOpen: false,
-    title: '😔 Currently Closed',
+    title: 'Currently Closed',
     message: status.reason || 'We are currently closed',
     variant: 'error',
   };

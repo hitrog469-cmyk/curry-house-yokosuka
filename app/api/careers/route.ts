@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { auth } from '@/auth'
 import { sendCareerEmail } from '@/lib/email'
 
 function getSupabaseAdmin() {
@@ -8,6 +9,14 @@ function getSupabaseAdmin() {
   if (!url || !key) return null
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 }
+
+async function isAdmin() {
+  const session = await auth()
+  return !!session && (session.user as any)?.role === 'admin'
+}
+
+const ALLOWED_CV_EXTENSIONS = ['pdf', 'doc', 'docx']
+const MAX_CV_SIZE = 5 * 1024 * 1024 // 5MB
 
 // POST: submit application (multipart/form-data with optional CV file)
 export async function POST(request: Request) {
@@ -36,8 +45,15 @@ export async function POST(request: Request) {
     let cv_filename: string | null = null
 
     if (cvFile && cvFile.size > 0) {
-      const ext = cvFile.name.split('.').pop()
-      const filename = `${Date.now()}-${name.replace(/\s+/g, '-')}.${ext}`
+      const ext = (cvFile.name.split('.').pop() || '').toLowerCase()
+      if (!ALLOWED_CV_EXTENSIONS.includes(ext)) {
+        return NextResponse.json({ error: 'CV must be a PDF or Word document (.pdf, .doc, .docx)' }, { status: 400 })
+      }
+      if (cvFile.size > MAX_CV_SIZE) {
+        return NextResponse.json({ error: 'CV file must be 5MB or smaller' }, { status: 400 })
+      }
+      const safeName = name.replace(/[^a-zA-Z0-9-]+/g, '-').slice(0, 60)
+      const filename = `${Date.now()}-${safeName}.${ext}`
       const arrayBuffer = await cvFile.arrayBuffer()
       const buffer = Buffer.from(arrayBuffer)
 
@@ -66,7 +82,7 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('[careers] DB error:', error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      return NextResponse.json({ error: 'Failed to submit application. Please try again later.' }, { status: 500 })
     }
 
     // Send emails (non-blocking)
@@ -77,12 +93,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, id: data.id }, { status: 201 })
   } catch (err: any) {
     console.error('[careers] Error:', err)
-    return NextResponse.json({ error: err.message || 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
 
 // GET: for admin to fetch applications
 export async function GET(request: Request) {
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const supabase = getSupabaseAdmin()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 500 })
 
@@ -97,12 +115,17 @@ export async function GET(request: Request) {
   if (status && status !== 'all') query = query.eq('status', status)
 
   const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[careers] DB error:', error)
+    return NextResponse.json({ error: 'Failed to fetch applications' }, { status: 500 })
+  }
   return NextResponse.json({ applications: data })
 }
 
 // PATCH: update application status / notes
 export async function PATCH(request: Request) {
+  if (!(await isAdmin())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const supabase = getSupabaseAdmin()
   if (!supabase) return NextResponse.json({ error: 'DB not configured' }, { status: 500 })
 
@@ -121,6 +144,9 @@ export async function PATCH(request: Request) {
     .select()
     .single()
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) {
+    console.error('[careers] DB error:', error)
+    return NextResponse.json({ error: 'Failed to update application' }, { status: 500 })
+  }
   return NextResponse.json({ application: data })
 }

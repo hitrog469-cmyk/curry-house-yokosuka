@@ -6,6 +6,7 @@ import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
+import { CheckCircle, ChefHat, Flame, Inbox, MapPin, Phone, Truck } from 'lucide-react'
 
 type Order = {
   id: string
@@ -281,7 +282,7 @@ export default function StaffPortal() {
           </div>
         ) : orders.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-            <div className="text-6xl mb-4">📭</div>
+            <Inbox className="w-14 h-14 mx-auto mb-4 text-gray-300" />
             <p className="text-gray-600 text-lg mb-2">No deliveries assigned</p>
             <p className="text-gray-500 text-sm">Admin will assign orders to you from the dashboard</p>
           </div>
@@ -295,20 +296,20 @@ export default function StaffPortal() {
                     <div className="flex items-start justify-between mb-4">
                       <div>
                         <h3 className="font-bold text-xl mb-2">{order.customer_name}</h3>
-                        <p className="text-gray-600 mb-1">
-                          📞{' '}
+                        <p className="text-gray-600 mb-1 flex items-center gap-1.5">
+                          <Phone className="w-4 h-4" />{' '}
                           <a href={`tel:${order.customer_phone}`} className="text-blue-600 hover:underline">
                             {order.customer_phone}
                           </a>
                         </p>
-                        <p className="text-gray-700 font-medium">📍 {order.delivery_address}</p>
+                        <p className="text-gray-700 font-medium flex items-center gap-1.5"><MapPin className="w-4 h-4" /> {order.delivery_address}</p>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${
                         order.status === 'preparing'
                           ? 'bg-blue-100 text-blue-700'
                           : 'bg-purple-100 text-purple-700'
                       }`}>
-                        {order.status === 'preparing' ? '👨‍🍳 Preparing' : '🚗 On the way'}
+                        {order.status === 'preparing' ? <><ChefHat className="w-3.5 h-3.5" /> Preparing</> : <><Truck className="w-3.5 h-3.5" /> On the way</>}
                       </span>
                     </div>
 
@@ -318,7 +319,7 @@ export default function StaffPortal() {
                       {order.items.map((item: any, idx: number) => (
                         <p key={idx} className="text-sm mb-1">
                           • {item.name} ×{item.quantity}
-                          {item.spiceLevel && <span className="text-orange-500 ml-1">🌶️{item.spiceLevel}</span>}
+                          {item.spiceLevel && <span className="text-orange-500 ml-1 inline-flex items-center gap-0.5"><Flame className="w-3 h-3" />{item.spiceLevel}</span>}
                         </p>
                       ))}
                     </div>
@@ -342,9 +343,9 @@ export default function StaffPortal() {
                     {order.status === 'preparing' && (
                       <button
                         onClick={() => updateOrderStatus(order.id, 'out_for_delivery')}
-                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg py-4 rounded-xl transition-colors"
+                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold text-lg py-4 rounded-xl transition-colors flex items-center justify-center gap-2"
                       >
-                        🚗 Start Delivery
+                        <Truck className="w-5 h-5" /> Start Delivery
                       </button>
                     )}
 
@@ -361,9 +362,9 @@ export default function StaffPortal() {
                         )}
                         <button
                           onClick={() => updateOrderStatus(order.id, 'delivered')}
-                          className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg transition-colors"
+                          className="bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg transition-colors flex items-center justify-center gap-2"
                         >
-                          ✅ Mark Delivered
+                          <CheckCircle className="w-5 h-5" /> Mark Delivered
                         </button>
                       </>
                     )}

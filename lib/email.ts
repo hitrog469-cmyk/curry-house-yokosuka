@@ -57,14 +57,14 @@ async function sendEmail(opts: {
 const header = `
 <div style="background:#1a1a1a;padding:20px 30px;border-radius:12px 12px 0 0;">
   <h1 style="color:#f97316;margin:0;font-size:22px;font-weight:900;font-family:sans-serif;">
-    🍛 The Curry House Yokosuka
+    The Curry House Yokosuka
   </h1>
 </div>`
 
 const footer = `
 <div style="background:#f1f5f9;padding:16px 30px;border-radius:0 0 12px 12px;text-align:center;">
   <p style="margin:0;color:#64748b;font-size:12px;font-family:sans-serif;">
-    📍 2-8-9 Honcho, Yokosuka City, Kanagawa 238-0041 &nbsp;|&nbsp; 📞 046-813-5869 &nbsp;|&nbsp;
+    2-8-9 Honcho, Yokosuka City, Kanagawa 238-0041 &nbsp;|&nbsp; 046-813-5869 &nbsp;|&nbsp;
     <a href="mailto:thecurryhouseyokosuka@gmail.com" style="color:#f97316;">thecurryhouseyokosuka@gmail.com</a>
   </p>
 </div>`
@@ -111,7 +111,7 @@ export async function sendContactEmail(data: {
   if (adminEmails.length > 0) {
     await sendEmail({
       to: adminEmails,
-      subject: `📬 New Contact: ${subjectLabels[data.subject] || data.subject} — ${data.name}`,
+      subject: `New Contact: ${subjectLabels[data.subject] || data.subject} — ${data.name}`,
       replyTo: data.email,
       html: wrap(`
         <h2 style="color:#1e293b;margin:0 0 4px;">New Contact Form Submission</h2>
@@ -127,7 +127,7 @@ export async function sendContactEmail(data: {
           <p style="color:#1e293b;font-size:14px;margin:0;white-space:pre-line;">${data.message}</p>
         </div>
         <p style="margin-top:16px;font-size:13px;color:#64748b;">
-          💡 Reply directly to this email to respond to ${data.name}.
+          Reply directly to this email to respond to ${data.name}.
         </p>
       `),
     })
@@ -136,7 +136,7 @@ export async function sendContactEmail(data: {
   // Auto-reply to customer
   await sendEmail({
     to: data.email,
-    subject: `✅ We received your message — The Curry House Yokosuka`,
+    subject: `We received your message — The Curry House Yokosuka`,
     html: wrap(`
       <h2 style="color:#1e293b;margin:0 0 4px;">Thanks, ${data.name}! We got your message.</h2>
       <p style="color:#64748b;font-size:14px;margin:0 0 20px;">
@@ -148,7 +148,7 @@ export async function sendContactEmail(data: {
       )}
       <p style="margin-top:20px;font-size:14px;color:#475569;">
         In the meantime, you can also reach us at:<br>
-        📞 <strong>046-813-5869</strong> &nbsp;|&nbsp; 📞 <strong>046-828-6716</strong>
+        <strong>046-813-5869</strong> &nbsp;|&nbsp; <strong>046-828-6716</strong>
       </p>
     `),
   })
@@ -170,7 +170,7 @@ export async function sendCateringEmail(data: {
   if (adminEmails.length > 0) {
     await sendEmail({
       to: adminEmails,
-      subject: `🎉 New Catering Inquiry — ${data.name} (${data.event_type}, ${data.guest_count} guests)`,
+      subject: `New Catering Inquiry — ${data.name} (${data.event_type}, ${data.guest_count} guests)`,
       replyTo: data.email,
       html: wrap(`
         <h2 style="color:#1e293b;margin:0 0 4px;">New Catering Inquiry</h2>
@@ -187,7 +187,7 @@ export async function sendCateringEmail(data: {
         )}
         <div style="margin-top:16px;padding:12px 16px;background:#fef3c7;border-radius:8px;border:1px solid #fcd34d;">
           <p style="margin:0;font-size:13px;color:#92400e;font-weight:600;">
-            ⚡ Status: Pending — please reply to confirm and discuss details
+            Status: Pending — please reply to confirm and discuss details
           </p>
         </div>
       `),
@@ -197,7 +197,7 @@ export async function sendCateringEmail(data: {
   // Auto-reply to customer
   await sendEmail({
     to: data.email,
-    subject: `🎉 Catering inquiry received — The Curry House Yokosuka`,
+    subject: `Catering inquiry received — The Curry House Yokosuka`,
     html: wrap(`
       <h2 style="color:#1e293b;margin:0 0 4px;">Thanks, ${data.name}! Your catering inquiry is received.</h2>
       <p style="color:#64748b;font-size:14px;margin:0 0 20px;">
@@ -211,7 +211,7 @@ export async function sendCateringEmail(data: {
         (data.special_requirements ? row('Special Requirements', data.special_requirements) : '')
       )}
       <p style="margin-top:20px;font-size:14px;color:#475569;">
-        Questions? Call us: 📞 <strong>046-813-5869</strong>
+        Questions? Call us: <strong>046-813-5869</strong>
       </p>
     `),
   })
@@ -231,7 +231,7 @@ export async function sendCareerEmail(data: {
   if (adminEmails.length > 0) {
     await sendEmail({
       to: adminEmails,
-      subject: `👔 New Job Application — ${data.name} for ${data.position}`,
+      subject: `New Job Application — ${data.name} for ${data.position}`,
       replyTo: data.email,
       html: wrap(`
         <h2 style="color:#1e293b;margin:0 0 4px;">New Job Application</h2>
@@ -241,7 +241,7 @@ export async function sendCareerEmail(data: {
           row('Email', `<a href="mailto:${data.email}" style="color:#f97316;">${data.email}</a>`) +
           row('Phone', `<a href="tel:${data.phone}" style="color:#f97316;">${data.phone}</a>`) +
           row('Position', `<strong>${data.position}</strong>`) +
-          (data.cv_url ? row('CV / Resume', `<a href="${data.cv_url}" style="color:#f97316;font-weight:700;">📎 Download CV</a>`) : row('CV', 'Not submitted'))
+          (data.cv_url ? row('CV / Resume', `<a href="${data.cv_url}" style="color:#f97316;font-weight:700;">Download CV</a>`) : row('CV', 'Not submitted'))
         )}
         <div style="margin-top:16px;padding:16px;background:#f8fafc;border-left:4px solid #8b5cf6;border-radius:0 8px 8px 0;">
           <p style="font-weight:700;color:#475569;font-size:12px;margin:0 0 8px;text-transform:uppercase;">Cover Letter</p>
@@ -254,7 +254,7 @@ export async function sendCareerEmail(data: {
   // Auto-reply to applicant
   await sendEmail({
     to: data.email,
-    subject: `👔 Application received — The Curry House Yokosuka`,
+    subject: `Application received — The Curry House Yokosuka`,
     html: wrap(`
       <h2 style="color:#1e293b;margin:0 0 4px;">Thanks for applying, ${data.name}!</h2>
       <p style="color:#64748b;font-size:14px;margin:0 0 20px;">
@@ -263,7 +263,7 @@ export async function sendCareerEmail(data: {
       </p>
       ${table(
         row('Position', data.position) +
-        row('Application Status', '<span style="color:#16a34a;font-weight:700;">✅ Received & Under Review</span>')
+        row('Application Status', '<span style="color:#16a34a;font-weight:700;">Received & Under Review</span>')
       )}
       <p style="margin-top:20px;font-size:14px;color:#475569;">
         Questions? Email us at <a href="mailto:thecurryhouseyokosuka@gmail.com" style="color:#f97316;">thecurryhouseyokosuka@gmail.com</a>

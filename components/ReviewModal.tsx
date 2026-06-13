@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import StarRating from './StarRating'
-import { X, CheckCircle } from 'lucide-react'
+import { X, CheckCircle, Soup } from 'lucide-react'
 
 interface ReviewModalProps {
   orderId: string
@@ -58,7 +58,7 @@ export default function ReviewModal({ orderId, orderType = 'online', customerNam
         ) : (
           <>
             <div className="text-center mb-6">
-              <div className="text-4xl mb-2">🍛</div>
+              <Soup className="w-9 h-9 mx-auto mb-2 text-green-600" />
               <h2 className="text-xl font-bold text-gray-900">How was your experience?</h2>
               <p className="text-sm text-gray-500 mt-1">The Curry House Yokosuka</p>
             </div>

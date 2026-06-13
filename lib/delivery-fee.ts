@@ -68,7 +68,7 @@ export function calculateDeliveryFee(distanceKm: number): {
   return {
     fee: 0,
     isWithinRange: true,
-    message: `✅ FREE Delivery! You are ${distanceKm.toFixed(1)}km from our restaurant.`,
+    message: `FREE Delivery! You are ${distanceKm.toFixed(1)}km from our restaurant.`,
   };
 }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
 import Link from 'next/link'
+import { Armchair, Receipt } from 'lucide-react'
 
 interface TableSession {
   id: string
@@ -200,7 +201,7 @@ export default function StaffTablesPage() {
 
         {sessions.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center border border-stone-200">
-            <div className="text-4xl mb-3">🪑</div>
+            <Armchair className="w-10 h-10 mb-3 mx-auto text-stone-400" />
             <p className="text-stone-500 font-medium">No active table sessions</p>
             <p className="text-stone-400 text-sm mt-1">Tables will appear here when customers scan QR codes</p>
           </div>
@@ -335,7 +336,7 @@ export default function StaffTablesPage() {
               {selectedSession.status === 'bill_requested' && (
                 <div className="bg-amber-50 rounded-xl p-3 border border-amber-200 mb-4">
                   <p className="text-amber-700 text-sm font-medium flex items-center gap-2">
-                    <span className="text-lg">🧾</span>
+                    <Receipt className="w-5 h-5" />
                     Customer is waiting for the bill!
                   </p>
                 </div>

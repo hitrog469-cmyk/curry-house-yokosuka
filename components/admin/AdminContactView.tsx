@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { Circle, Eye, CheckCircle, Archive, Inbox, Mail, type LucideIcon } from 'lucide-react'
 
 type ContactMessage = {
   id: string
@@ -12,11 +13,11 @@ type ContactMessage = {
   created_at: string
 }
 
-const STATUS_META: Record<string, { color: string; label: string }> = {
-  new:      { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', label: '🔴 New' },
-  read:     { color: 'bg-blue-100 text-blue-800 border-blue-300',   label: '👁 Read' },
-  replied:  { color: 'bg-green-100 text-green-800 border-green-300', label: '✅ Replied' },
-  archived: { color: 'bg-gray-100 text-gray-600 border-gray-300',   label: '📦 Archived' },
+const STATUS_META: Record<string, { color: string; label: string; icon: LucideIcon }> = {
+  new:      { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', label: 'New',      icon: Circle },
+  read:     { color: 'bg-blue-100 text-blue-800 border-blue-300',   label: 'Read',     icon: Eye },
+  replied:  { color: 'bg-green-100 text-green-800 border-green-300', label: 'Replied',  icon: CheckCircle },
+  archived: { color: 'bg-gray-100 text-gray-600 border-gray-300',   label: 'Archived', icon: Archive },
 }
 
 const SUBJECT_LABELS: Record<string, string> = {
@@ -74,15 +75,18 @@ export default function AdminContactView() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {Object.entries(STATUS_META).map(([key, meta]) => (
+        {Object.entries(STATUS_META).map(([key, meta]) => {
+          const StatIcon = meta.icon
+          return (
           <div key={key}
             className={`bg-white rounded-xl p-4 shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-all ${filterStatus === key ? 'ring-2 ring-gray-900' : ''} ${key === 'new' ? 'border-yellow-400' : key === 'replied' ? 'border-green-500' : key === 'read' ? 'border-blue-400' : 'border-gray-300'}`}
             onClick={() => setFilterStatus(filterStatus === key ? 'all' : key)}
           >
-            <p className="text-xs font-bold text-gray-500 mb-1">{meta.label}</p>
+            <p className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><StatIcon className="w-3.5 h-3.5" /> {meta.label}</p>
             <p className="text-3xl font-black text-gray-900">{messages.filter(m => m.status === key).length}</p>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Toolbar */}
@@ -111,7 +115,7 @@ export default function AdminContactView() {
         </div>
       ) : messages.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-          <div className="text-5xl mb-3">📭</div>
+          <Inbox className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500">No messages found</p>
         </div>
       ) : (
@@ -120,6 +124,7 @@ export default function AdminContactView() {
             const isNew = m.status === 'new'
             const isExpanded = expanded === m.id
             const meta = STATUS_META[m.status]
+            const MetaIcon = meta.icon
             return (
               <div key={m.id}
                 className={`bg-white rounded-xl shadow-sm overflow-hidden border-l-4 ${isNew ? 'border-yellow-400 ring-1 ring-yellow-100' : 'border-gray-200'}`}
@@ -139,7 +144,7 @@ export default function AdminContactView() {
                       <p className="font-bold text-gray-900">{m.name}</p>
                       <p className="text-xs text-gray-500 truncate">{m.email}{m.phone ? ` · ${m.phone}` : ''}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${meta.color}`}>{meta.label}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border inline-flex items-center gap-1 ${meta.color}`}><MetaIcon className="w-3.5 h-3.5" /> {meta.label}</span>
                     <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold">
                       {SUBJECT_LABELS[m.subject] || m.subject}
                     </span>
@@ -156,23 +161,26 @@ export default function AdminContactView() {
                     </div>
                     <div className="flex flex-wrap gap-2 items-center">
                       <span className="text-xs font-bold text-gray-500">Mark as:</span>
-                      {(['read', 'replied', 'archived'] as const).map(s => (
+                      {(['read', 'replied', 'archived'] as const).map(s => {
+                        const BtnIcon = STATUS_META[s].icon
+                        return (
                         <button key={s}
                           disabled={updating === m.id || m.status === s}
                           onClick={() => updateStatus(m.id, s)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 inline-flex items-center gap-1 ${
                             m.status === s ? 'bg-gray-200 text-gray-500 cursor-default' : 'bg-gray-900 hover:bg-gray-700 text-white'
                           }`}
                         >
-                          {STATUS_META[s].label}
+                          <BtnIcon className="w-3.5 h-3.5" /> {STATUS_META[s].label}
                         </button>
-                      ))}
+                        )
+                      })}
                       <a
                         href={`mailto:${m.email}?subject=Re: ${SUBJECT_LABELS[m.subject] || m.subject}&body=Hi ${m.name},%0A%0A`}
                         onClick={() => updateStatus(m.id, 'replied')}
-                        className="ml-auto bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                        className="ml-auto bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1"
                       >
-                        📧 Reply via Email
+                        <Mail className="w-3.5 h-3.5" /> Reply via Email
                       </a>
                     </div>
                   </div>

@@ -7,6 +7,7 @@ import TodaysSpecialPopup from '@/components/TodaysSpecialPopup'
 import TopBanner from '@/components/TopBanner'
 import TestimonialsSection from '@/components/TestimonialsSection'
 import { getMenuItemImage } from '@/lib/image-mapping'
+import { Check, Star } from 'lucide-react'
 
 export default function HomePage() {
   const features = [
@@ -137,7 +138,7 @@ export default function HomePage() {
                   <div key={i} className="text-center">
                     <div className="text-2xl md:text-3xl font-black text-white flex items-center justify-center gap-1">
                       {stat.value}
-                      {stat.star && <span className="text-yellow-400 text-xl">★</span>}
+                      {stat.star && <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />}
                     </div>
                     <div className="text-xs text-green-200/70 font-medium uppercase tracking-wider mt-1">{stat.label}</div>
                   </div>
@@ -329,7 +330,7 @@ export default function HomePage() {
                   {/* Badges */}
                   <div className="absolute top-3 left-3">
                     <span className="bg-white/95 backdrop-blur-sm text-gray-700 text-xs font-semibold px-2.5 py-1 rounded-lg shadow-sm flex items-center gap-1">
-                      <span className="text-yellow-500">★</span> 4.8
+                      <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" /> 4.8
                     </span>
                   </div>
                   <div className="absolute top-3 right-3">
@@ -381,7 +382,7 @@ export default function HomePage() {
             {[
               { name: 'Restaurant Guru', year: '2024' },
               { name: 'TripAdvisor', year: 'Excellence' },
-              { name: 'Google', year: '4.8★' },
+              { name: 'Google', year: '4.8 Rating' },
               { name: 'Halal Certified', year: 'Japan' },
             ].map((award, i) => (
               <div key={i} className="flex flex-col items-center group">
@@ -459,13 +460,13 @@ export default function HomePage() {
             {/* Trust badges */}
             <div className="flex flex-wrap items-center justify-center gap-6 pt-10 text-green-300 text-sm">
               <span className="flex items-center gap-2">
-                <span className="text-green-400">✓</span> Halal Certified
+                <Check className="w-4 h-4 text-green-400" /> Halal Certified
               </span>
               <span className="flex items-center gap-2">
-                <span className="text-green-400">✓</span> 30 Min Delivery
+                <Check className="w-4 h-4 text-green-400" /> 30 Min Delivery
               </span>
               <span className="flex items-center gap-2">
-                <span className="text-yellow-400">★</span> 4.9 Rating
+                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" /> 4.9 Rating
               </span>
             </div>
           </div>

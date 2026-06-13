@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { getRestaurantStatusMessage } from '@/lib/restaurant-hours';
+import { CheckCircle, Lock } from 'lucide-react';
 
 export default function RestaurantStatus() {
   const [status, setStatus] = useState<{
@@ -46,7 +47,7 @@ export default function RestaurantStatus() {
       className={`${bgColor} border rounded-lg p-4 mb-6 transition-all duration-300`}
     >
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 text-2xl">{status.isOpen ? '✅' : '🔒'}</div>
+        <div className="flex-shrink-0">{status.isOpen ? <CheckCircle className="w-7 h-7" /> : <Lock className="w-7 h-7" />}</div>
         <div className="flex-1">
           <h3 className={`font-bold text-lg ${textColor} mb-1`}>
             {status.title}

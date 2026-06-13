@@ -15,6 +15,7 @@ import {
 } from '@/lib/daily-special-api'
 import Link from 'next/link'
 import toast, { Toaster } from 'react-hot-toast'
+import { Store, CheckCircle, XCircle, Star, Megaphone, Check } from 'lucide-react'
 
 export default function AdminContentPage() {
   const { user, loading: authLoading } = useAuth()
@@ -207,22 +208,22 @@ export default function AdminContentPage() {
         {/* ── Restaurant Status ── */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">🏪 Restaurant Status</h2>
+            <h2 className="text-xl font-black text-white flex items-center gap-2"><Store className="w-5 h-5" /> Restaurant Status</h2>
             <p className="text-green-100 text-sm">Control whether the restaurant appears open or closed to customers</p>
           </div>
           <div className="p-6 space-y-4">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setRestaurantOpen(true)}
-                className={`flex-1 py-4 rounded-xl font-bold text-lg border-2 transition-all ${restaurantOpen ? 'bg-green-500 text-white border-green-500 shadow-lg' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-green-400'}`}
+                className={`flex-1 py-4 rounded-xl font-bold text-lg border-2 transition-all inline-flex items-center justify-center gap-2 ${restaurantOpen ? 'bg-green-500 text-white border-green-500 shadow-lg' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-green-400'}`}
               >
-                ✅ OPEN
+                <CheckCircle className="w-5 h-5" /> OPEN
               </button>
               <button
                 onClick={() => setRestaurantOpen(false)}
-                className={`flex-1 py-4 rounded-xl font-bold text-lg border-2 transition-all ${!restaurantOpen ? 'bg-red-500 text-white border-red-500 shadow-lg' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-red-400'}`}
+                className={`flex-1 py-4 rounded-xl font-bold text-lg border-2 transition-all inline-flex items-center justify-center gap-2 ${!restaurantOpen ? 'bg-red-500 text-white border-red-500 shadow-lg' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-red-400'}`}
               >
-                🔴 CLOSED
+                <XCircle className="w-5 h-5" /> CLOSED
               </button>
             </div>
             {!restaurantOpen && (
@@ -250,7 +251,7 @@ export default function AdminContentPage() {
         {/* ── Today's Special ── */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">⭐ Today's Special</h2>
+            <h2 className="text-xl font-black text-white flex items-center gap-2"><Star className="w-5 h-5" /> Today's Special</h2>
             <p className="text-orange-100 text-sm">Set a discounted item to feature on the menu today</p>
           </div>
           <div className="p-6 space-y-4">
@@ -338,7 +339,7 @@ export default function AdminContentPage() {
 
               {specialForm.original_price && specialForm.special_price && Number(specialForm.special_price) < Number(specialForm.original_price) && (
                 <div className="flex items-center gap-2 text-green-600 dark:text-green-400 font-semibold text-sm">
-                  <span>✓</span>
+                  <Check className="w-4 h-4" />
                   <span>
                     {Math.round(((Number(specialForm.original_price) - Number(specialForm.special_price)) / Number(specialForm.original_price)) * 100)}% discount
                     · Customer saves {formatPrice(Number(specialForm.original_price) - Number(specialForm.special_price))}
@@ -381,9 +382,9 @@ export default function AdminContentPage() {
               <button
                 onClick={handleSaveSpecial}
                 disabled={savingSpecial}
-                className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all shadow-lg disabled:opacity-60"
+                className="w-full py-3 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold rounded-xl transition-all shadow-lg disabled:opacity-60 inline-flex items-center justify-center gap-2"
               >
-                {savingSpecial ? 'Saving...' : '⭐ Activate Today\'s Special'}
+                {savingSpecial ? 'Saving...' : <><Star className="w-4 h-4" /> Activate Today&apos;s Special</>}
               </button>
             </div>
           </div>
@@ -392,7 +393,7 @@ export default function AdminContentPage() {
         {/* ── Banner Messages ── */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="bg-gradient-to-r from-red-600 to-pink-600 px-6 py-4">
-            <h2 className="text-xl font-black text-white flex items-center gap-2">📢 Banner Messages</h2>
+            <h2 className="text-xl font-black text-white flex items-center gap-2"><Megaphone className="w-5 h-5" /> Banner Messages</h2>
             <p className="text-red-100 text-sm">Edit the scrolling messages shown at the top of every page</p>
           </div>
           <div className="p-6 space-y-4">
@@ -426,7 +427,7 @@ export default function AdminContentPage() {
                 onChange={e => setNewMessage(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddMessage()}
                 className="flex-1 px-4 py-2.5 border border-dashed border-gray-400 dark:border-gray-500 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-red-500 focus:border-solid"
-                placeholder="🎉 Add a new banner message..."
+                placeholder="Add a new banner message..."
               />
               <button
                 onClick={handleAddMessage}

@@ -12,15 +12,27 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import RestaurantStatus from '@/components/RestaurantStatus'
+import { ORDERING_ENABLED, ORDERING_DISABLED_MESSAGE } from '@/lib/site-config'
+import OrderingDisabledBanner from '@/components/OrderingDisabledBanner'
+import { Flame, Plus, X, MapPin, CheckCircle, CreditCard, Banknote, Smartphone, Globe, Car, UtensilsCrossed } from 'lucide-react'
 
 // Spice level definitions
 const SPICE_LEVELS = [
-  { level: 'MILD', label: 'Mild', labelJp: 'マイルド', emoji: '🌶️', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-  { level: 'NORMAL', label: 'Normal', labelJp: '普通', emoji: '🌶️🌶️', color: 'bg-orange-100 text-orange-800 border-orange-300' },
-  { level: 'MEDIUM', label: 'Medium', labelJp: '中辛', emoji: '🌶️🌶️🌶️', color: 'bg-orange-200 text-orange-900 border-orange-400' },
-  { level: 'HOT', label: 'Hot', labelJp: '辛口', emoji: '🌶️🌶️🌶️🌶️', color: 'bg-red-100 text-red-800 border-red-300' },
-  { level: 'VERY HOT', label: 'Very Hot', labelJp: '激辛', emoji: '🔥', color: 'bg-red-200 text-red-900 border-red-400' },
+  { level: 'MILD', label: 'Mild', labelJp: 'マイルド', flames: 1, color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  { level: 'NORMAL', label: 'Normal', labelJp: '普通', flames: 2, color: 'bg-orange-100 text-orange-800 border-orange-300' },
+  { level: 'MEDIUM', label: 'Medium', labelJp: '中辛', flames: 3, color: 'bg-orange-200 text-orange-900 border-orange-400' },
+  { level: 'HOT', label: 'Hot', labelJp: '辛口', flames: 4, color: 'bg-red-100 text-red-800 border-red-300' },
+  { level: 'VERY HOT', label: 'Very Hot', labelJp: '激辛', flames: 5, color: 'bg-red-200 text-red-900 border-red-400' },
 ]
+
+// Renders a row of flame icons for a spice level
+const SpiceFlames = ({ count, className = 'w-3.5 h-3.5' }: { count: number; className?: string }) => (
+  <span className="inline-flex flex-wrap items-center justify-center">
+    {Array.from({ length: count }, (_, i) => (
+      <Flame key={i} className={className} />
+    ))}
+  </span>
+)
 
 export default function OrderPage() {
   const router = useRouter()
@@ -270,11 +282,12 @@ export default function OrderPage() {
   }
 
   const handleSubmitOrder = async () => {
+    if (!ORDERING_ENABLED) { alert(ORDERING_DISABLED_MESSAGE); return }
     if (!supabase) { alert('Order system not configured'); return }
     // Restaurant hours check disabled for now
     // const orderCheck = canPlaceOrder()
     // if (!orderCheck.allowed) {
-    //   alert(`❌ ${orderCheck.message}\n\nPlease check our opening hours and try again later.`)
+    //   alert(`${orderCheck.message}\n\nPlease check our opening hours and try again later.`)
     //   return
     // }
 
@@ -292,7 +305,7 @@ export default function OrderPage() {
     if (selectedLat && selectedLng) {
       const distance = calculateDistance(RESTAURANT_LOCATION.lat, RESTAURANT_LOCATION.lng, selectedLat, selectedLng)
       if (distance > 5) {
-        alert(`❌ Sorry! We only deliver within 5km of our restaurant.\n\nYour location is ${distance.toFixed(1)}km away.\n\nPlease contact us for special arrangements.`)
+        alert(`Sorry! We only deliver within 5km of our restaurant.\n\nYour location is ${distance.toFixed(1)}km away.\n\nPlease contact us for special arrangements.`)
         return
       }
     }
@@ -550,7 +563,7 @@ export default function OrderPage() {
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <span className="text-3xl">🍽️</span>
+                                    <UtensilsCrossed className="w-8 h-8 text-orange-300" />
                                   </div>
                                 )}
                               </div>
@@ -569,7 +582,7 @@ export default function OrderPage() {
                                         spiceInfo ? spiceInfo.color : 'bg-gray-100 text-gray-600 border-gray-300'
                                       }`}
                                     >
-                                      {spiceInfo ? spiceInfo.emoji : '🌶️'}
+                                      <SpiceFlames count={spiceInfo ? spiceInfo.flames : 1} className="w-3.5 h-3.5" />
                                       <span>{spiceInfo ? spiceInfo.label : 'Set Spice'}</span>
                                       <svg className="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -587,7 +600,7 @@ export default function OrderPage() {
                                           : 'bg-gray-100 text-gray-600 border-gray-300'
                                       }`}
                                     >
-                                      ➕
+                                      <Plus className="w-3 h-3" />
                                       <span>
                                         {selectedAddOns[itemId]?.length > 0
                                           ? `${selectedAddOns[itemId].length} Add-on${selectedAddOns[itemId].length > 1 ? 's' : ''}`
@@ -635,7 +648,7 @@ export default function OrderPage() {
                                 onClick={() => removeItem(itemId)}
                                 className="w-9 h-9 text-red-500 hover:text-white hover:bg-red-500 rounded-lg font-bold text-lg flex items-center justify-center transition-all"
                               >
-                                ✕
+                                <X className="w-5 h-5" />
                               </button>
                             </div>
                           </div>
@@ -673,7 +686,6 @@ export default function OrderPage() {
                       return (
                         <div className="mt-6 pt-6 border-t">
                           <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <span className="text-lg">✨</span>
                             People also ordered
                           </h3>
                           <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
@@ -690,7 +702,7 @@ export default function OrderPage() {
                                       className="w-full h-full object-cover scale-[1.5]"
                                     />
                                   ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
+                                    <div className="w-full h-full flex items-center justify-center"><UtensilsCrossed className="w-6 h-6 text-orange-300" /></div>
                                   )}
                                 </div>
                                 <p className="font-bold text-xs text-gray-900 line-clamp-1">{item.name}</p>
@@ -755,7 +767,7 @@ export default function OrderPage() {
                       </div>
                       {promoError && <p className="text-red-500 text-sm mt-2">{promoError}</p>}
                       {promoDiscount > 0 && (
-                        <p className="text-green-600 text-sm mt-2 font-semibold">✓ Promo code applied!</p>
+                        <p className="text-green-600 text-sm mt-2 font-semibold">Promo code applied!</p>
                       )}
                     </div>
 
@@ -773,7 +785,7 @@ export default function OrderPage() {
                       )}
                       <div className="flex justify-between text-gray-600">
                         <span className="font-semibold">Delivery Fee:</span>
-                        <span className="font-bold text-green-600">FREE 🎉</span>
+                        <span className="font-bold text-green-600">FREE</span>
                       </div>
                       <div className="flex justify-between text-2xl font-black text-gray-900 pt-3 border-t-2">
                         <span>Total:</span>
@@ -783,12 +795,24 @@ export default function OrderPage() {
                   </div>
 
                   {/* Continue Button */}
-                  <button
-                    onClick={() => setStep('details')}
-                    className="w-full btn-primary text-lg py-5"
-                  >
-                    Continue to Delivery Details →
-                  </button>
+                  {ORDERING_ENABLED ? (
+                    <button
+                      onClick={() => setStep('details')}
+                      className="w-full btn-primary text-lg py-5"
+                    >
+                      Continue to Delivery Details →
+                    </button>
+                  ) : (
+                    <>
+                      <OrderingDisabledBanner />
+                      <button
+                        disabled
+                        className="w-full btn-primary text-lg py-5 opacity-50 cursor-not-allowed"
+                      >
+                        Online Ordering Launching Soon
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -849,7 +873,7 @@ export default function OrderPage() {
                       <p className="text-red-500 text-xs mt-1.5 font-medium">Phone numbers don't match</p>
                     )}
                     {phoneConfirm && formData.phone && phoneConfirm === formData.phone && (
-                      <p className="text-green-600 text-xs mt-1.5 font-medium">✓ Phone numbers match — you can track your order with this number</p>
+                      <p className="text-green-600 text-xs mt-1.5 font-medium">Phone numbers match — you can track your order with this number</p>
                     )}
                   </div>
 
@@ -895,7 +919,7 @@ export default function OrderPage() {
                       }}
                       className="w-full mb-3 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl transition-all"
                     >
-                      📍 Use My Current Location
+                      <MapPin className="w-5 h-5" /> Use My Current Location
                     </button>
 
                     <div className="flex items-center gap-2 mb-3">
@@ -928,7 +952,7 @@ export default function OrderPage() {
                     {placeSelected && selectedLat && selectedLng && (
                       <div className="mt-3 rounded-xl overflow-hidden border-2 border-green-200 shadow-sm">
                         <div className="bg-green-50 px-3 py-2 flex items-center gap-2">
-                          <span className="text-green-600 text-sm">✅</span>
+                          <CheckCircle className="w-4 h-4 text-green-600" />
                           <p className="text-green-700 text-xs font-bold">Location confirmed</p>
                         </div>
                         <iframe
@@ -983,7 +1007,7 @@ export default function OrderPage() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">💳</span>
+                        <CreditCard className="w-5 h-5 text-green-700" />
                         <span className="font-bold text-gray-900">Pay at Door</span>
                         <span className="bg-green-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">RECOMMENDED</span>
                       </div>
@@ -991,10 +1015,10 @@ export default function OrderPage() {
                         Our delivery partner carries a mobile card terminal. We accept:
                       </p>
                       <div className="flex flex-wrap gap-2 mt-2">
-                        <span className="text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold">💵 Cash</span>
-                        <span className="text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold">💳 Visa/Master</span>
-                        <span className="text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold">📱 PayPay</span>
-                        <span className="text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold">📱 LINE Pay</span>
+                        <span className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold"><Banknote className="w-3.5 h-3.5" /> Cash</span>
+                        <span className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold"><CreditCard className="w-3.5 h-3.5" /> Visa/Master</span>
+                        <span className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold"><Smartphone className="w-3.5 h-3.5" /> PayPay</span>
+                        <span className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded-lg border border-gray-200 font-semibold"><Smartphone className="w-3.5 h-3.5" /> LINE Pay</span>
                       </div>
                     </div>
                   </label>
@@ -1010,7 +1034,7 @@ export default function OrderPage() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-lg">🌐</span>
+                        <Globe className="w-5 h-5 text-gray-400" />
                         <span className="font-bold text-gray-500">Online Payment</span>
                         <span className="bg-gray-400 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">COMING SOON</span>
                       </div>
@@ -1022,6 +1046,7 @@ export default function OrderPage() {
                 </div>
               </div>
 
+              {!ORDERING_ENABLED && <OrderingDisabledBanner />}
               <div className="flex gap-4">
                 <button
                   onClick={() => setStep('cart')}
@@ -1031,10 +1056,10 @@ export default function OrderPage() {
                 </button>
                 <button
                   onClick={handleSubmitOrder}
-                  disabled={loading}
-                  className="flex-1 btn-primary text-lg py-4"
+                  disabled={loading || !ORDERING_ENABLED}
+                  className="flex-1 btn-primary text-lg py-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Placing Order...' : 'Place Order'}
+                  {!ORDERING_ENABLED ? 'Ordering Launching Soon' : loading ? 'Placing Order...' : 'Place Order'}
                 </button>
               </div>
             </div>
@@ -1069,7 +1094,7 @@ export default function OrderPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-gray-500 uppercase tracking-wider">Estimated Time</p>
-                      <p className="text-lg font-bold text-green-600">🚗 {confirmedOrder.estimatedTime}</p>
+                      <p className="text-lg font-bold text-green-600 inline-flex items-center gap-1.5"><Car className="w-4 h-4" /> {confirmedOrder.estimatedTime}</p>
                     </div>
                   </div>
                 </div>
@@ -1080,8 +1105,8 @@ export default function OrderPage() {
                   <p className="font-semibold text-gray-900">{confirmedOrder.address}</p>
                   {deliveryDistance !== null && (
                     <div className="flex items-center gap-2 mt-2">
-                      <span className="text-green-600 text-xs font-bold">📍 {deliveryDistance.toFixed(1)}km from restaurant</span>
-                      <span className="text-green-600 text-xs font-bold">· 🚗 Delivery FREE</span>
+                      <span className="text-green-600 text-xs font-bold inline-flex items-center gap-1"><MapPin className="w-3 h-3" /> {deliveryDistance.toFixed(1)}km from restaurant</span>
+                      <span className="text-green-600 text-xs font-bold inline-flex items-center gap-1">· <Car className="w-3 h-3" /> Delivery FREE</span>
                     </div>
                   )}
                 </div>
@@ -1099,8 +1124,8 @@ export default function OrderPage() {
                           </div>
                           <p className="text-xs text-gray-500">{item.nameJp}</p>
                           {item.spiceLevel && (
-                            <span className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold mt-1">
-                              🌶️ {item.spiceLevel}
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-bold mt-1">
+                              <Flame className="w-3 h-3" /> {item.spiceLevel}
                             </span>
                           )}
                           {item.addOns && item.addOns.length > 0 && (
@@ -1117,7 +1142,7 @@ export default function OrderPage() {
                 <div className="border-t-2 border-dashed border-gray-300 pt-4">
                   <div className="flex justify-between text-gray-700 mb-2">
                     <span className="font-semibold">Delivery Fee</span>
-                    <span className="font-bold">{confirmedOrder.total > 0 && deliveryFee > 0 ? formatPrice(deliveryFee) : 'FREE ✓'}</span>
+                    <span className="font-bold">{confirmedOrder.total > 0 && deliveryFee > 0 ? formatPrice(deliveryFee) : 'FREE'}</span>
                   </div>
                   <div className="flex justify-between text-2xl font-black">
                     <span>Total Due</span>
@@ -1128,17 +1153,17 @@ export default function OrderPage() {
                 {/* Payment Info - COD with Card Swipe */}
                 <div className="mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">💳</span>
+                    <CreditCard className="w-5 h-5 text-blue-700" />
                     <span className="font-bold text-blue-800">Pay at Door</span>
                   </div>
                   <p className="text-sm text-blue-700 mb-2">
                     Our delivery staff carries a card reader. You can pay with:
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    <span className="text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold">💵 Cash</span>
-                    <span className="text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold">💳 Card Swipe (Visa/Master)</span>
-                    <span className="text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold">📱 PayPay</span>
-                    <span className="text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold">📱 LINE Pay</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold"><Banknote className="w-3.5 h-3.5" /> Cash</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold"><CreditCard className="w-3.5 h-3.5" /> Card Swipe (Visa/Master)</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold"><Smartphone className="w-3.5 h-3.5" /> PayPay</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-white px-2 py-1 rounded-lg border border-blue-200 font-semibold"><Smartphone className="w-3.5 h-3.5" /> LINE Pay</span>
                   </div>
                 </div>
 
@@ -1175,14 +1200,14 @@ export default function OrderPage() {
                     disabled={cancelling}
                     className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl transition-all"
                   >
-                    {cancelling ? '⏳ Cancelling...' : '❌ Cancel Order'}
+                    {cancelling ? 'Cancelling...' : 'Cancel Order'}
                   </button>
                 </div>
               )}
 
               {cancelled && (
                 <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 text-center">
-                  <p className="text-2xl mb-2">✅</p>
+                  <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
                   <p className="font-bold text-gray-800">Order Cancelled</p>
                   <p className="text-sm text-gray-500 mt-1">Your order has been cancelled. No payment was taken.</p>
                 </div>
@@ -1190,7 +1215,7 @@ export default function OrderPage() {
 
               {!cancelled && cancelSecondsLeft === 0 && (
                 <p className="text-center text-xs text-gray-400">
-                  ⏱️ Cancellation window has closed — your order is being prepared.
+                  Cancellation window has closed — your order is being prepared.
                 </p>
               )}
             </div>
@@ -1220,7 +1245,7 @@ export default function OrderPage() {
                       : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50'
                   }`}
                 >
-                  <span className="text-2xl w-12 text-center">{spice.emoji}</span>
+                  <span className="w-20 shrink-0 flex justify-center text-red-500"><SpiceFlames count={spice.flames} className="w-4 h-4" /></span>
                   <div className="flex-1 text-left">
                     <span className="font-bold text-gray-900">{spice.label}</span>
                     <span className="text-gray-500 text-sm ml-2">{spice.labelJp}</span>

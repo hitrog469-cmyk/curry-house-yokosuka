@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { Circle, Eye, Star, XCircle, CheckCircle, Briefcase, Paperclip, Save, Mail, type LucideIcon } from 'lucide-react'
 
 type Application = {
   id: string
@@ -15,12 +16,12 @@ type Application = {
   created_at: string
 }
 
-const STATUS_META: Record<string, { color: string; label: string; border: string }> = {
-  new:         { color: 'bg-yellow-100 text-yellow-800', label: '🔴 New',         border: 'border-yellow-400' },
-  reviewed:    { color: 'bg-blue-100 text-blue-800',     label: '👁 Reviewed',    border: 'border-blue-400' },
-  shortlisted: { color: 'bg-purple-100 text-purple-800', label: '⭐ Shortlisted', border: 'border-purple-400' },
-  rejected:    { color: 'bg-red-100 text-red-700',       label: '❌ Rejected',    border: 'border-red-300' },
-  hired:       { color: 'bg-green-100 text-green-800',   label: '✅ Hired',       border: 'border-green-500' },
+const STATUS_META: Record<string, { color: string; label: string; border: string; icon: LucideIcon }> = {
+  new:         { color: 'bg-yellow-100 text-yellow-800', label: 'New',         border: 'border-yellow-400', icon: Circle },
+  reviewed:    { color: 'bg-blue-100 text-blue-800',     label: 'Reviewed',    border: 'border-blue-400',   icon: Eye },
+  shortlisted: { color: 'bg-purple-100 text-purple-800', label: 'Shortlisted', border: 'border-purple-400', icon: Star },
+  rejected:    { color: 'bg-red-100 text-red-700',       label: 'Rejected',    border: 'border-red-300',    icon: XCircle },
+  hired:       { color: 'bg-green-100 text-green-800',   label: 'Hired',       border: 'border-green-500',  icon: CheckCircle },
 }
 
 export default function AdminCareersView() {
@@ -71,15 +72,18 @@ export default function AdminCareersView() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-        {Object.entries(STATUS_META).map(([key, meta]) => (
+        {Object.entries(STATUS_META).map(([key, meta]) => {
+          const StatIcon = meta.icon
+          return (
           <div key={key}
             className={`bg-white rounded-xl p-4 shadow-sm border-l-4 ${meta.border} cursor-pointer hover:shadow-md transition-all ${filterStatus === key ? 'ring-2 ring-gray-900' : ''}`}
             onClick={() => setFilterStatus(filterStatus === key ? 'all' : key)}
           >
-            <p className="text-xs font-bold text-gray-500 mb-1">{meta.label}</p>
+            <p className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><StatIcon className="w-3.5 h-3.5" /> {meta.label}</p>
             <p className="text-3xl font-black text-gray-900">{apps.filter(a => a.status === key).length}</p>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Filter */}
@@ -89,12 +93,15 @@ export default function AdminCareersView() {
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterStatus === 'all' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
             All ({apps.length})
           </button>
-          {Object.entries(STATUS_META).map(([key, meta]) => (
+          {Object.entries(STATUS_META).map(([key, meta]) => {
+            const FilterIcon = meta.icon
+            return (
             <button key={key} onClick={() => setFilterStatus(key)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterStatus === key ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {meta.label} ({apps.filter(a => a.status === key).length})
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 ${filterStatus === key ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+              <FilterIcon className="w-3.5 h-3.5" /> {meta.label} ({apps.filter(a => a.status === key).length})
             </button>
-          ))}
+            )
+          })}
         </div>
         <button onClick={fetchApps} className="text-sm text-blue-600 hover:underline">↻ Refresh</button>
       </div>
@@ -105,13 +112,14 @@ export default function AdminCareersView() {
         </div>
       ) : apps.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-          <div className="text-5xl mb-3">👔</div>
+          <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500">No applications yet</p>
         </div>
       ) : (
         <div className="space-y-3">
           {apps.map(a => {
             const meta = STATUS_META[a.status]
+            const MetaIcon = meta.icon
             const isExpanded = expanded === a.id
             return (
               <div key={a.id}
@@ -130,9 +138,9 @@ export default function AdminCareersView() {
                       <p className="text-xs text-gray-500">{a.email} · {a.phone}</p>
                     </div>
                     <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-xs font-bold">{a.position}</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${meta.color}`}>{meta.label}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${meta.color}`}><MetaIcon className="w-3.5 h-3.5" /> {meta.label}</span>
                     {a.cv_url && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold">📎 CV</span>
+                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-semibold inline-flex items-center gap-1"><Paperclip className="w-3.5 h-3.5" /> CV</span>
                     )}
                     <span className="text-xs text-gray-400">{new Date(a.created_at).toLocaleDateString('ja-JP')}</span>
                     <span className="text-gray-400">{isExpanded ? '▲' : '▼'}</span>
@@ -156,7 +164,7 @@ export default function AdminCareersView() {
                           rel="noopener noreferrer"
                           className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors inline-flex items-center gap-2"
                         >
-                          📎 Download CV {a.cv_filename ? `(${a.cv_filename})` : ''}
+                          <Paperclip className="w-4 h-4" /> Download CV {a.cv_filename ? `(${a.cv_filename})` : ''}
                         </a>
                       </div>
                     )}
@@ -176,31 +184,34 @@ export default function AdminCareersView() {
                     {/* Actions */}
                     <div className="flex flex-wrap gap-2 items-center">
                       <span className="text-xs font-bold text-gray-500">Status:</span>
-                      {Object.entries(STATUS_META).map(([key, smeta]) => (
+                      {Object.entries(STATUS_META).map(([key, smeta]) => {
+                        const BtnIcon = smeta.icon
+                        return (
                         <button key={key}
                           disabled={saving === a.id || a.status === key}
                           onClick={() => updateApp(a.id, { status: key, notes: editNotes[a.id] ?? a.notes ?? undefined })}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 inline-flex items-center gap-1 ${
                             a.status === key ? `${smeta.color} cursor-default` : 'bg-gray-900 hover:bg-gray-700 text-white'
                           }`}
                         >
-                          {smeta.label}
+                          <BtnIcon className="w-3.5 h-3.5" /> {smeta.label}
                         </button>
-                      ))}
+                        )
+                      })}
                       {editNotes[a.id] !== undefined && editNotes[a.id] !== (a.notes || '') && (
                         <button
                           disabled={saving === a.id}
                           onClick={() => updateApp(a.id, { notes: editNotes[a.id] })}
-                          className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold"
+                          className="ml-auto bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1"
                         >
-                          {saving === a.id ? 'Saving…' : '💾 Save Notes'}
+                          {saving === a.id ? 'Saving…' : <><Save className="w-3.5 h-3.5" /> Save Notes</>}
                         </button>
                       )}
                       <a
                         href={`mailto:${a.email}?subject=Re: Your application for ${a.position} at The Curry House Yokosuka&body=Hi ${a.name},%0A%0A`}
-                        className="ml-auto bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                        className="ml-auto bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1"
                       >
-                        📧 Email Applicant
+                        <Mail className="w-3.5 h-3.5" /> Email Applicant
                       </a>
                     </div>
                   </div>

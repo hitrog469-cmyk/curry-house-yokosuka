@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { Crown, Car, Bell, ChefHat, HandHelping, HelpCircle, Search, User, Pencil, Ban, CheckCircle, XCircle, Link2, MapPin, type LucideIcon } from 'lucide-react'
 
 type UserProfile = {
   id: string
@@ -14,12 +15,12 @@ type UserProfile = {
 const ROLES = ['admin', 'staff', 'reception', 'kitchen', 'customer'] as const
 type Role = (typeof ROLES)[number]
 
-const ROLE_META: Record<Role, { label: string; color: string; icon: string; loginUrl: string; dashUrl: string }> = {
-  admin:     { label: 'Admin',     color: 'bg-red-100 text-red-800 border-red-300',       icon: '👑', loginUrl: '/admin/login',  dashUrl: '/admin' },
-  staff:     { label: 'Staff',     color: 'bg-purple-100 text-purple-800 border-purple-300', icon: '🚗', loginUrl: '/admin/login',  dashUrl: '/staff' },
-  reception: { label: 'Reception', color: 'bg-orange-100 text-orange-800 border-orange-300', icon: '🔔', loginUrl: '/admin/login',  dashUrl: '/reception' },
-  kitchen:   { label: 'Kitchen',   color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: '👨‍🍳', loginUrl: '/admin/login',  dashUrl: '/kitchen' },
-  customer:  { label: 'Customer',  color: 'bg-blue-100 text-blue-800 border-blue-300',     icon: '🙋', loginUrl: '/auth/login',   dashUrl: '/profile' },
+const ROLE_META: Record<Role, { label: string; color: string; icon: LucideIcon; loginUrl: string; dashUrl: string }> = {
+  admin:     { label: 'Admin',     color: 'bg-red-100 text-red-800 border-red-300',       icon: Crown,       loginUrl: '/admin/login',  dashUrl: '/admin' },
+  staff:     { label: 'Staff',     color: 'bg-purple-100 text-purple-800 border-purple-300', icon: Car,         loginUrl: '/admin/login',  dashUrl: '/staff' },
+  reception: { label: 'Reception', color: 'bg-orange-100 text-orange-800 border-orange-300', icon: Bell,        loginUrl: '/admin/login',  dashUrl: '/reception' },
+  kitchen:   { label: 'Kitchen',   color: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: ChefHat,     loginUrl: '/admin/login',  dashUrl: '/kitchen' },
+  customer:  { label: 'Customer',  color: 'bg-blue-100 text-blue-800 border-blue-300',     icon: HandHelping, loginUrl: '/auth/login',   dashUrl: '/profile' },
 }
 
 const BLANK_FORM = { email: '', password: '', fullName: '', phone: '', role: 'staff' as Role }
@@ -91,7 +92,7 @@ export default function AdminUsersView() {
     } else {
       setShowCreate(false)
       setForm(BLANK_FORM)
-      showToast(`✅ Created ${json.user.email} as ${json.user.role}`)
+      showToast(`Created ${json.user.email} as ${json.user.role}`)
       fetchUsers()
     }
     setCreating(false)
@@ -110,9 +111,9 @@ export default function AdminUsersView() {
     })
     const json = await res.json()
     if (!res.ok) {
-      showToast(`❌ ${json.error}`)
+      showToast(`${json.error}`)
     } else {
-      showToast(`✅ Updated ${json.user.email}`)
+      showToast(`Updated ${json.user.email}`)
       setEditingId(null)
       setEditPassword('')
       fetchUsers()
@@ -128,7 +129,7 @@ export default function AdminUsersView() {
       body: JSON.stringify({ id: u.id, is_active: !u.is_active }),
     })
     if (res.ok) {
-      showToast(`${!u.is_active ? '✅ Activated' : '⛔ Deactivated'}: ${u.email}`)
+      showToast(`${!u.is_active ? 'Activated' : 'Deactivated'}: ${u.email}`)
       fetchUsers()
     }
   }
@@ -148,11 +149,12 @@ export default function AdminUsersView() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
         {ROLES.map(role => {
           const m = ROLE_META[role]
+          const Icon = m.icon
           return (
             <div key={role} className={`bg-white rounded-xl p-4 shadow-sm border-l-4 cursor-pointer transition-all hover:shadow-md ${filterRole === role ? 'ring-2 ring-gray-900' : ''}`}
               onClick={() => setFilterRole(filterRole === role ? 'all' : role)}>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-xl">{m.icon}</span>
+                <Icon className="w-5 h-5 text-gray-600" />
                 <span className="text-xs font-bold text-gray-500 uppercase">{role}</span>
               </div>
               <p className="text-3xl font-black text-gray-900">{roleCountFor(role)}</p>
@@ -164,20 +166,23 @@ export default function AdminUsersView() {
 
       {/* Toolbar */}
       <div className="flex flex-wrap gap-3 items-center mb-4">
-        <input
-          type="text"
-          placeholder="🔍 Search by name or email…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="flex-1 min-w-48 px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-400"
-        />
+        <div className="relative flex-1 min-w-48">
+          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search by name or email…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-gray-400"
+          />
+        </div>
         <select
           value={filterRole}
           onChange={e => setFilterRole(e.target.value)}
           className="px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm font-semibold"
         >
           <option value="all">All Roles</option>
-          {ROLES.map(r => <option key={r} value={r}>{ROLE_META[r].icon} {ROLE_META[r].label}</option>)}
+          {ROLES.map(r => <option key={r} value={r}>{ROLE_META[r].label}</option>)}
         </select>
         <button
           onClick={() => { setShowCreate(true); setCreateError('') }}
@@ -196,21 +201,22 @@ export default function AdminUsersView() {
         </div>
       ) : filteredUsers.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-          <div className="text-5xl mb-3">👤</div>
+          <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500">No users found</p>
         </div>
       ) : (
         <div className="space-y-2">
           {filteredUsers.map(u => {
-            const meta = ROLE_META[u.role as Role] || { label: u.role, color: 'bg-gray-100 text-gray-700 border-gray-200', icon: '❓' }
+            const meta = ROLE_META[u.role as Role] || { label: u.role, color: 'bg-gray-100 text-gray-700 border-gray-200', icon: HelpCircle }
+            const MetaIcon = meta.icon
             const isEditing = editingId === u.id
             return (
               <div key={u.id} className={`bg-white rounded-xl shadow-sm overflow-hidden transition-all ${!u.is_active ? 'opacity-50' : ''}`}>
                 {/* Main row */}
                 <div className="flex flex-wrap items-center gap-3 p-4">
                   {/* Avatar */}
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold flex-shrink-0 ${meta.color.split(' ')[0]}`}>
-                    {meta.icon}
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${meta.color.split(' ')[0]}`}>
+                    <MetaIcon className="w-5 h-5 text-gray-700" />
                   </div>
 
                   {/* Name + email */}
@@ -221,8 +227,8 @@ export default function AdminUsersView() {
                   </div>
 
                   {/* Role badge */}
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${meta.color}`}>
-                    {meta.icon} {u.role}
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border inline-flex items-center gap-1 ${meta.color}`}>
+                    <MetaIcon className="w-3.5 h-3.5" /> {u.role}
                   </span>
 
                   {/* Status */}
@@ -242,19 +248,19 @@ export default function AdminUsersView() {
                         if (isEditing) { setEditingId(null); setEditPassword('') }
                         else { setEditingId(u.id); setEditRole(u.role as Role); setEditPassword('') }
                       }}
-                      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-semibold transition-colors"
+                      className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-xs font-semibold transition-colors inline-flex items-center gap-1"
                     >
-                      {isEditing ? 'Cancel' : '✏️ Edit'}
+                      {isEditing ? 'Cancel' : <><Pencil className="w-3.5 h-3.5" /> Edit</>}
                     </button>
                     <button
                       onClick={() => toggleActive(u)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors inline-flex items-center gap-1 ${
                         u.is_active
                           ? 'bg-red-50 hover:bg-red-100 text-red-600'
                           : 'bg-green-50 hover:bg-green-100 text-green-600'
                       }`}
                     >
-                      {u.is_active ? '⛔ Deactivate' : '✅ Activate'}
+                      {u.is_active ? <><Ban className="w-3.5 h-3.5" /> Deactivate</> : <><CheckCircle className="w-3.5 h-3.5" /> Activate</>}
                     </button>
                   </div>
                 </div>
@@ -271,7 +277,7 @@ export default function AdminUsersView() {
                           className="px-3 py-2 border-2 border-gray-200 rounded-lg text-sm font-semibold bg-white"
                         >
                           {ROLES.map(r => (
-                            <option key={r} value={r}>{ROLE_META[r].icon} {r}</option>
+                            <option key={r} value={r}>{r}</option>
                           ))}
                         </select>
                       </div>
@@ -322,7 +328,9 @@ export default function AdminUsersView() {
               <div>
                 <label className="text-xs font-bold text-gray-500 block mb-1">ROLE *</label>
                 <div className="grid grid-cols-5 gap-2">
-                  {ROLES.map(r => (
+                  {ROLES.map(r => {
+                    const RoleIcon = ROLE_META[r].icon
+                    return (
                     <button
                       key={r}
                       type="button"
@@ -333,10 +341,11 @@ export default function AdminUsersView() {
                           : 'border-gray-200 hover:border-gray-400'
                       }`}
                     >
-                      <div className="text-lg">{ROLE_META[r].icon}</div>
+                      <RoleIcon className="w-5 h-5 mx-auto" />
                       <div className="text-xs font-bold mt-0.5 capitalize">{r}</div>
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
 
@@ -389,13 +398,13 @@ export default function AdminUsersView() {
               {/* Login info preview */}
               <div className="p-3 bg-gray-50 rounded-xl text-xs text-gray-600 border border-gray-200">
                 <p className="font-bold text-gray-700 mb-1">This user will log in at:</p>
-                <p>🔗 <code className="bg-white px-1 rounded border">{ROLE_META[form.role].loginUrl}</code></p>
-                <p className="mt-1">📍 Dashboard: <code className="bg-white px-1 rounded border">{ROLE_META[form.role].dashUrl}</code></p>
+                <p className="flex items-center gap-1.5"><Link2 className="w-3.5 h-3.5 flex-shrink-0" /> <code className="bg-white px-1 rounded border">{ROLE_META[form.role].loginUrl}</code></p>
+                <p className="mt-1 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 flex-shrink-0" /> Dashboard: <code className="bg-white px-1 rounded border">{ROLE_META[form.role].dashUrl}</code></p>
               </div>
 
               {createError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
-                  ❌ {createError}
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-center gap-1.5">
+                  <XCircle className="w-4 h-4 flex-shrink-0" /> {createError}
                 </div>
               )}
 
@@ -412,7 +421,7 @@ export default function AdminUsersView() {
                   disabled={creating}
                   className="flex-1 py-3 bg-gray-900 hover:bg-gray-700 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-colors"
                 >
-                  {creating ? 'Creating…' : `Create ${ROLE_META[form.role].icon} ${form.role}`}
+                  {creating ? 'Creating…' : `Create ${form.role}`}
                 </button>
               </div>
             </form>

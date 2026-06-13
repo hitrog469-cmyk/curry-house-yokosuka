@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import StarRating from './StarRating'
+import { BadgeCheck } from 'lucide-react'
 
 const STATIC_FALLBACK = [
   { id: 's1', reviewer_name: 'Yuki Tanaka', rating: 5, comment: 'Best Indian food in Yokosuka! The butter chicken is absolutely amazing.', created_at: '2026-01-15', is_verified: true },
@@ -68,7 +69,7 @@ export default function TestimonialsSection() {
                 <div>
                   <div className="font-bold text-gray-900 text-sm flex items-center gap-1">
                     {r.reviewer_name}
-                    {r.is_verified && <span className="text-xs text-green-600 font-normal">✓ Verified</span>}
+                    {r.is_verified && <span className="text-xs text-green-600 font-normal inline-flex items-center gap-0.5"><BadgeCheck className="w-3.5 h-3.5" /> Verified</span>}
                   </div>
                   <div className="text-xs text-gray-500">{formatDate(r.created_at)}</div>
                 </div>

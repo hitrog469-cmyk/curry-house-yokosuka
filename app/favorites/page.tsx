@@ -8,6 +8,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 import Image from 'next/image'
+import { Heart, HeartOff, Soup, Clock, Package, UtensilsCrossed, MapPin } from 'lucide-react'
 
 export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<string[]>([])
@@ -86,7 +87,7 @@ export default function FavoritesPage() {
         <section className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-black text-stone-800">❤️ Favorite Dishes</h2>
+              <h2 className="text-2xl font-black text-stone-800 flex items-center gap-2"><Heart className="w-5 h-5 text-rose-500" /> Favorite Dishes</h2>
               <p className="text-stone-500 text-sm">Tap the heart on any menu item to save it here</p>
             </div>
             {favoriteItems.length > 0 && (
@@ -101,7 +102,7 @@ export default function FavoritesPage() {
 
           {favoriteItems.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center border border-stone-200">
-              <div className="text-5xl mb-4">💔</div>
+              <HeartOff className="w-12 h-12 mb-4 mx-auto text-stone-400" />
               <h3 className="text-xl font-bold text-stone-800 mb-2">No Favorites Yet</h3>
               <p className="text-stone-500 mb-6">
                 Browse our menu and tap the heart icon to save your favorite dishes!
@@ -129,7 +130,7 @@ export default function FavoritesPage() {
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-5xl">🍛</span>
+                          <Soup className="w-12 h-12 text-amber-400" />
                         </div>
                       )}
                       {/* Remove from favorites */}
@@ -137,7 +138,7 @@ export default function FavoritesPage() {
                         onClick={() => toggleFavorite(item.id)}
                         className="absolute top-3 right-3 w-10 h-10 bg-white/90 backdrop-blur rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
                       >
-                        <span className="text-red-500 text-xl">❤️</span>
+                        <Heart className="w-5 h-5 text-red-500 fill-current" />
                       </button>
                     </div>
                     <div className="p-4">
@@ -164,14 +165,14 @@ export default function FavoritesPage() {
         <section>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-2xl font-black text-stone-800">🕐 Order Again</h2>
+              <h2 className="text-2xl font-black text-stone-800 flex items-center gap-2"><Clock className="w-5 h-5 text-stone-600" /> Order Again</h2>
               <p className="text-stone-500 text-sm">Quickly reorder from your past orders</p>
             </div>
           </div>
 
           {recentOrders.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center border border-stone-200">
-              <div className="text-5xl mb-4">📦</div>
+              <Package className="w-12 h-12 mb-4 mx-auto text-stone-400" />
               <h3 className="text-xl font-bold text-stone-800 mb-2">No Recent Orders</h3>
               <p className="text-stone-500 mb-6">
                 Your past orders will appear here for easy reordering.
@@ -224,8 +225,8 @@ export default function FavoritesPage() {
         <div className="mt-12 grid sm:grid-cols-2 gap-4">
           <Link href="/menu" className="bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl p-6 hover:shadow-lg transition-all group">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                🍽️
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <UtensilsCrossed className="w-7 h-7" />
               </div>
               <div>
                 <h3 className="font-bold text-lg">Browse Full Menu</h3>
@@ -235,8 +236,8 @@ export default function FavoritesPage() {
           </Link>
           <Link href="/track" className="bg-gradient-to-r from-sky-500 to-blue-500 text-white rounded-2xl p-6 hover:shadow-lg transition-all group">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                📍
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <MapPin className="w-7 h-7" />
               </div>
               <div>
                 <h3 className="font-bold text-lg">Track Your Order</h3>

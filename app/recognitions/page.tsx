@@ -1,10 +1,19 @@
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
+import { Trophy, Medal, Award, Star, CheckCircle, UtensilsCrossed, ChefHat, FileText, type LucideIcon } from 'lucide-react'
 
 export default function RecognitionsPage() {
   // Template data - replace with actual certificates/awards
-  const recognitions = [
+  const recognitions: {
+    id: number
+    name: string
+    year: string
+    description: string
+    type: string
+    icon: LucideIcon
+    link: string | null
+  }[] = [
     {
       id: 1,
       name: 'Restaurant Guru Award',
@@ -12,7 +21,7 @@ export default function RecognitionsPage() {
       description: 'Recognized as one of the best restaurants in Yokosuka for exceptional Indian cuisine.',
       type: 'award',
       // Replace with actual image path: '/images/certificates/restaurant-guru-2024.jpg'
-      imagePlaceholder: '🏆',
+      icon: Trophy,
       link: null, // Optional external link
     },
     {
@@ -21,7 +30,7 @@ export default function RecognitionsPage() {
       year: '2023-2024',
       description: 'Consistently rated excellent by travelers and food enthusiasts worldwide.',
       type: 'certificate',
-      imagePlaceholder: '🥇',
+      icon: Medal,
       link: null,
     },
     {
@@ -30,7 +39,7 @@ export default function RecognitionsPage() {
       year: 'Current',
       description: 'All our meat products are certified 100% Halal by authorized certification body.',
       type: 'certificate',
-      imagePlaceholder: '🏅',
+      icon: Award,
       link: null,
     },
     {
@@ -39,7 +48,7 @@ export default function RecognitionsPage() {
       year: '2024',
       description: 'Maintaining a 4.8+ star rating with over 500 verified reviews.',
       type: 'rating',
-      imagePlaceholder: '⭐',
+      icon: Star,
       link: null,
     },
     {
@@ -48,7 +57,7 @@ export default function RecognitionsPage() {
       year: 'Current',
       description: 'Certified by Yokosuka Health Department for maintaining highest food safety standards.',
       type: 'certificate',
-      imagePlaceholder: '✅',
+      icon: CheckCircle,
       link: null,
     },
     {
@@ -57,7 +66,7 @@ export default function RecognitionsPage() {
       year: '2023',
       description: 'Voted best curry restaurant in the Yokosuka area by local community.',
       type: 'award',
-      imagePlaceholder: '🍛',
+      icon: UtensilsCrossed,
       link: null,
     },
   ]
@@ -80,7 +89,7 @@ export default function RecognitionsPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium border border-white/10 mb-6">
-              <span className="text-2xl">🏆</span>
+              <Trophy className="w-6 h-6" />
               <span className="text-emerald-50">Our Achievements</span>
             </div>
             <h1 className="text-4xl lg:text-5xl font-black mb-4">Awards & Recognitions</h1>
@@ -108,7 +117,7 @@ export default function RecognitionsPage() {
                     Example: <img src={item.image} alt={item.name} className="w-full h-full object-contain p-4" />
                   */}
                   <div className="text-center">
-                    <span className="text-6xl block mb-2">{item.imagePlaceholder}</span>
+                    <item.icon className="w-16 h-16 mx-auto mb-2 text-gray-400" />
                     <span className="text-xs text-gray-400 font-medium">
                       [Upload Certificate/Award Image]
                     </span>
@@ -155,7 +164,7 @@ export default function RecognitionsPage() {
           {/* Add More Notice */}
           <div className="max-w-2xl mx-auto mt-12 text-center">
             <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
-              <span className="text-3xl mb-3 block">📝</span>
+              <FileText className="w-8 h-8 mb-3 mx-auto text-amber-700" />
               <h3 className="font-bold text-amber-900 mb-2">Template Section</h3>
               <p className="text-amber-800 text-sm">
                 This is a template page. Replace the placeholder images and content with your actual
@@ -171,19 +180,19 @@ export default function RecognitionsPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-16 text-gray-500">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">✅</span>
+              <CheckCircle className="w-6 h-6" />
               <span className="font-semibold">Halal Certified</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl">⭐</span>
+              <Star className="w-6 h-6" />
               <span className="font-semibold">4.8+ Rating</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl">🏆</span>
+              <Trophy className="w-6 h-6" />
               <span className="font-semibold">Award Winning</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl">👨‍🍳</span>
+              <ChefHat className="w-6 h-6" />
               <span className="font-semibold">Expert Chefs</span>
             </div>
           </div>

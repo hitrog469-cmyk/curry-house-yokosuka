@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatPrice } from '@/lib/utils'
-import { Bell, ChefHat, CheckCircle, DollarSign, Printer, RefreshCw, Volume2, VolumeX, LayoutGrid, Columns3 } from 'lucide-react'
+import { AlertTriangle, Bell, Check, ChefHat, CheckCircle, DollarSign, Flame, MousePointerClick, Printer, Receipt, RefreshCw, User, Volume2, VolumeX, LayoutGrid, Columns3 } from 'lucide-react'
 import ToggleTabs from '@/components/ui/ToggleTabs'
 
 // Constants
@@ -274,7 +274,7 @@ export default function StaffDashboardPage() {
       </head>
       <body>
         <div class="header">
-          <h1>🍛 KITCHEN SLIP</h1>
+          <h1>KITCHEN SLIP</h1>
           ${isAddOn ? '<span class="add-on-badge">+ ADD-ON ORDER</span>' : '<span style="font-size:12px">NEW ORDER</span>'}
         </div>
 
@@ -292,13 +292,13 @@ export default function StaffDashboardPage() {
               <div>
                 <div class="item-name">${item.name}</div>
                 ${item.setMealChoices ? `
-                  ${item.setMealChoices.curries?.length ? `<div class="item-details">🍛 ${item.setMealChoices.curries.join(' + ')}</div>` : ''}
-                  <div class="item-details">🫓 ${item.setMealChoices.naan || 'Plain Naan'}</div>
-                  <div class="item-details">🍚 ${item.setMealChoices.rice || 'Plain Rice'}</div>
-                  ${item.setMealChoices.drink ? `<div class="item-details">🥤 ${item.setMealChoices.drink}</div>` : ''}
-                  ${item.setMealChoices.upgradeDetails?.length ? `<div class="item-details">⬆️ ${item.setMealChoices.upgradeDetails.join(', ')}</div>` : ''}
+                  ${item.setMealChoices.curries?.length ? `<div class="item-details">Curry: ${item.setMealChoices.curries.join(' + ')}</div>` : ''}
+                  <div class="item-details">Naan: ${item.setMealChoices.naan || 'Plain Naan'}</div>
+                  <div class="item-details">Rice: ${item.setMealChoices.rice || 'Plain Rice'}</div>
+                  ${item.setMealChoices.drink ? `<div class="item-details">Drink: ${item.setMealChoices.drink}</div>` : ''}
+                  ${item.setMealChoices.upgradeDetails?.length ? `<div class="item-details">Upgrade: ${item.setMealChoices.upgradeDetails.join(', ')}</div>` : ''}
                 ` : ''}
-                ${item.spiceLevel ? `<div class="item-details">🌶️ ${item.spiceLevel}</div>` : ''}
+                ${item.spiceLevel ? `<div class="item-details">Spice: ${item.spiceLevel}</div>` : ''}
                 ${item.addOns?.length ? `<div class="item-details">+ ${item.addOns.map(a => typeof a === 'string' ? a : a.name).join(', ')}</div>` : ''}
                 ${item.variation ? `<div class="item-details">• ${typeof item.variation === 'string' ? item.variation : item.variation.name}</div>` : ''}
               </div>
@@ -344,7 +344,7 @@ export default function StaffDashboardPage() {
       const remainder = total - (perPerson * (splits - 1))
       splitInfo = `
         <div class="split-info">
-          <div style="font-weight:bold;margin-bottom:4px;">📋 BILL SPLIT (${splits} people)</div>
+          <div style="font-weight:bold;margin-bottom:4px;">BILL SPLIT (${splits} people)</div>
           <div>Per Person: ${formatPrice(perPerson)}</div>
           ${remainder !== perPerson ? `<div style="font-size:10px;color:#666;">*First person pays ${formatPrice(remainder)}</div>` : ''}
         </div>
@@ -385,7 +385,7 @@ export default function StaffDashboardPage() {
       </head>
       <body>
         <div class="header">
-          <h1>🍛 THE CURRY HOUSE</h1>
+          <h1>THE CURRY HOUSE</h1>
           <p>YOKOSUKA</p>
           <p>ザ・カリーハウス横須賀</p>
         </div>
@@ -408,12 +408,12 @@ export default function StaffDashboardPage() {
               <span class="item-price">${formatPrice(item.price * item.quantity)}</span>
             </div>
             ${item.setMealChoices ? `
-              ${item.setMealChoices.curries?.length ? `<div style="font-size:10px;color:#444;padding:1px 0;">　🍛 ${item.setMealChoices.curries.join(' + ')}</div>` : ''}
-              <div style="font-size:10px;color:#444;padding:1px 0;">　🫓 ${item.setMealChoices.naan || 'Plain Naan'} · 🍚 ${item.setMealChoices.rice || 'Plain Rice'}</div>
-              ${item.setMealChoices.drink ? `<div style="font-size:10px;color:#444;padding:1px 0;">　🥤 ${item.setMealChoices.drink}</div>` : ''}
-              ${item.setMealChoices.upgradeDetails?.length ? `<div style="font-size:10px;color:#e65c00;padding:1px 0;">　⬆️ ${item.setMealChoices.upgradeDetails.join(', ')}</div>` : ''}
+              ${item.setMealChoices.curries?.length ? `<div style="font-size:10px;color:#444;padding:1px 0;">　Curry: ${item.setMealChoices.curries.join(' + ')}</div>` : ''}
+              <div style="font-size:10px;color:#444;padding:1px 0;">　${item.setMealChoices.naan || 'Plain Naan'} · ${item.setMealChoices.rice || 'Plain Rice'}</div>
+              ${item.setMealChoices.drink ? `<div style="font-size:10px;color:#444;padding:1px 0;">　Drink: ${item.setMealChoices.drink}</div>` : ''}
+              ${item.setMealChoices.upgradeDetails?.length ? `<div style="font-size:10px;color:#e65c00;padding:1px 0;">　Upgrade: ${item.setMealChoices.upgradeDetails.join(', ')}</div>` : ''}
             ` : ''}
-            ${item.spiceLevel ? `<div style="font-size:10px;color:#666;padding:1px 0;">　🌶️ ${item.spiceLevel}</div>` : ''}
+            ${item.spiceLevel ? `<div style="font-size:10px;color:#666;padding:1px 0;">　Spice: ${item.spiceLevel}</div>` : ''}
             ${item.addOns?.map(addon => `
               <div class="item" style="font-size:10px;color:#666;">
                 <span class="item-name">　+ ${typeof addon === 'string' ? addon : addon.name}</span>
@@ -737,13 +737,13 @@ export default function StaffDashboardPage() {
 
                   {/* Status indicator */}
                   {table.status !== 'available' && (
-                    <span className="text-xs mt-1 font-semibold">
-                      {table.status === 'new_order' && '🆕 NEW'}
-                      {table.status === 'preparing' && '🍳'}
+                    <span className="text-xs mt-1 font-semibold flex items-center gap-1">
+                      {table.status === 'new_order' && <><Bell className="w-3.5 h-3.5" /> NEW</>}
+                      {table.status === 'preparing' && <ChefHat className="w-4 h-4" />}
                       {table.status === 'add_on' && '+ ADD'}
-                      {table.status === 'bill_requested' && '💰'}
-                      {table.status === 'served' && '✓'}
-                      {table.status === 'delayed' && '⚠️ LATE'}
+                      {table.status === 'bill_requested' && <DollarSign className="w-4 h-4" />}
+                      {table.status === 'served' && <Check className="w-4 h-4" />}
+                      {table.status === 'delayed' && <><AlertTriangle className="w-3.5 h-3.5" /> LATE</>}
                     </span>
                   )}
 
@@ -783,8 +783,8 @@ export default function StaffDashboardPage() {
                   </div>
 
                   {selectedTableData.customerName && (
-                    <div className="text-gray-400 text-sm mb-2">
-                      👤 {selectedTableData.customerName} ({selectedTableData.partySize} guests)
+                    <div className="text-gray-400 text-sm mb-2 flex items-center gap-1.5">
+                      <User className="w-4 h-4" /> {selectedTableData.customerName} ({selectedTableData.partySize} guests)
                     </div>
                   )}
 
@@ -801,10 +801,10 @@ export default function StaffDashboardPage() {
                           }`}
                         >
                           <div className="flex justify-between items-center mb-2">
-                            <span className={`text-xs px-2 py-0.5 rounded ${
+                            <span className={`text-xs px-2 py-0.5 rounded inline-flex items-center gap-1 ${
                               order.status === 'pending' ? 'bg-red-500' : 'bg-blue-500'
                             }`}>
-                              {order.status === 'pending' ? '🆕 UNPRINTED' : '🍳 COOKING'}
+                              {order.status === 'pending' ? <><Bell className="w-3 h-3" /> UNPRINTED</> : <><ChefHat className="w-3 h-3" /> COOKING</>}
                             </span>
                             <span className="text-xs text-gray-400">
                               {new Date(order.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
@@ -814,7 +814,7 @@ export default function StaffDashboardPage() {
                             <div key={idx} className="flex justify-between text-sm py-1">
                               <span>
                                 {item.name}
-                                {item.spiceLevel && <span className="text-orange-400 ml-1">🌶️{item.spiceLevel}</span>}
+                                {item.spiceLevel && <span className="text-orange-400 ml-1 inline-flex items-center gap-0.5"><Flame className="w-3 h-3" />{item.spiceLevel}</span>}
                               </span>
                               <span className="font-bold">×{item.quantity}</span>
                             </div>
@@ -842,7 +842,7 @@ export default function StaffDashboardPage() {
                         onClick={() => printKitchenSlip(selectedTableData)}
                         className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl text-lg flex items-center justify-center gap-2 transition-all"
                       >
-                        <span className="text-2xl">🖨️</span>
+                        <Printer className="w-6 h-6" />
                         Print Kitchen Slip
                       </button>
                     )}
@@ -853,7 +853,7 @@ export default function StaffDashboardPage() {
                           onClick={() => printFinalReceipt(selectedTableData)}
                           className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
                         >
-                          <span className="text-xl">🧾</span>
+                          <Receipt className="w-5 h-5" />
                           Print Bill
                         </button>
 
@@ -865,7 +865,7 @@ export default function StaffDashboardPage() {
                           }}
                           className="w-full bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
                         >
-                          <span className="text-xl">✅</span>
+                          <CheckCircle className="w-5 h-5" />
                           Paid - Close Table
                         </button>
                       </>
@@ -874,7 +874,7 @@ export default function StaffDashboardPage() {
                 </>
               ) : (
                 <div className="text-center py-12 text-gray-500">
-                  <div className="text-6xl mb-4">👆</div>
+                  <MousePointerClick className="w-12 h-12 mx-auto mb-4 text-gray-600" />
                   <p className="text-lg">Select a table to view details</p>
                   <p className="text-sm mt-2">Tap a colored tile to see orders</p>
                 </div>

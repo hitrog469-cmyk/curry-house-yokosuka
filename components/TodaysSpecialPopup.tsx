@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { getTodaysSpecial, isSpecialValid, type DailySpecial } from '@/lib/daily-special-api'
 import { getMenuItemImage } from '@/lib/image-mapping'
+import { Sparkles } from 'lucide-react'
 import { formatPrice } from '@/lib/utils'
 import { menuItems } from '@/lib/menu-data'
 
@@ -159,7 +160,7 @@ export default function TodaysSpecialPopup({ forceShow = false }: TodaysSpecialP
             <div className="p-5">
               {/* Badge */}
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3" style={{background: 'rgba(93,183,97,0.1)', color: '#3E7B41'}}>
-                <span>🌟</span>
+                <Sparkles className="w-3.5 h-3.5" />
                 <span>Today&apos;s Special</span>
               </div>
 
@@ -225,7 +226,7 @@ export default function TodaysSpecialPopup({ forceShow = false }: TodaysSpecialP
           className="fixed bottom-24 right-4 z-40 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-lg hover:shadow-xl transition-all animate-fadeIn flex items-center gap-2"
           style={{background: 'linear-gradient(135deg, #5DB761, #4AA64E)'}}
         >
-          <span>🌟</span>
+          <Sparkles className="w-3.5 h-3.5" />
           <span>Today&apos;s Special</span>
         </button>
       )}

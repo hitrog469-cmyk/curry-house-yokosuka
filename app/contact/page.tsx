@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/footer';
 import Link from 'next/link';
+import { CheckCircle, XCircle, Send } from 'lucide-react';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -247,14 +248,16 @@ export default function ContactPage() {
               {status === 'success' && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
                   <p className="text-green-700 font-semibold text-center flex items-center justify-center gap-2">
-                    ✅ Thank you! Your message has been sent. Check your email for confirmation.
+                    <CheckCircle className="w-5 h-5 shrink-0" />
+                    Thank you! Your message has been sent. Check your email for confirmation.
                   </p>
                 </div>
               )}
               {status === 'error' && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-red-700 font-semibold text-center">
-                    ❌ {errorMsg}
+                  <p className="text-red-700 font-semibold flex items-center justify-center gap-2">
+                    <XCircle className="w-5 h-5 shrink-0" />
+                    {errorMsg}
                   </p>
                 </div>
               )}
@@ -345,7 +348,14 @@ export default function ContactPage() {
                   disabled={status === 'loading'}
                   className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-60 text-white px-8 py-4 rounded-xl transition-all font-bold text-lg shadow-md hover:shadow-lg"
                 >
-                  {status === 'loading' ? '⏳ Sending...' : '✉️ Send Message'}
+                  {status === 'loading' ? (
+                    'Sending...'
+                  ) : (
+                    <span className="inline-flex items-center justify-center gap-2">
+                      <Send className="w-5 h-5" />
+                      Send Message
+                    </span>
+                  )}
                 </button>
               </form>
             </div>

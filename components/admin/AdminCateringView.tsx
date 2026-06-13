@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { Clock, Phone, CheckCircle, XCircle, Zap, PartyPopper, Mail, type LucideIcon } from 'lucide-react'
 
 type CateringInquiry = {
   id: string
@@ -15,11 +16,11 @@ type CateringInquiry = {
   created_at: string
 }
 
-const STATUS_META: Record<string, { color: string; label: string; border: string }> = {
-  pending:   { color: 'bg-yellow-100 text-yellow-800', label: '⏳ Pending',   border: 'border-yellow-400' },
-  contacted: { color: 'bg-blue-100 text-blue-800',     label: '📞 Contacted', border: 'border-blue-400' },
-  confirmed: { color: 'bg-green-100 text-green-800',   label: '✅ Confirmed', border: 'border-green-500' },
-  cancelled: { color: 'bg-red-100 text-red-700',       label: '❌ Cancelled', border: 'border-red-300' },
+const STATUS_META: Record<string, { color: string; label: string; border: string; icon: LucideIcon }> = {
+  pending:   { color: 'bg-yellow-100 text-yellow-800', label: 'Pending',   border: 'border-yellow-400', icon: Clock },
+  contacted: { color: 'bg-blue-100 text-blue-800',     label: 'Contacted', border: 'border-blue-400',   icon: Phone },
+  confirmed: { color: 'bg-green-100 text-green-800',   label: 'Confirmed', border: 'border-green-500',  icon: CheckCircle },
+  cancelled: { color: 'bg-red-100 text-red-700',       label: 'Cancelled', border: 'border-red-300',    icon: XCircle },
 }
 
 export default function AdminCateringView() {
@@ -75,21 +76,24 @@ export default function AdminCateringView() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        {Object.entries(STATUS_META).map(([key, meta]) => (
+        {Object.entries(STATUS_META).map(([key, meta]) => {
+          const StatIcon = meta.icon
+          return (
           <div key={key}
             className={`bg-white rounded-xl p-4 shadow-sm border-l-4 ${meta.border} cursor-pointer hover:shadow-md transition-all ${filterStatus === key ? 'ring-2 ring-gray-900' : ''}`}
             onClick={() => setFilterStatus(filterStatus === key ? 'all' : key)}
           >
-            <p className="text-xs font-bold text-gray-500 mb-1">{meta.label}</p>
+            <p className="text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><StatIcon className="w-3.5 h-3.5" /> {meta.label}</p>
             <p className="text-3xl font-black text-gray-900">{inquiries.filter(i => i.status === key).length}</p>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Alert for pending */}
       {pendingCount > 0 && (
         <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-center gap-3">
-          <span className="text-2xl">⚡</span>
+          <Zap className="w-6 h-6 text-yellow-600 flex-shrink-0" />
           <div>
             <p className="font-bold text-yellow-800">{pendingCount} inquiry{pendingCount > 1 ? 's' : ''} waiting for response</p>
             <p className="text-sm text-yellow-700">Please contact them to discuss event details</p>
@@ -104,17 +108,20 @@ export default function AdminCateringView() {
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterStatus === 'all' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
             All ({inquiries.length})
           </button>
-          {Object.entries(STATUS_META).map(([key, meta]) => (
+          {Object.entries(STATUS_META).map(([key, meta]) => {
+            const FilterIcon = meta.icon
+            return (
             <button key={key} onClick={() => setFilterStatus(key)}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${filterStatus === key ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
-              {meta.label} ({inquiries.filter(i => i.status === key).length})
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1 ${filterStatus === key ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
+              <FilterIcon className="w-3.5 h-3.5" /> {meta.label} ({inquiries.filter(i => i.status === key).length})
             </button>
-          ))}
+            )
+          })}
         </div>
         <button onClick={fetchInquiries} className="text-sm text-blue-600 hover:underline">↻ Refresh</button>
         {upcomingConfirmed > 0 && (
-          <span className="ml-auto bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-            🎉 {upcomingConfirmed} upcoming confirmed event{upcomingConfirmed > 1 ? 's' : ''}
+          <span className="ml-auto bg-green-600 text-white text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1">
+            <PartyPopper className="w-3.5 h-3.5" /> {upcomingConfirmed} upcoming confirmed event{upcomingConfirmed > 1 ? 's' : ''}
           </span>
         )}
       </div>
@@ -125,13 +132,14 @@ export default function AdminCateringView() {
         </div>
       ) : inquiries.length === 0 ? (
         <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-          <div className="text-5xl mb-3">🎉</div>
+          <PartyPopper className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-500">No catering inquiries yet</p>
         </div>
       ) : (
         <div className="space-y-3">
           {inquiries.map(inq => {
             const meta = STATUS_META[inq.status]
+            const MetaIcon = meta.icon
             const isExpanded = expanded === inq.id
             const eventDate = new Date(inq.event_date)
             const isPast = eventDate < new Date()
@@ -144,8 +152,8 @@ export default function AdminCateringView() {
                   onClick={() => setExpanded(isExpanded ? null : inq.id)}
                 >
                   <div className="flex items-center gap-3 flex-wrap">
-                    <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center text-white font-black text-xl flex-shrink-0">
-                      🎉
+                    <div className="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-500 rounded-xl flex items-center justify-center text-white flex-shrink-0">
+                      <PartyPopper className="w-5 h-5" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-gray-900">{inq.name}</p>
@@ -161,7 +169,7 @@ export default function AdminCateringView() {
                       </p>
                       <p className="text-xs text-gray-500">{inq.event_time}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${meta.color}`}>{meta.label}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1 ${meta.color}`}><MetaIcon className="w-3.5 h-3.5" /> {meta.label}</span>
                     <span className="text-gray-400">{isExpanded ? '▲' : '▼'}</span>
                   </div>
                 </button>
@@ -208,23 +216,26 @@ export default function AdminCateringView() {
                     {/* Actions */}
                     <div className="flex flex-wrap gap-2 items-center">
                       <span className="text-xs font-bold text-gray-500">Status:</span>
-                      {Object.entries(STATUS_META).map(([key, smeta]) => (
+                      {Object.entries(STATUS_META).map(([key, smeta]) => {
+                        const BtnIcon = smeta.icon
+                        return (
                         <button key={key}
                           disabled={updating === inq.id || inq.status === key}
                           onClick={() => updateStatus(inq.id, key)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 ${
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-40 inline-flex items-center gap-1 ${
                             inq.status === key ? `${smeta.color} cursor-default` : 'bg-gray-900 hover:bg-gray-700 text-white'
                           }`}
                         >
-                          {smeta.label}
+                          <BtnIcon className="w-3.5 h-3.5" /> {smeta.label}
                         </button>
-                      ))}
+                        )
+                      })}
                       <a
                         href={`mailto:${inq.email}?subject=Catering Inquiry — The Curry House Yokosuka&body=Hi ${inq.name},%0A%0AThank you for your catering inquiry for ${inq.event_type} on ${eventDate.toLocaleDateString('en-GB')}.%0A%0A`}
                         onClick={() => inq.status === 'pending' && updateStatus(inq.id, 'contacted')}
-                        className="ml-auto bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                        className="ml-auto bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-colors inline-flex items-center gap-1"
                       >
-                        📧 Reply to Client
+                        <Mail className="w-3.5 h-3.5" /> Reply to Client
                       </a>
                     </div>
                   </div>

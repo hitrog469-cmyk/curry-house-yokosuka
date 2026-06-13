@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/footer';
+import { Check, CheckCircle, XCircle, Paperclip } from 'lucide-react';
 
 type JobPosition = {
   id: string;
@@ -294,7 +295,7 @@ export default function CareersPage() {
                 <ul className="space-y-3">
                   {selectedJob.responsibilities.map((resp, idx) => (
                     <li key={idx} className="flex gap-3 text-gray-600 dark:text-gray-400">
-                      <span className="text-green-500 font-bold">✓</span>
+                      <Check className="w-5 h-5 text-green-500 shrink-0" />
                       <span>{resp}</span>
                     </li>
                   ))}
@@ -361,7 +362,7 @@ export default function CareersPage() {
               {/* Success state */}
               {appStatus === 'success' ? (
                 <div className="text-center py-8">
-                  <div className="text-6xl mb-4">🎉</div>
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                   <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Application Submitted!</h3>
                   <p className="text-gray-500 dark:text-gray-400 mb-6">
                     We&apos;ve received your application and sent a confirmation to your email.<br />
@@ -378,7 +379,7 @@ export default function CareersPage() {
               <form className="space-y-6" onSubmit={handleAppSubmit}>
                 {appStatus === 'error' && (
                   <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                    <p className="text-red-700 font-semibold text-sm">❌ {appError}</p>
+                    <p className="text-red-700 font-semibold text-sm flex items-center gap-2"><XCircle className="w-4 h-4 shrink-0" />{appError}</p>
                   </div>
                 )}
 
@@ -468,7 +469,7 @@ export default function CareersPage() {
                     PDF, DOC, or DOCX format · Max 5MB (optional)
                   </p>
                   {cvFile && (
-                    <p className="text-xs text-purple-600 mt-1 font-semibold">📎 {cvFile.name}</p>
+                    <p className="text-xs text-purple-600 mt-1 font-semibold flex items-center gap-1"><Paperclip className="w-3 h-3 shrink-0" />{cvFile.name}</p>
                   )}
                 </div>
 
@@ -477,7 +478,7 @@ export default function CareersPage() {
                   disabled={appStatus === 'loading'}
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-8 py-4 rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 transition-all font-bold text-lg shadow-xl"
                 >
-                  {appStatus === 'loading' ? '⏳ Submitting...' : '🚀 Submit Application'}
+                  {appStatus === 'loading' ? 'Submitting...' : 'Submit Application'}
                 </button>
               </form>
               )}

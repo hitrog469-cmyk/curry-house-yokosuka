@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/footer'
 import Link from 'next/link'
+import { Camera, Upload, FileText, Image as ImageIcon } from 'lucide-react'
 
 export default function GalleryPage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
@@ -12,14 +13,14 @@ export default function GalleryPage() {
 
   // Placeholder photos until real guest photos are uploaded
   const placeholderPhotos = [
-    { id: 1, category: 'Curry', emoji: '🍛' },
-    { id: 2, category: 'Biryani', emoji: '🍚' },
-    { id: 3, category: 'Naan', emoji: '🫓' },
-    { id: 4, category: 'Dessert', emoji: '🍮' },
-    { id: 5, category: 'Drinks', emoji: '🥤' },
-    { id: 6, category: 'Mexican', emoji: '🌮' },
-    { id: 7, category: 'Japanese', emoji: '🍱' },
-    { id: 8, category: 'Nepalese', emoji: '🥟' },
+    { id: 1, category: 'Curry' },
+    { id: 2, category: 'Biryani' },
+    { id: 3, category: 'Naan' },
+    { id: 4, category: 'Dessert' },
+    { id: 5, category: 'Drinks' },
+    { id: 6, category: 'Mexican' },
+    { id: 7, category: 'Japanese' },
+    { id: 8, category: 'Nepalese' },
   ]
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +71,7 @@ export default function GalleryPage() {
         <div className="max-w-2xl mx-auto mb-12">
           <div className="card bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200">
             <div className="text-center mb-6">
-              <div className="text-6xl mb-4">📸</div>
+              <Camera className="w-16 h-16 mb-4 mx-auto text-purple-600" />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Share Your Food Photos</h2>
               <p className="text-gray-600">
                 Show us how you enjoyed our dishes! Your photos might be featured on our website.
@@ -92,7 +93,7 @@ export default function GalleryPage() {
                   className="cursor-pointer block text-center p-8 border-2 border-dashed border-purple-300 rounded-xl bg-white hover:bg-purple-50 transition-colors"
                 >
                   <div className="space-y-2">
-                    <div className="text-4xl">⬆️</div>
+                    <Upload className="w-10 h-10 mx-auto text-purple-500" />
                     <div className="font-bold text-gray-900">Click to Upload Photos</div>
                     <div className="text-sm text-gray-500">
                       JPG, PNG, or GIF (max 5MB each)
@@ -112,8 +113,9 @@ export default function GalleryPage() {
                   className="mt-1 w-5 h-5 text-purple-600 border-2 border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
                 />
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-blue-900 mb-1">
-                    📝 Photo Display Consent
+                  <p className="text-sm font-semibold text-blue-900 mb-1 flex items-center gap-1.5">
+                    <FileText className="w-4 h-4" />
+                    Photo Display Consent
                   </p>
                   <p className="text-xs text-blue-800">
                     I give The Curry House Yokosuka permission to display my uploaded photos on their website and social media for promotional purposes.
@@ -167,9 +169,7 @@ export default function GalleryPage() {
               <div key={item.id} className="card overflow-hidden hover-lift group">
                 <div className="aspect-square bg-gradient-to-br from-orange-100 via-yellow-100 to-pink-100 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="text-7xl mb-2 group-hover:scale-125 transition-transform duration-300">
-                      {item.emoji}
-                    </div>
+                    <ImageIcon className="w-16 h-16 mb-2 mx-auto text-gray-400 group-hover:scale-125 transition-transform duration-300" />
                     <div className="text-sm font-semibold text-gray-600">{item.category}</div>
                   </div>
                 </div>

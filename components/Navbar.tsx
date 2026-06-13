@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import NotificationBell from './NotificationBell';
+import { PartyPopper } from 'lucide-react';
 
 export default function Navbar() {
   const { user, signOut, loading, refreshUser } = useAuth();
@@ -68,7 +69,7 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/menu', label: 'Menu' },
-    { href: '/offers', label: 'Offers', icon: '🎉' },
+    { href: '/offers', label: 'Offers' },
     { href: '/gallery', label: 'Gallery' },
     { href: '/about', label: 'About' },
     { href: '/contact', label: 'Contact' },
@@ -113,7 +114,6 @@ export default function Navbar() {
                     : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
                 }`}
               >
-                {link.icon && <span className="mr-1">{link.icon}</span>}
                 {link.label}
               </Link>
             ))}
@@ -283,16 +283,15 @@ export default function Navbar() {
                     : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                {link.icon && <span className="mr-2">{link.icon}</span>}
                 {link.label}
               </Link>
             ))}
             <Link
               href="/catering"
               onClick={() => setShowMobileMenu(false)}
-              className="block px-4 py-3 text-purple-600 hover:bg-purple-50 rounded-xl transition-colors font-semibold"
+              className="flex items-center gap-2 px-4 py-3 text-purple-600 hover:bg-purple-50 rounded-xl transition-colors font-semibold"
             >
-              🎉 Party & Catering
+              <PartyPopper className="w-4 h-4" /> Party & Catering
             </Link>
             {!user && (
               <div className="pt-3 mt-2 border-t border-gray-100 space-y-2">

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import crypto from 'crypto'
 import { getSupabaseServiceClient } from '@/lib/supabase-server'
+import { sendPasswordResetEmail } from '@/lib/mailer'
 
 export async function POST(request: Request) {
   try {
@@ -40,9 +41,12 @@ export async function POST(request: Request) {
       })
       .eq('id', profile.id)
 
-    // TODO: Send email with reset link
-    // For now, log the token (in production, integrate an email service)
-    console.log(`Password reset link: ${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`)
+    // Send the reset link by email. Never log the token — it grants account access.
+    try {
+      await sendPasswordResetEmail(profile.email, resetToken)
+    } catch (emailErr) {
+      console.error('Password reset email failed to send:', emailErr)
+    }
 
     return NextResponse.json({ success: true })
   } catch (err) {
